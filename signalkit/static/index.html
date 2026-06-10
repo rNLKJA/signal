@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Signal — governed analyst over NYC public-safety data</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: light-dark(#fafafa, #111418);
+    --panel: light-dark(#ffffff, #1a1f26);
+    --text: light-dark(#1a1a1a, #e8e8e8);
+    --muted: light-dark(#666666, #9aa4b2);
+    --border: light-dark(#e2e2e2, #2c333d);
+    --brand: light-dark(#0b57d0, #8ab4f8);
+    --bar: light-dark(#0b57d0, #5b8def);
+    --bar-anomaly: light-dark(#c5221f, #f28b82);
+    --ok: light-dark(#137333, #81c995);
+    accent-color: var(--brand);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+  h1 .v { color: var(--muted); font-weight: 400; font-size: 1rem; }
+  .tagline { color: var(--muted); margin: 0 0 1.5rem; }
+  .tagline a { color: var(--brand); }
+  form {
+    display: flex; flex-wrap: wrap; gap: .75rem; align-items: end;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem;
+  }
+  label { display: flex; flex-direction: column; gap: .25rem; font-size: .8rem; color: var(--muted); }
+  input, select, button {
+    font: inherit; color: inherit; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: .45rem .6rem;
+  }
+  button {
+    background: var(--brand); border-color: var(--brand); cursor: pointer;
+    color: light-dark(#ffffff, #111418); font-weight: 600; padding-inline: 1.1rem;
+  }
+  button[disabled] { opacity: .6; cursor: wait; }
+  section { margin-top: 1.5rem; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+  #narrative { font-size: 1.05rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+  .chip {
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: .15rem .7rem; font-size: .8rem; color: var(--muted);
+  }
+  .chip b { color: var(--text); }
+  .chip.review-yes { border-color: var(--bar-anomaly); color: var(--bar-anomaly); }
+  .chip.review-no { border-color: var(--ok); color: var(--ok); }
+  svg { width: 100%; height: auto; display: block; margin-top: 1rem; }
+  .gov { font-size: .8rem; color: var(--muted); margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: .75rem; }
+  .gov code { color: var(--text); background: var(--bg); padding: .05rem .35rem; border-radius: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .5rem; }
+  caption { text-align: left; color: var(--muted); font-size: .8rem; margin-bottom: .4rem; }
+  th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .err { color: var(--bar-anomaly); }
+  .hint { color: var(--muted); font-size: .8rem; }
+  footer { margin-top: 2.5rem; color: var(--muted); font-size: .8rem; }
+  footer a { color: var(--brand); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Signal <span class="v" id="version"></span></h1>
+  <p class="tagline">A governed analyst over NYC public-safety data. Every answer is audit-logged
+    before it is returned — the trail is below, live. <a href="/docs">API docs</a> ·
+    <a href="https://github.com/rNLKJA/signal">source</a></p>
+
+  <form id="ask-form">
+    <label>Offence (substring, blank = all)
+      <input name="offense" list="offense-options" placeholder="burglary" autocomplete="off">
+      <datalist id="offense-options">
+        <option>PETIT LARCENY</option><option>GRAND LARCENY</option><option>BURGLARY</option>
+        <option>ROBBERY</option><option>FELONY ASSAULT</option><option>ASSAULT 3</option>
+        <option>HARRASSMENT 2</option><option>CRIMINAL MISCHIEF</option><option>DANGEROUS DRUGS</option>
+        <option>VEHICLE AND TRAFFIC LAWS</option>
+      </datalist>
+    </label>
+    <label>Borough
+      <select name="borough">
+        <option value="">All boroughs</option>
+        <option>Manhattan</option><option>Brooklyn</option><option>Queens</option>
+        <option>Bronx</option><option>Staten Island</option>
+      </select>
+    </label>
+    <label>Months
+      <input name="months" type="number" min="2" max="24" value="12" required>
+    </label>
+    <button type="submit" id="ask-btn">Ask</button>
+  </form>
+
+  <section id="answer" hidden>
+    <div class="panel">
+      <p id="narrative"></p>
+      <div class="chips" id="chips"></div>
+      <div id="chart-holder"></div>
+      <p class="gov" id="gov"></p>
+    </div>
+  </section>
+  <section id="error" hidden><div class="panel"><p class="err" id="error-msg"></p><p class="hint" id="error-hint"></p></div></section>
+
+  <section>
+    <div class="panel">
+      <table id="audit">
+        <caption>Audit trail — the governance log, live (most recent first).
+          Every row satisfies the four APS mandatory AI requirements.</caption>
+        <thead><tr><th>Decision</th><th>When (UTC)</th><th>Model</th><th>Input</th><th>Human review</th></tr></thead>
+        <tbody id="audit-body"><tr><td colspan="5" class="hint">No decisions logged yet — ask something.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Data: NYC Open Data, NYPD complaint datasets (server-side aggregates only — no raw incident
+    rows or PII enter the system). Governance: APS Mandatory AI Requirements (Jun 2026),
+    EU AI Act Art. 50, Privacy Act 1988 (Cth). MIT licence.
+  </footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+async function loadVersion() {
+  try {
+    const r = await fetch("/health");
+    $("version").textContent = "v" + (await r.json()).version;
+  } catch { /* cosmetic only */ }
+}
+
+function chartSVG(monthly, anomalies) {
+  const entries = Object.entries(monthly);
+  const max = Math.max(...entries.map(([, v]) => v));
+  const W = 840, H = 240, PAD = 28, baseline = H - PAD;
+  const bw = (W - PAD) / entries.length;
+  const bars = entries.map(([month, v], i) => {
+    const h = max ? Math.round((v / max) * (H - PAD * 2)) : 0;
+    const x = PAD + i * bw, y = baseline - h;
+    const anomalous = anomalies.includes(month);
+    const fill = anomalous ? "var(--bar-anomaly)" : "var(--bar)";
+    const label = `${month}: ${v.toLocaleString()} complaints` + (anomalous ? " (anomaly)" : "");
+    return `<rect x="${x.toFixed(1)}" y="${y}" width="${(bw * 0.78).toFixed(1)}" height="${h}"
+      rx="2" fill="${fill}"><title>${label}</title></rect>
+      <text x="${(x + bw * 0.39).toFixed(1)}" y="${baseline + 14}" text-anchor="middle"
+        font-size="9" fill="var(--muted)">${i % 2 ? "" : month.slice(2)}</text>`;
+  }).join("");
+  const desc = `Monthly complaint counts from ${entries[0][0]} to ${entries.at(-1)[0]}, peak ${max.toLocaleString()}.`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${desc}">
+    <line x1="${PAD}" y1="${baseline}" x2="${W}" y2="${baseline}" stroke="var(--border)"/>
+    <text x="${PAD}" y="14" font-size="10" fill="var(--muted)">peak ${max.toLocaleString()}/month</text>
+    ${bars}</svg>`;
+}
+
+function pct(v, suffix) {
+  if (v === null || v === undefined) return "";
+  const arrow = v >= 0 ? "▲" : "▼";
+  return `<span class="chip">${suffix} <b>${arrow} ${Math.abs(v)}%</b></span>`;
+}
+
+function renderAnswer(d) {
+  $("error").hidden = true;
+  $("answer").hidden = false;
+  $("narrative").textContent = d.narrative;
+  const s = d.stats;
+  $("chips").innerHTML =
+    `<span class="chip">total <b>${s.total_complaints.toLocaleString()}</b></span>` +
+    `<span class="chip">trend <b>${s.trend_direction}</b></span>` +
+    pct(s.mom_change_pct, "MoM") + pct(s.yoy_change_pct, "YoY") +
+    `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">
+       human review ${d.human_review_required ? "required" : "not required"}</span>`;
+  $("chart-holder").innerHTML = chartSVG(s.monthly_counts, s.anomalous_months);
+  $("gov").innerHTML = `Decision <code>${d.decision_id}</code> · model <code>${d.model_used}</code>
+    · source: ${d.data_source}`;
+}
+
+function renderError(status, body) {
+  $("answer").hidden = true;
+  $("error").hidden = false;
+  if (status === 404 && body.detail?.valid_values) {
+    $("error-msg").textContent = body.detail.message;
+    $("error-hint").textContent = "Try a borough like " +
+      body.detail.valid_values.boroughs.join(", ") + ".";
+  } else {
+    $("error-msg").textContent = `Request failed (${status}).`;
+    $("error-hint").textContent = typeof body.detail === "string" ? body.detail : "";
+  }
+}
+
+async function refreshAudit() {
+  const rows = await (await fetch("/decisions?limit=10")).json();
+  if (!rows.length) return;
+  $("audit-body").innerHTML = rows.reverse().map((e) => `<tr>
+    <td><code>${e.decision_id}</code></td>
+    <td>${e.timestamp.slice(0, 16).replace("T", " ")}</td>
+    <td>${e.model_name}</td>
+    <td>${e.input_summary}</td>
+    <td>${e.human_review_required ? "⚠ required" : "—"}</td></tr>`).join("");
+}
+
+$("ask-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const f = new FormData(ev.target);
+  const payload = {
+    question: "dashboard query",
+    offense: f.get("offense") || null,
+    borough: f.get("borough") || null,
+    months: Number(f.get("months")),
+  };
+  $("ask-btn").disabled = true;
+  try {
+    const r = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await r.json();
+    r.ok ? renderAnswer(body) : renderError(r.status, body);
+    await refreshAudit();
+  } catch {
+    renderError(0, { detail: "Network error — is the API running?" });
+  } finally {
+    $("ask-btn").disabled = false;
+  }
+});
+
+loadVersion();
+refreshAudit();
+</script>
+</body>
+</html>

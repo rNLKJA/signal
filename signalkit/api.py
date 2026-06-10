@@ -4,7 +4,8 @@ signalkit/api.py
 The Signal HTTP API.
 
 Endpoints:
-  GET  /           — service index
+  GET  /           — interactive dashboard (single self-contained page)
+  GET  /api        — service index (JSON)
   GET  /health     — liveness + version
   POST /ask        — ask the analyst; response includes the governance decision_id
   GET  /decisions  — read back the audit trail (the governance log, live)
@@ -19,11 +20,16 @@ part of the user-facing surface, not a hidden ops file.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import HTMLResponse
 
 import signalkit
 from signalkit.analyst.core import Analyst, AnalystQuery, NoDataError
 from signalkit.data.nypd import DataUnavailable
+
+DASHBOARD_PATH = Path(__file__).parent / "static" / "index.html"
 
 
 def create_app(analyst: Analyst | None = None) -> FastAPI:
@@ -38,7 +44,11 @@ def create_app(analyst: Analyst | None = None) -> FastAPI:
     )
     app.state.analyst = analyst or Analyst()
 
-    @app.get("/")
+    @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse, include_in_schema=False)
+    def dashboard() -> str:
+        return DASHBOARD_PATH.read_text(encoding="utf-8")
+
+    @app.get("/api")
     def index() -> dict:
         return {
             "service": "signal",

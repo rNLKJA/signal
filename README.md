@@ -62,6 +62,7 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 
 | Endpoint | What it does |
 |---|---|
+| `GET /` | Interactive dashboard — ask questions, see the chart, watch the audit trail fill in. One self-contained page, no frameworks, no CDN. |
 | `POST /ask` | Ask the analyst. Filters: `offense`, `borough` (substring), `months` (2–24). Returns narrative, stats, and the `decision_id`. |
 | `GET /decisions` | The governance log, live. Most recent entries, `limit` up to 100. |
 | `GET /health` | Liveness and version. |
@@ -73,10 +74,10 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 - [x] Data layer over NYC Open Data with offline snapshot and stale-while-revalidate
 - [x] Analyst layer: trend stats, anomaly detection, every answer audit-logged
 - [x] FastAPI service with the audit trail as a public endpoint
-- [x] Tests (26+) and CI
+- [x] Tests and CI
+- [x] Interactive dashboard at `/` (vanilla, self-contained, dark-mode aware)
 - [ ] Deploy to Modal (`modal_app.py` is ready; needs account auth) — live URL here
 - [ ] LLM narrative layer enabled in deployment
-- [ ] Interactive front end over the API
 
 ## Reproduce
 
@@ -87,8 +88,8 @@ git clone https://github.com/rNLKJA/signal.git
 cd signal
 pip install -e ".[dev]"
 
-pytest                                  # 29 tests, all offline
-uvicorn signalkit.api:app --reload     # then open http://127.0.0.1:8000/docs
+pytest                                  # all offline, no network needed
+uvicorn signalkit.api:app --reload     # then open http://127.0.0.1:8000/
 ```
 
 Ask it something:

@@ -13,8 +13,16 @@ def client(tmp_path):
     return TestClient(create_app(analyst))
 
 
+def test_dashboard_served_at_root(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Signal" in response.text
+    assert "audit" in response.text.lower()
+
+
 def test_index(client):
-    body = client.get("/").json()
+    body = client.get("/api").json()
     assert body["service"] == "signal"
     assert "/ask (POST)" in body["endpoints"]
 
