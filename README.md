@@ -1,18 +1,37 @@
 # Signal
 
-An interactive product over US public data, with an LLM analyst layer and a governance log that records every AI-assisted decision in a form built to satisfy the APS Mandatory AI Requirements and the EU AI Act.
+An interactive product over US public-safety data, with an analyst layer and a governance log that records every AI-assisted answer in a form built to satisfy the APS Mandatory AI Requirements and the EU AI Act.
 
-Most data products show you a chart. Signal also shows you how the answer was reached: which model ran, what data informed it, what decision followed, and whether a human signed off. That audit trail is the part regulators and agencies now ask for, and it is the part most portfolios skip.
+Most data products show you a chart. Signal also shows you how the answer was reached: which model ran, what data informed it, what decision followed, and whether a human signed off. Every API response carries a `decision_id`, and the audit trail is itself a public endpoint — traceability is part of the product surface, not an ops file.
+
+```bash
+curl -X POST https://<deployment>/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "How is burglary trending in Brooklyn?", "offense": "burglary", "borough": "brooklyn"}'
+```
+
+```json
+{
+  "narrative": "Between 2025-04 and 2026-03, NYPD recorded 3,087 complaints for offence matching 'burglary' in BROOKLYN. The trend over the window is falling. The latest month is down 7.0% on the month before. Year on year, the latest month is down 15.6%.",
+  "stats": { "trend_direction": "falling", "yoy_change_pct": -15.6, "...": "..." },
+  "decision_id": "d-328069d6",
+  "data_source": "NYC Open Data — NYPD Complaint Data Historic (qgea-i56i) + Current YTD (5uac-w243)",
+  "model_used": "signal-stats-v1 (deterministic)",
+  "human_review_required": false
+}
+```
+
+That `decision_id` resolves at `GET /decisions` to the full audit entry: model provenance, data sources, decision category, confidence, risk tier, and the human-review flag.
 
 ## The problem
 
 From 15 June 2026, Australian Public Service agencies must document their use of AI against four mandatory requirements: what AI system was used, what decision was made, what data informed the decision, and whether a human reviewed it. The EU AI Act (2024/1689) adds risk-tier classification and traceability obligations, and the December 2026 amendment to the Privacy Act 1988 (Cth) adds a disclosure obligation for automated decision-making.
 
-These rules are easy to nod along to and hard to actually meet, because compliance has to be captured at the moment a decision is made, not reconstructed afterwards. Signal treats that record as a first-class part of the product rather than paperwork bolted on at the end.
+These rules are easy to nod along to and hard to actually meet, because compliance has to be captured at the moment a decision is made, not reconstructed afterwards. Signal wires the record into the request path: the analyst cannot answer without logging.
 
 ## Governance design
 
-The shipped core is [`signal/governance/decision_log.py`](signal/governance/decision_log.py): a Pydantic v2 schema and an append-only JSONL logger for AI-assisted decisions. Every field maps to a specific obligation, tagged in the source as `[APS]`, `[EU]`, or `[Privacy]`.
+The core is [`signalkit/governance/decision_log.py`](signalkit/governance/decision_log.py): a Pydantic v2 schema and an append-only JSONL logger for AI-assisted decisions. Every field maps to a specific obligation, tagged in the source as `[APS]`, `[EU]`, or `[Privacy]`.
 
 How it maps to the four APS mandatory requirements:
 
@@ -25,35 +44,39 @@ How it maps to the four APS mandatory requirements:
 
 For the EU AI Act, `risk_category` records the tier (`unacceptable`, `high`, `limited`, `minimal`) so high-risk uses are flagged for the logging and oversight that Annex III requires. `confidence_score` and the UTC `timestamp` support the traceability obligations. A validator enforces that any human override carries a written reason, so the record cannot claim an override without explaining it.
 
+The analyst layer ([`signalkit/analyst/core.py`](signalkit/analyst/core.py)) applies three governance rules of its own:
+
+- **Aggregates only.** The statistics are computed server-side by the data source (SoQL group-bys); no raw incident rows, and no PII, ever enter the system.
+- **The LLM is optional and sandboxed.** Without an API key, narratives come from a deterministic template (`signal-stats-v1`). With `ANTHROPIC_API_KEY` set, an LLM phrases the narrative — but it receives only the computed statistics, never the underlying data, and the audit entry records which model actually produced the words.
+- **Anomalies trigger human review.** Months with a z-score at or beyond 2 set `human_review_required=True` in both the response and the log. A spike should be checked by a person before anyone acts on it.
+
 The log is plain JSONL: one decision per line, UTF-8, no special tooling needed to read or grep it, and `to_dicts()` hands it straight to pandas or DuckDB for analysis.
 
-```python
-from signal.governance.decision_log import DecisionEntry, DecisionLogger
+## The data
 
-logger = DecisionLogger("logs/decisions.jsonl")
+Live monthly complaint aggregates from NYC Open Data — NYPD Complaint Data [Historic](https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i) plus [Current YTD](https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Current-Year-To-Date-/5uac-w243), unioned into a rolling window of the previous full year plus the current year to date.
 
-logger.log(DecisionEntry(
-    model_name="claude-sonnet-4-6",
-    model_provider="Anthropic",
-    input_summary="Summarise Q1 2026 property crime trends for SA region.",
-    model_output_summary="Property offences up 12% QoQ. Hotspots: Adelaide CBD, Port Adelaide.",
-    decision_made="Flagged for senior analyst review and inclusion in Q1 brief.",
-    data_sources=["ABS Crime Statistics 2025"],
-    confidence_score=0.91,
-    human_review_required=True,
-    human_reviewer="senior.analyst@example.gov.au",
-    risk_category="limited",
-))
-```
+Cold aggregate queries on the historic dataset can take Socrata over a minute, so the data layer is stale-while-revalidate: requests are answered instantly from a bundled real-data snapshot (or the last live cache) while a background thread refreshes live data for subsequent calls. The `data_source` field in every response and audit entry states exactly which was used. The source data also contains complaint dates typo'd as far back as year 1012, so every query bounds the date range explicitly.
+
+## API
+
+| Endpoint | What it does |
+|---|---|
+| `POST /ask` | Ask the analyst. Filters: `offense`, `borough` (substring), `months` (2–24). Returns narrative, stats, and the `decision_id`. |
+| `GET /decisions` | The governance log, live. Most recent entries, `limit` up to 100. |
+| `GET /health` | Liveness and version. |
+| `GET /docs` | OpenAPI docs. |
 
 ## Status and roadmap
 
-The governance log is the first piece to ship and is the priority artefact. The interactive front end and the LLM analyst layer that writes to this log are next.
-
 - [x] Governance decision log (APS / EU AI Act / Privacy Act aligned)
-- [ ] LLM analyst layer that logs each query as a `DecisionEntry`
-- [ ] Interactive product over a US public dataset
-- [ ] Live `/api` endpoint deployed to Modal
+- [x] Data layer over NYC Open Data with offline snapshot and stale-while-revalidate
+- [x] Analyst layer: trend stats, anomaly detection, every answer audit-logged
+- [x] FastAPI service with the audit trail as a public endpoint
+- [x] Tests (26+) and CI
+- [ ] Deploy to Modal (`modal_app.py` is ready; needs account auth) — live URL here
+- [ ] LLM narrative layer enabled in deployment
+- [ ] Interactive front end over the API
 
 ## Reproduce
 
@@ -62,11 +85,23 @@ Requires Python 3.10 or later.
 ```bash
 git clone https://github.com/rNLKJA/signal.git
 cd signal
-pip install -r requirements.txt
+pip install -e ".[dev]"
 
-# run the built-in smoke test: writes and reads back one decision entry
-python -m signal.governance.decision_log
+pytest                                  # 29 tests, all offline
+uvicorn signalkit.api:app --reload     # then open http://127.0.0.1:8000/docs
 ```
+
+Ask it something:
+
+```bash
+curl -X POST http://127.0.0.1:8000/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"offense": "grand larceny", "borough": "manhattan", "months": 12}'
+```
+
+Then read the audit trail at `http://127.0.0.1:8000/decisions`.
+
+> Why `signalkit` and not `signal`? A top-level Python package named `signal` shadows the standard-library `signal` module and breaks anything that imports it (asyncio, uvicorn). The repo keeps the product name; the package keeps out of the stdlib's way.
 
 ## Licence
 
