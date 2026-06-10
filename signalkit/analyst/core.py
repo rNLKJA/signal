@@ -34,7 +34,9 @@ from signalkit.governance.decision_log import (
     DecisionCategory,
     DecisionEntry,
     DecisionLogger,
+    GovernanceSummary,
     RiskCategory,
+    summarise,
 )
 
 DETERMINISTIC_MODEL = "signal-stats-v1 (deterministic)"
@@ -281,3 +283,14 @@ class Analyst:
     def recent_decisions(self, limit: int = 20) -> list[DecisionEntry]:
         """Read back the most recent audit entries (newest last)."""
         return self._logger.read_all()[-limit:]
+
+    def get_decision(self, decision_id: str) -> DecisionEntry | None:
+        """Resolve a decision_id from an /ask response to its full audit entry."""
+        for entry in self._logger.read_all():
+            if entry.decision_id == decision_id:
+                return entry
+        return None
+
+    def governance_summary(self) -> GovernanceSummary:
+        """Aggregate the audit log: review rate, risk tiers, model breakdown."""
+        return summarise(self._logger.read_all())

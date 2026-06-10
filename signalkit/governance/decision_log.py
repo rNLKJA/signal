@@ -197,6 +197,49 @@ class DecisionEntry(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Summary analytics
+# ---------------------------------------------------------------------------
+
+class GovernanceSummary(BaseModel):
+    """Aggregate view of the audit log — the governance posture, quantified."""
+
+    total_decisions: int
+    human_review_required_count: int
+    human_review_rate: Optional[float] = Field(
+        default=None, description="Fraction of decisions flagged for human review (0–1)."
+    )
+    by_risk_category: dict[str, int]
+    by_model: dict[str, int]
+    by_decision_category: dict[str, int]
+    first_decision_at: Optional[datetime] = None
+    last_decision_at: Optional[datetime] = None
+
+
+def summarise(entries: list[DecisionEntry]) -> GovernanceSummary:
+    """Compute the governance summary over a list of audit entries."""
+    by_risk: dict[str, int] = {}
+    by_model: dict[str, int] = {}
+    by_category: dict[str, int] = {}
+    review_count = 0
+    for e in entries:
+        by_risk[e.risk_category.value] = by_risk.get(e.risk_category.value, 0) + 1
+        by_model[e.model_name] = by_model.get(e.model_name, 0) + 1
+        by_category[e.decision_category.value] = by_category.get(e.decision_category.value, 0) + 1
+        if e.human_review_required:
+            review_count += 1
+    return GovernanceSummary(
+        total_decisions=len(entries),
+        human_review_required_count=review_count,
+        human_review_rate=round(review_count / len(entries), 3) if entries else None,
+        by_risk_category=by_risk,
+        by_model=by_model,
+        by_decision_category=by_category,
+        first_decision_at=min((e.timestamp for e in entries), default=None),
+        last_decision_at=max((e.timestamp for e in entries), default=None),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Logger
 # ---------------------------------------------------------------------------
 

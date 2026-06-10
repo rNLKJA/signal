@@ -116,6 +116,7 @@
         <thead><tr><th>Decision</th><th>When (UTC)</th><th>Model</th><th>Input</th><th>Human review</th></tr></thead>
         <tbody id="audit-body"><tr><td colspan="5" class="hint">No decisions logged yet — ask something.</td></tr></tbody>
       </table>
+      <p class="hint" id="gov-summary"></p>
     </div>
   </section>
 
@@ -177,8 +178,8 @@ function renderAnswer(d) {
     `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">
        human review ${d.human_review_required ? "required" : "not required"}</span>`;
   $("chart-holder").innerHTML = chartSVG(s.monthly_counts, s.anomalous_months);
-  $("gov").innerHTML = `Decision <code>${d.decision_id}</code> · model <code>${d.model_used}</code>
-    · source: ${d.data_source}`;
+  $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
+    · model <code>${d.model_used}</code> · source: ${d.data_source}`;
 }
 
 function renderError(status, body) {
@@ -196,13 +197,21 @@ function renderError(status, body) {
 
 async function refreshAudit() {
   const rows = await (await fetch("/decisions?limit=10")).json();
-  if (!rows.length) return;
-  $("audit-body").innerHTML = rows.reverse().map((e) => `<tr>
-    <td><code>${e.decision_id}</code></td>
-    <td>${e.timestamp.slice(0, 16).replace("T", " ")}</td>
-    <td>${e.model_name}</td>
-    <td>${e.input_summary}</td>
-    <td>${e.human_review_required ? "⚠ required" : "—"}</td></tr>`).join("");
+  if (rows.length) {
+    $("audit-body").innerHTML = rows.reverse().map((e) => `<tr>
+      <td><a href="/decisions/${e.decision_id}"><code>${e.decision_id}</code></a></td>
+      <td>${e.timestamp.slice(0, 16).replace("T", " ")}</td>
+      <td>${e.model_name}</td>
+      <td>${e.input_summary}</td>
+      <td>${e.human_review_required ? "⚠ required" : "—"}</td></tr>`).join("");
+  }
+  const s = await (await fetch("/governance/summary")).json();
+  if (s.total_decisions) {
+    const risks = Object.entries(s.by_risk_category).map(([k, v]) => `${k} ${v}`).join(", ");
+    $("gov-summary").textContent =
+      `${s.total_decisions} decisions logged · ` +
+      `${Math.round((s.human_review_rate ?? 0) * 100)}% required human review · risk tiers: ${risks}`;
+  }
 }
 
 $("ask-form").addEventListener("submit", async (ev) => {

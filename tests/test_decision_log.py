@@ -55,3 +55,29 @@ def test_logger_roundtrip(tmp_path):
 def test_read_all_on_missing_file(tmp_path):
     logger = DecisionLogger(tmp_path / "never_written.jsonl")
     assert logger.read_all() == []
+
+
+def test_summarise_aggregates():
+    from signalkit.governance.decision_log import summarise
+
+    entries = [
+        make_entry(),
+        make_entry(human_review_required=True, model_name="claude-haiku-4-5-20251001"),
+        make_entry(human_review_required=True),
+    ]
+    summary = summarise(entries)
+    assert summary.total_decisions == 3
+    assert summary.human_review_required_count == 2
+    assert summary.human_review_rate == round(2 / 3, 3)
+    assert summary.by_risk_category == {"limited": 3}
+    assert summary.by_model["claude-haiku-4-5-20251001"] == 1
+    assert summary.first_decision_at <= summary.last_decision_at
+
+
+def test_summarise_empty():
+    from signalkit.governance.decision_log import summarise
+
+    summary = summarise([])
+    assert summary.total_decisions == 0
+    assert summary.human_review_rate is None
+    assert summary.first_decision_at is None

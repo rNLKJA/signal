@@ -61,3 +61,27 @@ def test_ask_validates_months(client):
 
 def test_decisions_limit_validated(client):
     assert client.get("/decisions?limit=500").status_code == 422
+
+
+def test_decision_resolves_by_id(client):
+    decision_id = client.post("/ask", json={"offense": "burglary"}).json()["decision_id"]
+    entry = client.get(f"/decisions/{decision_id}").json()
+    assert entry["decision_id"] == decision_id
+    assert entry["model_name"]
+    assert entry["data_sources"]
+
+
+def test_unknown_decision_id_404(client):
+    response = client.get("/decisions/d-doesnotexist")
+    assert response.status_code == 404
+    assert "d-doesnotexist" in response.json()["detail"]
+
+
+def test_governance_summary(client):
+    client.post("/ask", json={"offense": "burglary"})
+    client.post("/ask", json={"offense": "robbery"})
+    summary = client.get("/governance/summary").json()
+    assert summary["total_decisions"] == 2
+    assert summary["by_risk_category"] == {"limited": 2}
+    assert "signal-stats-v1 (deterministic)" in summary["by_model"]
+    assert summary["first_decision_at"] <= summary["last_decision_at"]

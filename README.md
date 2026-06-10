@@ -1,5 +1,7 @@
 # Signal
 
+[![CI](https://github.com/rNLKJA/signal/actions/workflows/ci.yml/badge.svg)](https://github.com/rNLKJA/signal/actions/workflows/ci.yml)
+
 An interactive product over US public-safety data, with an analyst layer and a governance log that records every AI-assisted answer in a form built to satisfy the APS Mandatory AI Requirements and the EU AI Act.
 
 Most data products show you a chart. Signal also shows you how the answer was reached: which model ran, what data informed it, what decision followed, and whether a human signed off. Every API response carries a `decision_id`, and the audit trail is itself a public endpoint — traceability is part of the product surface, not an ops file.
@@ -65,6 +67,8 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 | `GET /` | Interactive dashboard — ask questions, see the chart, watch the audit trail fill in. One self-contained page, no frameworks, no CDN. |
 | `POST /ask` | Ask the analyst. Filters: `offense`, `borough` (substring), `months` (2–24). Returns narrative, stats, and the `decision_id`. |
 | `GET /decisions` | The governance log, live. Most recent entries, `limit` up to 100. |
+| `GET /decisions/{decision_id}` | Resolve any `decision_id` from an answer to its full audit entry. |
+| `GET /governance/summary` | The governance posture, quantified: review rate, risk tiers, model breakdown. |
 | `GET /health` | Liveness and version. |
 | `GET /docs` | OpenAPI docs. |
 
@@ -76,6 +80,8 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 - [x] FastAPI service with the audit trail as a public endpoint
 - [x] Tests and CI
 - [x] Interactive dashboard at `/` (vanilla, self-contained, dark-mode aware)
+- [x] Decision deep-links and governance analytics (`/decisions/{id}`, `/governance/summary`)
+- [x] LLM path under test (mocked client; aggregates-only prompt enforced)
 - [ ] Deploy to Modal (`modal_app.py` is ready; needs account auth) — live URL here
 - [ ] LLM narrative layer enabled in deployment
 
@@ -101,6 +107,12 @@ curl -X POST http://127.0.0.1:8000/ask \
 ```
 
 Then read the audit trail at `http://127.0.0.1:8000/decisions`.
+
+Or run it in Docker (image not yet CI-verified):
+
+```bash
+docker build -t signal . && docker run -p 8000:8000 signal
+```
 
 > Why `signalkit` and not `signal`? A top-level Python package named `signal` shadows the standard-library `signal` module and breaks anything that imports it (asyncio, uvicorn). The repo keeps the product name; the package keeps out of the stdlib's way.
 

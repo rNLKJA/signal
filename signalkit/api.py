@@ -4,11 +4,13 @@ signalkit/api.py
 The Signal HTTP API.
 
 Endpoints:
-  GET  /           — interactive dashboard (single self-contained page)
-  GET  /api        — service index (JSON)
-  GET  /health     — liveness + version
-  POST /ask        — ask the analyst; response includes the governance decision_id
-  GET  /decisions  — read back the audit trail (the governance log, live)
+  GET  /                       — interactive dashboard (single self-contained page)
+  GET  /api                    — service index (JSON)
+  GET  /health                 — liveness + version
+  POST /ask                    — ask the analyst; response carries the decision_id
+  GET  /decisions              — read back the audit trail (the governance log, live)
+  GET  /decisions/{decision_id} — resolve one decision_id to its full audit entry
+  GET  /governance/summary     — aggregate governance posture (review rate, risk tiers)
 
 Run locally:
     uvicorn signalkit.api:app --reload
@@ -78,6 +80,20 @@ def create_app(analyst: Analyst | None = None) -> FastAPI:
     def decisions(limit: int = Query(default=20, ge=1, le=100)) -> list[dict]:
         entries = app.state.analyst.recent_decisions(limit)
         return [e.model_dump(mode="json") for e in entries]
+
+    @app.get("/decisions/{decision_id}")
+    def decision_by_id(decision_id: str) -> dict:
+        entry = app.state.analyst.get_decision(decision_id)
+        if entry is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No decision '{decision_id}' in the audit log.",
+            )
+        return entry.model_dump(mode="json")
+
+    @app.get("/governance/summary")
+    def governance_summary() -> dict:
+        return app.state.analyst.governance_summary().model_dump(mode="json")
 
     return app
 
