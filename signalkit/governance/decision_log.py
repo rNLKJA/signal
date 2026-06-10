@@ -1,6 +1,6 @@
 """
-signal/governance/decision_log.py
-==================================
+signalkit/governance/decision_log.py
+====================================
 Structured audit trail for AI-assisted decisions in Signal.
 
 Aligned to:
@@ -12,7 +12,7 @@ Aligned to:
 
 Usage
 -----
-    from signal.governance.decision_log import DecisionEntry, DecisionLogger
+    from signalkit.governance.decision_log import DecisionEntry, DecisionLogger
 
     logger = DecisionLogger("logs/decisions.jsonl")
 
