@@ -20,10 +20,17 @@ image = (
 
 app = modal.App("signal-api")
 
+# The audit trail must survive cold starts — an ephemeral governance log is
+# no governance log. Decisions persist to a Modal Volume mounted at /data.
+decisions_volume = modal.Volume.from_name("signal-decisions", create_if_missing=True)
 
-@app.function(image=image)
+
+@app.function(image=image, volumes={"/data": decisions_volume})
 @modal.asgi_app()
 def api():
+    import os
+
+    os.environ.setdefault("SIGNAL_LOG_PATH", "/data/decisions.jsonl")
     from signalkit.api import app as fastapi_app
 
     return fastapi_app

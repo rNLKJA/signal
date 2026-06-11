@@ -85,8 +85,8 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 - [x] Decision deep-links and governance analytics (`/decisions/{id}`, `/governance/summary`)
 - [x] LLM path under test (mocked client; aggregates-only prompt enforced)
 - [x] Deployed to Modal — live at https://rnlkja--signal-api-api.modal.run
+- [x] Decision log persisted to a Modal Volume — the audit trail survives cold starts
 - [ ] LLM narrative layer enabled in deployment (needs an API key as a Modal secret)
-- [ ] Persist the decision log to a Modal Volume (currently container-local, resets on cold start)
 
 ## Reproduce
 
