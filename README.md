@@ -4,7 +4,9 @@
 
 An interactive product over US public-safety data, with an analyst layer and a governance log that records every AI-assisted answer in a form built to satisfy the APS Mandatory AI Requirements and the EU AI Act.
 
-**Live demo: https://rnlkja--signal-api-api.modal.run** — ask it something and watch the audit trail fill in.
+**Live demo: https://rnlkja--signal-api-api.modal.run** — ask it something and watch the audit trail fill in. Queries are shareable links: [`/?offense=grand larceny&borough=manhattan`](https://rnlkja--signal-api-api.modal.run/?offense=grand%20larceny&borough=manhattan).
+
+![Signal dashboard: governed analyst answer with trend chart, offence and law-category breakdowns, and the live audit trail](.github/dashboard.png)
 
 Most data products show you a chart. Signal also shows you how the answer was reached: which model ran, what data informed it, what decision followed, and whether a human signed off. Every API response carries a `decision_id`, and the audit trail is itself a public endpoint — traceability is part of the product surface, not an ops file.
 

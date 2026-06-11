@@ -408,8 +408,24 @@ for (const [btn, type] of [["t-bar", "bar"], ["t-line", "line"]]) {
   });
 }
 
+// Shareable query links: /?offense=burglary&borough=brooklyn&months=12
+// auto-fills the form and asks on load.
+function autorunFromURL() {
+  const qp = new URLSearchParams(location.search);
+  if (!qp.has("offense") && !qp.has("borough")) return;
+  const form = $("ask-form");
+  form.elements.offense.value = qp.get("offense") || "";
+  const wanted = (qp.get("borough") || "").toLowerCase();
+  for (const opt of form.elements.borough.options) {
+    if (opt.value.toLowerCase() === wanted) form.elements.borough.value = opt.value;
+  }
+  if (qp.get("months")) form.elements.months.value = qp.get("months");
+  form.dispatchEvent(new Event("submit", { cancelable: true }));
+}
+
 loadVersion();
 refreshAudit();
+autorunFromURL();
 </script>
 </body>
 </html>
