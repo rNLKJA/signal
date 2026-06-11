@@ -85,3 +85,40 @@ def test_governance_summary(client):
     assert summary["by_risk_category"] == {"limited": 2}
     assert "signal-stats-v1 (deterministic)" in summary["by_model"]
     assert summary["first_decision_at"] <= summary["last_decision_at"]
+
+
+def test_compare_five_boroughs(client):
+    body = client.post("/compare", json={"offense": "burglary", "months": 12}).json()
+    boroughs = [s["borough"] for s in body["series"]]
+    assert len(boroughs) == 5
+    assert "BROOKLYN" in boroughs and "STATEN ISLAND" in boroughs
+    # series aligned: every borough covers the same window
+    windows = {tuple(s["monthly_counts"].keys()) for s in body["series"]}
+    assert len(windows) == 1
+    assert len(next(iter(windows))) == 12
+    assert body["decision_id"].startswith("d-")
+    assert body["narrative"]
+
+
+def test_compare_is_audit_logged(client):
+    decision_id = client.post("/compare", json={"offense": "robbery"}).json()["decision_id"]
+    entry = client.get(f"/decisions/{decision_id}").json()
+    assert "borough-comparison" in entry["tags"]
+
+
+def test_compare_bad_offense_404(client):
+    response = client.post("/compare", json={"offense": "space piracy"})
+    assert response.status_code == 404
+    assert "offenses" in response.json()["detail"]["valid_values"]
+
+
+def test_ask_includes_law_category_split(client):
+    stats = client.post("/ask", json={"offense": "burglary"}).json()["stats"]
+    assert stats["by_law_category"]
+    assert sum(stats["by_law_category"].values()) == stats["total_complaints"]
+
+
+def test_dashboard_gzipped_when_accepted(client):
+    response = client.get("/", headers={"Accept-Encoding": "gzip"})
+    assert response.headers.get("content-encoding") == "gzip"
+    assert "max-age=300" in response.headers.get("cache-control", "")

@@ -5,6 +5,8 @@ from signalkit.analyst.core import (  # noqa: F401
     Analyst,
     AnalystAnswer,
     AnalystQuery,
+    CompareQuery,
+    CompareResult,
     NoDataError,
     TrendStats,
 )

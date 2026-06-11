@@ -67,7 +67,8 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 | Endpoint | What it does |
 |---|---|
 | `GET /` | Interactive dashboard — ask questions, see the chart, watch the audit trail fill in. One self-contained page, no frameworks, no CDN. |
-| `POST /ask` | Ask the analyst. Filters: `offense`, `borough` (substring), `months` (2–24). Returns narrative, stats, and the `decision_id`. Rate-limited per client (default 20/min, `429` + `Retry-After` beyond that). |
+| `POST /ask` | Ask the analyst. Filters: `offense`, `borough` (substring), `months` (2–24). Returns narrative, stats (trend, anomalies, top offences, law-category split), and the `decision_id`. Rate-limited per client (default 20/min, `429` + `Retry-After` beyond that). |
+| `POST /compare` | One offence scope across all five boroughs: aligned monthly series, totals, YoY, trend per borough. Audit-logged and rate-limited like `/ask`. |
 | `GET /decisions` | The governance log, live. Most recent entries, `limit` up to 100. |
 | `GET /decisions/{decision_id}` | Resolve any `decision_id` from an answer to its full audit entry. |
 | `GET /governance/summary` | The governance posture, quantified: review rate, risk tiers, model breakdown. |
@@ -87,6 +88,8 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 - [x] Deployed to Modal — live at https://rnlkja--signal-api-api.modal.run
 - [x] Decision log persisted to a Modal Volume — the audit trail survives cold starts
 - [x] LLM narrative live in deployment — DeepSeek via the provider-agnostic layer, attributed per-decision in the audit log
+- [x] Visual suite: bar/line toggle, borough comparison (multi-series), top offences, law-category split — all hand-rolled SVG
+- [x] Perf: LLM narrative cache (identical queries never re-spend tokens), gzip, dashboard cache headers
 
 ## Reproduce
 

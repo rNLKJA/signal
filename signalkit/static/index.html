@@ -17,6 +17,11 @@
     --bar: light-dark(#0b57d0, #5b8def);
     --bar-anomaly: light-dark(#c5221f, #f28b82);
     --ok: light-dark(#137333, #81c995);
+    --s1: light-dark(#0b57d0, #8ab4f8);
+    --s2: light-dark(#c5221f, #f28b82);
+    --s3: light-dark(#137333, #81c995);
+    --s4: light-dark(#a8580c, #f5b97a);
+    --s5: light-dark(#7627bb, #c79df2);
     accent-color: var(--brand);
   }
   * { box-sizing: border-box; }
@@ -27,6 +32,7 @@
   main { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
   h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
   h1 .v { color: var(--muted); font-weight: 400; font-size: 1rem; }
+  h2 { font-size: 1rem; margin: 0 0 .5rem; }
   .tagline { color: var(--muted); margin: 0 0 1.5rem; }
   .tagline a { color: var(--brand); }
   form {
@@ -43,10 +49,11 @@
     background: var(--brand); border-color: var(--brand); cursor: pointer;
     color: light-dark(#ffffff, #111418); font-weight: 600; padding-inline: 1.1rem;
   }
+  button.secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
   button[disabled] { opacity: .6; cursor: wait; }
   section { margin-top: 1.5rem; }
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
-  #narrative { font-size: 1.05rem; }
+  #narrative, #cmp-narrative { font-size: 1.05rem; }
   .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
   .chip {
     border: 1px solid var(--border); border-radius: 999px;
@@ -56,8 +63,15 @@
   .chip.review-yes { border-color: var(--bar-anomaly); color: var(--bar-anomaly); }
   .chip.review-no { border-color: var(--ok); color: var(--ok); }
   svg { width: 100%; height: auto; display: block; margin-top: 1rem; }
+  .viz-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  @media (max-width: 640px) { .viz-row { grid-template-columns: 1fr; } }
+  .toggle { display: inline-flex; gap: 0; margin-top: .75rem; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .toggle button { border: 0; border-radius: 0; background: var(--bg); color: var(--muted); font-size: .8rem; padding: .25rem .8rem; }
+  .toggle button[aria-pressed="true"] { background: var(--brand); color: light-dark(#fff, #111418); }
   .gov { font-size: .8rem; color: var(--muted); margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: .75rem; }
-  .gov code { color: var(--text); background: var(--bg); padding: .05rem .35rem; border-radius: 4px; }
+  .gov code, td code { color: var(--text); background: var(--bg); padding: .05rem .35rem; border-radius: 4px; }
+  .legend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; margin-top: .5rem; font-size: .8rem; color: var(--muted); }
+  .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: .35rem; }
   table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .5rem; }
   caption { text-align: left; color: var(--muted); font-size: .8rem; margin-bottom: .4rem; }
   th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -96,16 +110,37 @@
       <input name="months" type="number" min="2" max="24" value="12" required>
     </label>
     <button type="submit" id="ask-btn">Ask</button>
+    <button type="button" id="cmp-btn" class="secondary"
+      title="Same offence and window, all five boroughs side by side">Compare boroughs</button>
   </form>
 
   <section id="answer" hidden>
     <div class="panel">
       <p id="narrative"></p>
       <div class="chips" id="chips"></div>
+      <div class="toggle" role="group" aria-label="Chart type">
+        <button type="button" id="t-bar" aria-pressed="true">Bars</button>
+        <button type="button" id="t-line" aria-pressed="false">Line</button>
+      </div>
       <div id="chart-holder"></div>
+      <div class="viz-row">
+        <div><h2>Top offences in scope</h2><div id="top-holder"></div></div>
+        <div><h2>Law category split</h2><div id="law-holder"></div></div>
+      </div>
       <p class="gov" id="gov"></p>
     </div>
   </section>
+
+  <section id="cmp" hidden>
+    <div class="panel">
+      <h2>Borough comparison</h2>
+      <p id="cmp-narrative"></p>
+      <div id="cmp-holder"></div>
+      <div class="legend" id="cmp-legend"></div>
+      <p class="gov" id="cmp-gov"></p>
+    </div>
+  </section>
+
   <section id="error" hidden><div class="panel"><p class="err" id="error-msg"></p><p class="hint" id="error-hint"></p></div></section>
 
   <section>
@@ -129,6 +164,9 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
+const SERIES_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)"];
+let lastAnswer = null;
+let chartType = "bar";
 
 async function loadVersion() {
   try {
@@ -137,27 +175,99 @@ async function loadVersion() {
   } catch { /* cosmetic only */ }
 }
 
-function chartSVG(monthly, anomalies) {
+function trendSVG(monthly, anomalies, type) {
   const entries = Object.entries(monthly);
   const max = Math.max(...entries.map(([, v]) => v));
   const W = 840, H = 240, PAD = 28, baseline = H - PAD;
   const bw = (W - PAD) / entries.length;
-  const bars = entries.map(([month, v], i) => {
-    const h = max ? Math.round((v / max) * (H - PAD * 2)) : 0;
-    const x = PAD + i * bw, y = baseline - h;
-    const anomalous = anomalies.includes(month);
-    const fill = anomalous ? "var(--bar-anomaly)" : "var(--bar)";
-    const label = `${month}: ${v.toLocaleString()} complaints` + (anomalous ? " (anomaly)" : "");
-    return `<rect x="${x.toFixed(1)}" y="${y}" width="${(bw * 0.78).toFixed(1)}" height="${h}"
-      rx="2" fill="${fill}"><title>${label}</title></rect>
-      <text x="${(x + bw * 0.39).toFixed(1)}" y="${baseline + 14}" text-anchor="middle"
-        font-size="9" fill="var(--muted)">${i % 2 ? "" : month.slice(2)}</text>`;
-  }).join("");
+  const x = (i) => PAD + i * bw + bw * 0.39;
+  const y = (v) => baseline - (max ? (v / max) * (H - PAD * 2) : 0);
+  const labels = entries.map(([month], i) =>
+    `<text x="${x(i).toFixed(1)}" y="${baseline + 14}" text-anchor="middle"
+       font-size="9" fill="var(--muted)">${i % 2 ? "" : month.slice(2)}</text>`).join("");
+  let marks;
+  if (type === "line") {
+    const pts = entries.map(([, v], i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    const dots = entries.map(([month, v], i) => {
+      const anomalous = anomalies.includes(month);
+      return `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${anomalous ? 5 : 3}"
+        fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}">
+        <title>${month}: ${v.toLocaleString()} complaints${anomalous ? " (anomaly)" : ""}</title></circle>`;
+    }).join("");
+    marks = `<polyline points="${pts}" fill="none" stroke="var(--bar)" stroke-width="2"/>` + dots;
+  } else {
+    marks = entries.map(([month, v], i) => {
+      const anomalous = anomalies.includes(month);
+      return `<rect x="${(PAD + i * bw).toFixed(1)}" y="${y(v).toFixed(1)}"
+        width="${(bw * 0.78).toFixed(1)}" height="${(baseline - y(v)).toFixed(1)}" rx="2"
+        fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}">
+        <title>${month}: ${v.toLocaleString()} complaints${anomalous ? " (anomaly)" : ""}</title></rect>`;
+    }).join("");
+  }
   const desc = `Monthly complaint counts from ${entries[0][0]} to ${entries.at(-1)[0]}, peak ${max.toLocaleString()}.`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${desc}">
     <line x1="${PAD}" y1="${baseline}" x2="${W}" y2="${baseline}" stroke="var(--border)"/>
     <text x="${PAD}" y="14" font-size="10" fill="var(--muted)">peak ${max.toLocaleString()}/month</text>
-    ${bars}</svg>`;
+    ${marks}${labels}</svg>`;
+}
+
+function hbarSVG(rows, colorFor) {
+  // rows: [{label, count}], horizontal bars with value labels
+  const max = Math.max(...rows.map((r) => r.count));
+  const W = 420, rowH = 26, PADL = 4, H = rows.length * rowH + 4;
+  const bars = rows.map((r, i) => {
+    const w = max ? (r.count / max) * (W - 130) : 0;
+    const yy = 4 + i * rowH;
+    return `<rect x="${PADL}" y="${yy}" width="${w.toFixed(1)}" height="16" rx="2" fill="${colorFor(r, i)}">
+        <title>${r.label}: ${r.count.toLocaleString()}</title></rect>
+      <text x="${PADL + w + 6}" y="${yy + 12}" font-size="10" fill="var(--text)">${r.count.toLocaleString()}</text>
+      <text x="${PADL}" y="${yy + 25}" font-size="8.5" fill="var(--muted)">${r.label}</text>`;
+  }).join("");
+  const desc = rows.map((r) => `${r.label} ${r.count.toLocaleString()}`).join(", ");
+  return `<svg viewBox="0 0 ${W} ${H + rows.length * 10}" role="img" aria-label="${desc}">${bars}</svg>`;
+}
+
+function stackedSVG(split) {
+  // split: {FELONY: n, ...} → one stacked horizontal bar + legend
+  const total = Object.values(split).reduce((a, b) => a + b, 0);
+  const W = 420, H = 26;
+  let xPos = 0;
+  const segs = Object.entries(split).map(([k, v], i) => {
+    const w = total ? (v / total) * W : 0;
+    const seg = `<rect x="${xPos.toFixed(1)}" y="2" width="${w.toFixed(1)}" height="18" fill="${SERIES_COLORS[i % 5]}">
+      <title>${k}: ${v.toLocaleString()} (${Math.round((v / total) * 100)}%)</title></rect>`;
+    xPos += w;
+    return seg;
+  }).join("");
+  const legend = Object.entries(split).map(([k, v], i) =>
+    `<span><span class="sw" style="background:${SERIES_COLORS[i % 5]}"></span>${k} ${Math.round((v / total) * 100)}%</span>`).join("");
+  const desc = Object.entries(split).map(([k, v]) => `${k} ${v.toLocaleString()}`).join(", ");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${desc}">${segs}</svg>
+    <div class="legend">${legend}</div>`;
+}
+
+function compareSVG(series) {
+  const months = Object.keys(series[0].monthly_counts);
+  const max = Math.max(...series.flatMap((s) => Object.values(s.monthly_counts)));
+  const W = 840, H = 280, PAD = 28, baseline = H - PAD;
+  const step = (W - PAD * 2) / (months.length - 1);
+  const x = (i) => PAD + i * step;
+  const y = (v) => baseline - (max ? (v / max) * (H - PAD * 2) : 0);
+  const lines = series.map((s, si) => {
+    const pts = months.map((m, i) => `${x(i).toFixed(1)},${y(s.monthly_counts[m]).toFixed(1)}`).join(" ");
+    const dots = months.map((m, i) =>
+      `<circle cx="${x(i).toFixed(1)}" cy="${y(s.monthly_counts[m]).toFixed(1)}" r="2.5" fill="${SERIES_COLORS[si % 5]}">
+         <title>${s.borough} ${m}: ${s.monthly_counts[m].toLocaleString()}</title></circle>`).join("");
+    return `<polyline points="${pts}" fill="none" stroke="${SERIES_COLORS[si % 5]}" stroke-width="2"/>` + dots;
+  }).join("");
+  const labels = months.map((m, i) =>
+    `<text x="${x(i).toFixed(1)}" y="${baseline + 14}" text-anchor="middle" font-size="9"
+       fill="var(--muted)">${i % 2 ? "" : m.slice(2)}</text>`).join("");
+  const desc = `Monthly complaints by borough, ${months[0]} to ${months.at(-1)}.`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${desc}">
+    <line x1="${PAD}" y1="${baseline}" x2="${W - PAD}" y2="${baseline}" stroke="var(--border)"/>
+    <text x="${PAD}" y="14" font-size="10" fill="var(--muted)">peak ${max.toLocaleString()}/month</text>
+    ${lines}${labels}</svg>`;
 }
 
 function pct(v, suffix) {
@@ -166,7 +276,14 @@ function pct(v, suffix) {
   return `<span class="chip">${suffix} <b>${arrow} ${Math.abs(v)}%</b></span>`;
 }
 
+function renderTrendChart() {
+  if (!lastAnswer) return;
+  const s = lastAnswer.stats;
+  $("chart-holder").innerHTML = trendSVG(s.monthly_counts, s.anomalous_months, chartType);
+}
+
 function renderAnswer(d) {
+  lastAnswer = d;
   $("error").hidden = true;
   $("answer").hidden = false;
   $("narrative").textContent = d.narrative;
@@ -177,18 +294,39 @@ function renderAnswer(d) {
     pct(s.mom_change_pct, "MoM") + pct(s.yoy_change_pct, "YoY") +
     `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">
        human review ${d.human_review_required ? "required" : "not required"}</span>`;
-  $("chart-holder").innerHTML = chartSVG(s.monthly_counts, s.anomalous_months);
+  renderTrendChart();
+  $("top-holder").innerHTML = hbarSVG(
+    s.top_offenses.map((t) => ({ label: t.offense, count: t.count })), () => "var(--bar)");
+  $("law-holder").innerHTML = stackedSVG(s.by_law_category);
   $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · model <code>${d.model_used}</code> · source: ${d.data_source}`;
 }
 
+function renderCompare(d) {
+  $("error").hidden = true;
+  $("cmp").hidden = false;
+  $("cmp-narrative").textContent = d.narrative;
+  $("cmp-holder").innerHTML = compareSVG(d.series);
+  $("cmp-legend").innerHTML = d.series.map((s, i) => {
+    const yoy = s.yoy_change_pct === null ? "" :
+      ` ${s.yoy_change_pct >= 0 ? "▲" : "▼"}${Math.abs(s.yoy_change_pct)}% YoY`;
+    return `<span><span class="sw" style="background:${SERIES_COLORS[i % 5]}"></span>
+      ${s.borough} ${s.total.toLocaleString()}${yoy}</span>`;
+  }).join("");
+  $("cmp-gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
+    · model <code>${d.model_used}</code>`;
+}
+
 function renderError(status, body) {
   $("answer").hidden = true;
+  $("cmp").hidden = true;
   $("error").hidden = false;
   if (status === 404 && body.detail?.valid_values) {
     $("error-msg").textContent = body.detail.message;
-    $("error-hint").textContent = "Try a borough like " +
-      body.detail.valid_values.boroughs.join(", ") + ".";
+    const vv = body.detail.valid_values;
+    $("error-hint").textContent = vv.boroughs
+      ? "Try a borough like " + vv.boroughs.join(", ") + "."
+      : "Try an offence like " + (vv.offenses || []).slice(0, 8).join(", ") + ".";
   } else {
     $("error-msg").textContent = `Request failed (${status}).`;
     $("error-hint").textContent = typeof body.detail === "string" ? body.detail : "";
@@ -214,24 +352,31 @@ async function refreshAudit() {
   }
 }
 
-$("ask-form").addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const f = new FormData(ev.target);
-  const payload = {
-    question: "dashboard query",
+async function post(path, payload) {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return { ok: r.ok, status: r.status, body: await r.json() };
+}
+
+function formPayload() {
+  const f = new FormData($("ask-form"));
+  return {
     offense: f.get("offense") || null,
     borough: f.get("borough") || null,
     months: Number(f.get("months")),
   };
+}
+
+$("ask-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
   $("ask-btn").disabled = true;
   try {
-    const r = await fetch("/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const body = await r.json();
-    r.ok ? renderAnswer(body) : renderError(r.status, body);
+    const p = formPayload();
+    const r = await post("/ask", { question: "dashboard query", offense: p.offense, borough: p.borough, months: p.months });
+    r.ok ? renderAnswer(r.body) : renderError(r.status, r.body);
     await refreshAudit();
   } catch {
     renderError(0, { detail: "Network error — is the API running?" });
@@ -239,6 +384,29 @@ $("ask-form").addEventListener("submit", async (ev) => {
     $("ask-btn").disabled = false;
   }
 });
+
+$("cmp-btn").addEventListener("click", async () => {
+  $("cmp-btn").disabled = true;
+  try {
+    const p = formPayload();
+    const r = await post("/compare", { question: "dashboard comparison", offense: p.offense, months: p.months });
+    r.ok ? renderCompare(r.body) : renderError(r.status, r.body);
+    await refreshAudit();
+  } catch {
+    renderError(0, { detail: "Network error — is the API running?" });
+  } finally {
+    $("cmp-btn").disabled = false;
+  }
+});
+
+for (const [btn, type] of [["t-bar", "bar"], ["t-line", "line"]]) {
+  $(btn).addEventListener("click", () => {
+    chartType = type;
+    $("t-bar").setAttribute("aria-pressed", String(type === "bar"));
+    $("t-line").setAttribute("aria-pressed", String(type === "line"));
+    renderTrendChart();
+  });
+}
 
 loadVersion();
 refreshAudit();

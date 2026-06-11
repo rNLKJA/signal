@@ -25,10 +25,12 @@ class FakePost:
     def __init__(self, fail: bool, content: str = FAKE_NARRATIVE):
         self.fail = fail
         self.content = content
+        self.calls = 0
         self.last_url = None
         self.last_kwargs = None
 
     def __call__(self, url, **kwargs):
+        self.calls += 1
         self.last_url = url
         self.last_kwargs = kwargs
         if self.fail:
@@ -86,8 +88,10 @@ def test_llm_prompt_contains_aggregates_only(analyst, monkeypatch):
     prompt = fake.last_kwargs["json"]["messages"][0]["content"]
     assert "total_complaints" in prompt  # the computed stats are present
     assert "monthly_counts" in prompt
-    # raw record fields must never appear: records carry per-row law_category
-    assert "law_category" not in prompt
+    # Leak canary: the query is filtered to Brooklyn, so data from any other
+    # borough appearing in the prompt would mean raw records leaked through.
+    assert "STATEN ISLAND" not in prompt
+    assert "QUEENS" not in prompt
 
 
 def test_llm_failure_falls_back_honestly(analyst, monkeypatch):
@@ -114,3 +118,24 @@ def test_empty_llm_content_falls_back(analyst, monkeypatch):
 def test_no_key_means_no_llm(analyst):
     answer = analyst.ask(AnalystQuery(offense="burglary"))
     assert answer.model_used == DETERMINISTIC_MODEL
+
+
+def test_identical_queries_hit_the_cache(analyst, monkeypatch):
+    """Same aggregates → one upstream call, but both decisions audit-logged
+    with the (honest) LLM attribution."""
+    fake = install_fake_llm(monkeypatch, fail=False)
+    first = analyst.ask(AnalystQuery(offense="burglary"))
+    second = analyst.ask(AnalystQuery(offense="burglary"))
+
+    assert fake.calls == 1  # second narrative came from the cache
+    assert first.narrative == second.narrative
+    assert first.decision_id != second.decision_id  # still two audit entries
+    logged = analyst.recent_decisions()
+    assert all(e.model_name == LLM_MODEL for e in logged[-2:])
+
+
+def test_different_queries_miss_the_cache(analyst, monkeypatch):
+    fake = install_fake_llm(monkeypatch, fail=False)
+    analyst.ask(AnalystQuery(offense="burglary"))
+    analyst.ask(AnalystQuery(offense="robbery"))
+    assert fake.calls == 2

@@ -8,6 +8,7 @@ Endpoints:
   GET  /api                    — service index (JSON)
   GET  /health                 — liveness + version
   POST /ask                    — ask the analyst; response carries the decision_id
+  POST /compare                — one offence scope across all five boroughs
   GET  /decisions              — read back the audit trail (the governance log, live)
   GET  /decisions/{decision_id} — resolve one decision_id to its full audit entry
   GET  /governance/summary     — aggregate governance posture (review rate, risk tiers)
@@ -26,10 +27,11 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 
 import signalkit
-from signalkit.analyst.core import Analyst, AnalystQuery, NoDataError
+from signalkit.analyst.core import Analyst, AnalystQuery, CompareQuery, NoDataError
 from signalkit.data.nypd import DataUnavailable
 from signalkit.ratelimit import RateLimiter
 
@@ -57,9 +59,12 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
     )
     app.state.analyst = analyst or Analyst()
     app.state.rate_limiter = rate_limiter or RateLimiter()
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
 
     @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse, include_in_schema=False)
-    def dashboard() -> str:
+    def dashboard(response: Response) -> str:
+        # The page only changes on deploy; let browsers keep it for 5 minutes.
+        response.headers["Cache-Control"] = "public, max-age=300"
         return DASHBOARD_PATH.read_text(encoding="utf-8")
 
     @app.get("/api")
@@ -75,8 +80,7 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
     def health() -> dict:
         return {"status": "ok", "version": signalkit.__version__}
 
-    @app.post("/ask")
-    def ask(query: AnalystQuery, request: Request, response: Response) -> dict:
+    def _enforce_rate_limit(request: Request, response: Response) -> None:
         limiter = app.state.rate_limiter
         key = _client_key(request)
         # Operational visibility (Modal logs): who is the limiter keying on,
@@ -94,6 +98,10 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
             )
         response.headers["X-RateLimit-Limit"] = str(limiter.limit)
         response.headers["X-RateLimit-Remaining"] = str(limiter.remaining(key))
+
+    @app.post("/ask")
+    def ask(query: AnalystQuery, request: Request, response: Response) -> dict:
+        _enforce_rate_limit(request, response)
         try:
             answer = app.state.analyst.ask(query)
         except NoDataError as e:
@@ -104,6 +112,20 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         except DataUnavailable as e:
             raise HTTPException(status_code=503, detail=str(e)) from e
         return answer.model_dump(mode="json")
+
+    @app.post("/compare")
+    def compare(query: CompareQuery, request: Request, response: Response) -> dict:
+        _enforce_rate_limit(request, response)
+        try:
+            result = app.state.analyst.compare(query)
+        except NoDataError as e:
+            raise HTTPException(
+                status_code=404,
+                detail={"message": str(e), "valid_values": e.suggestions},
+            ) from e
+        except DataUnavailable as e:
+            raise HTTPException(status_code=503, detail=str(e)) from e
+        return result.model_dump(mode="json")
 
     @app.get("/decisions")
     def decisions(limit: int = Query(default=20, ge=1, le=100)) -> list[dict]:
