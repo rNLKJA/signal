@@ -65,3 +65,16 @@ class RateLimiter:
                 for k in [k for k, v in self._hits.items() if not v]:
                     del self._hits[k]
             return None
+
+    def remaining(self, key: str) -> int:
+        """Requests left in the current window for ``key`` (for X-RateLimit-*)."""
+        if self.limit <= 0:
+            return self.limit
+        now = self._now()
+        with self._lock:
+            hits = self._hits.get(key)
+            if not hits:
+                return self.limit
+            while hits and now - hits[0] >= self.window:
+                hits.popleft()
+            return max(0, self.limit - len(hits))

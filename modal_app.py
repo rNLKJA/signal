@@ -30,7 +30,15 @@ decisions_volume = modal.Volume.from_name("signal-decisions", create_if_missing=
 llm_secret = modal.Secret.from_name("signal-llm")
 
 
-@app.function(image=image, volumes={"/data": decisions_volume}, secrets=[llm_secret])
+# max_containers=1: the rate limiter and the decision-log file are
+# in-process/single-writer by design — one container keeps both globally
+# correct, and caps cost. Plenty for a demo's traffic.
+@app.function(
+    image=image,
+    volumes={"/data": decisions_volume},
+    secrets=[llm_secret],
+    max_containers=1,
+)
 @modal.asgi_app()
 def api():
     import os

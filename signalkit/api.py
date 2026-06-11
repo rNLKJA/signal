@@ -22,9 +22,10 @@ part of the user-facing surface, not a hidden ops file.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 
 import signalkit
@@ -75,14 +76,24 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         return {"status": "ok", "version": signalkit.__version__}
 
     @app.post("/ask")
-    def ask(query: AnalystQuery, request: Request) -> dict:
-        retry_after = app.state.rate_limiter.check(_client_key(request))
+    def ask(query: AnalystQuery, request: Request, response: Response) -> dict:
+        limiter = app.state.rate_limiter
+        key = _client_key(request)
+        # Operational visibility (Modal logs): who is the limiter keying on,
+        # and which container served this? Diagnoses proxy/scale-out effects.
+        print(
+            f"rate-limit key={key} remaining={limiter.remaining(key)} "
+            f"container={os.environ.get('MODAL_TASK_ID', 'local')}"
+        )
+        retry_after = limiter.check(key)
         if retry_after is not None:
             raise HTTPException(
                 status_code=429,
                 detail=f"Rate limit reached. Try again in {retry_after} seconds.",
                 headers={"Retry-After": str(int(retry_after) + 1)},
             )
+        response.headers["X-RateLimit-Limit"] = str(limiter.limit)
+        response.headers["X-RateLimit-Remaining"] = str(limiter.remaining(key))
         try:
             answer = app.state.analyst.ask(query)
         except NoDataError as e:
