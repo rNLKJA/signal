@@ -33,11 +33,15 @@ llm_secret = modal.Secret.from_name("signal-llm")
 # max_containers=1: the rate limiter and the decision-log file are
 # in-process/single-writer by design — one container keeps both globally
 # correct, and caps cost. Plenty for a demo's traffic.
+# min_containers=1: one container stays resident so a visitor's first
+# click never pays a cold start. Costs idle compute (fits Modal's free
+# credits at current usage); remove the parameter to go scale-to-zero.
 @app.function(
     image=image,
     volumes={"/data": decisions_volume},
     secrets=[llm_secret],
     max_containers=1,
+    min_containers=1,
 )
 @modal.asgi_app()
 def api():
