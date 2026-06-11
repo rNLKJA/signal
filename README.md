@@ -4,10 +4,12 @@
 
 An interactive product over US public-safety data, with an analyst layer and a governance log that records every AI-assisted answer in a form built to satisfy the APS Mandatory AI Requirements and the EU AI Act.
 
+**Live demo: https://rnlkja--signal-api-api.modal.run** — ask it something and watch the audit trail fill in.
+
 Most data products show you a chart. Signal also shows you how the answer was reached: which model ran, what data informed it, what decision followed, and whether a human signed off. Every API response carries a `decision_id`, and the audit trail is itself a public endpoint — traceability is part of the product surface, not an ops file.
 
 ```bash
-curl -X POST https://<deployment>/ask \
+curl -X POST https://rnlkja--signal-api-api.modal.run/ask \
   -H 'Content-Type: application/json' \
   -d '{"question": "How is burglary trending in Brooklyn?", "offense": "burglary", "borough": "brooklyn"}'
 ```
@@ -82,8 +84,9 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 - [x] Interactive dashboard at `/` (vanilla, self-contained, dark-mode aware)
 - [x] Decision deep-links and governance analytics (`/decisions/{id}`, `/governance/summary`)
 - [x] LLM path under test (mocked client; aggregates-only prompt enforced)
-- [ ] Deploy to Modal (`modal_app.py` is ready; needs account auth) — live URL here
-- [ ] LLM narrative layer enabled in deployment
+- [x] Deployed to Modal — live at https://rnlkja--signal-api-api.modal.run
+- [ ] LLM narrative layer enabled in deployment (needs an API key as a Modal secret)
+- [ ] Persist the decision log to a Modal Volume (currently container-local, resets on cold start)
 
 ## Reproduce
 
