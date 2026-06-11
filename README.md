@@ -67,7 +67,7 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 | Endpoint | What it does |
 |---|---|
 | `GET /` | Interactive dashboard — ask questions, see the chart, watch the audit trail fill in. One self-contained page, no frameworks, no CDN. |
-| `POST /ask` | Ask the analyst. Filters: `offense`, `borough` (substring), `months` (2–24). Returns narrative, stats, and the `decision_id`. |
+| `POST /ask` | Ask the analyst. Filters: `offense`, `borough` (substring), `months` (2–24). Returns narrative, stats, and the `decision_id`. Rate-limited per client (default 20/min, `429` + `Retry-After` beyond that). |
 | `GET /decisions` | The governance log, live. Most recent entries, `limit` up to 100. |
 | `GET /decisions/{decision_id}` | Resolve any `decision_id` from an answer to its full audit entry. |
 | `GET /governance/summary` | The governance posture, quantified: review rate, risk tiers, model breakdown. |

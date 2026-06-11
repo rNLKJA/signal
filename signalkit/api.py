@@ -24,17 +24,27 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 
 import signalkit
 from signalkit.analyst.core import Analyst, AnalystQuery, NoDataError
 from signalkit.data.nypd import DataUnavailable
+from signalkit.ratelimit import RateLimiter
 
 DASHBOARD_PATH = Path(__file__).parent / "static" / "index.html"
 
 
-def create_app(analyst: Analyst | None = None) -> FastAPI:
+def _client_key(request: Request) -> str:
+    """Identify the caller. Behind Modal's proxy the real address arrives
+    in X-Forwarded-For; fall back to the socket peer locally."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None = None) -> FastAPI:
     app = FastAPI(
         title="Signal",
         version=signalkit.__version__,
@@ -45,6 +55,7 @@ def create_app(analyst: Analyst | None = None) -> FastAPI:
         ),
     )
     app.state.analyst = analyst or Analyst()
+    app.state.rate_limiter = rate_limiter or RateLimiter()
 
     @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse, include_in_schema=False)
     def dashboard() -> str:
@@ -64,7 +75,14 @@ def create_app(analyst: Analyst | None = None) -> FastAPI:
         return {"status": "ok", "version": signalkit.__version__}
 
     @app.post("/ask")
-    def ask(query: AnalystQuery) -> dict:
+    def ask(query: AnalystQuery, request: Request) -> dict:
+        retry_after = app.state.rate_limiter.check(_client_key(request))
+        if retry_after is not None:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit reached. Try again in {retry_after} seconds.",
+                headers={"Retry-After": str(int(retry_after) + 1)},
+            )
         try:
             answer = app.state.analyst.ask(query)
         except NoDataError as e:
