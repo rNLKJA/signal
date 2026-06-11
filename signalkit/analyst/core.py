@@ -8,9 +8,11 @@ DecisionEntry for every answer it produces.
 Governance design points:
 
   - The statistics are deterministic and computed from aggregate data only.
-  - The optional LLM (set ANTHROPIC_API_KEY and install the ``llm`` extra)
-    phrases the narrative from the computed statistics. It never sees raw
-    incident data, only the aggregates in TrendStats.
+  - The optional LLM (set SIGNAL_LLM_API_KEY; any OpenAI-compatible
+    provider, DeepSeek by default) phrases the narrative from the computed
+    statistics. It never sees raw incident data, only the aggregates in
+    TrendStats. The audit entry records which provider and model actually
+    produced the words — swapping the model never weakens the trail.
   - Every answer is logged before it is returned, and the API response
     carries the ``decision_id`` so any output can be traced back to its
     audit entry: what model ran, what data informed it, what was decided,
@@ -41,6 +43,9 @@ from signalkit.governance.decision_log import (
 
 DETERMINISTIC_MODEL = "signal-stats-v1 (deterministic)"
 DEFAULT_LOG_PATH = "logs/decisions.jsonl"
+DEFAULT_LLM_BASE_URL = "https://api.deepseek.com"
+DEFAULT_LLM_MODEL = "deepseek-chat"
+DEFAULT_LLM_PROVIDER = "DeepSeek"
 ANOMALY_Z_THRESHOLD = 2.0
 TREND_SLOPE_THRESHOLD = 0.01  # fraction of mean per month
 
@@ -189,11 +194,16 @@ def _template_narrative(stats: TrendStats, query: AnalystQuery) -> str:
     return " ".join(parts)
 
 
-def _llm_narrative(stats: TrendStats, query: AnalystQuery, model: str) -> str:
-    """Phrase the narrative with an LLM. Receives aggregates only, never raw data."""
-    import anthropic
+def _llm_narrative(
+    stats: TrendStats, query: AnalystQuery, model: str, base_url: str, api_key: str
+) -> str:
+    """Phrase the narrative via any OpenAI-compatible chat-completions API.
 
-    client = anthropic.Anthropic()
+    Receives aggregates only, never raw data — the prompt is built solely
+    from the computed TrendStats.
+    """
+    import httpx
+
     prompt = (
         "You are a careful crime-data analyst. Using ONLY the statistics below, "
         "write a 3-4 sentence plain-English summary. Do not invent numbers.\n\n"
@@ -201,12 +211,27 @@ def _llm_narrative(stats: TrendStats, query: AnalystQuery, model: str) -> str:
         f"Filters: offence={query.offense or 'all'}, borough={query.borough or 'all'}\n"
         f"Statistics: {stats.model_dump_json()}"
     )
-    message = client.messages.create(
-        model=model,
-        max_tokens=300,
-        messages=[{"role": "user", "content": prompt}],
+    response = httpx.post(
+        f"{base_url.rstrip('/')}/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={
+            "model": model,
+            # Reasoning models (e.g. deepseek-v4-pro) spend tokens thinking
+            # before answering; the budget must cover both or content
+            # comes back empty.
+            "max_tokens": 1500,
+            "messages": [{"role": "user", "content": prompt}],
+        },
+        timeout=60.0,
     )
-    return message.content[0].text.strip()
+    response.raise_for_status()
+    narrative = (response.json()["choices"][0]["message"]["content"] or "").strip()
+    if not narrative:
+        # e.g. a reasoning model that exhausted its budget before answering.
+        # An empty narrative must never reach a user; the caller falls back
+        # to the deterministic template.
+        raise ValueError("LLM returned an empty narrative.")
+    return narrative
 
 
 class Analyst:
@@ -238,11 +263,15 @@ class Analyst:
 
         stats = compute_stats(filtered, query.months)
         model_used = DETERMINISTIC_MODEL
-        llm_model = os.environ.get("SIGNAL_LLM_MODEL", "claude-haiku-4-5-20251001")
-        if os.environ.get("ANTHROPIC_API_KEY"):
+        provider = None
+        api_key = os.environ.get("SIGNAL_LLM_API_KEY")
+        if api_key:
+            llm_model = os.environ.get("SIGNAL_LLM_MODEL", DEFAULT_LLM_MODEL)
+            base_url = os.environ.get("SIGNAL_LLM_BASE_URL", DEFAULT_LLM_BASE_URL)
             try:
-                narrative = _llm_narrative(stats, query, llm_model)
+                narrative = _llm_narrative(stats, query, llm_model, base_url, api_key)
                 model_used = llm_model
+                provider = os.environ.get("SIGNAL_LLM_PROVIDER", DEFAULT_LLM_PROVIDER)
             except Exception:
                 narrative = _template_narrative(stats, query)
         else:
@@ -251,7 +280,7 @@ class Analyst:
         human_review = bool(stats.anomalous_months)
         entry = DecisionEntry(
             model_name=model_used,
-            model_provider="Anthropic" if model_used == llm_model else None,
+            model_provider=provider,
             input_summary=(
                 f"question='{query.question}' offense='{query.offense}' "
                 f"borough='{query.borough}' months={query.months}"

@@ -1,50 +1,49 @@
-"""LLM narrative path, tested with a fake anthropic module (no key, no network).
+"""LLM narrative path, tested against a faked OpenAI-compatible endpoint
+(no key, no network, no provider SDK).
 
 The contract under test:
-  - when the LLM runs, the audit entry records the LLM model and provider
+  - when the LLM runs, the audit entry records the configured model and
+    provider — the log never lies about which model produced the words
+  - the request goes to {base_url}/chat/completions with a bearer key
   - the prompt contains only computed aggregates, never raw records
   - any client failure falls back to the deterministic template, and the
-    audit entry records the deterministic model — the log never lies about
-    which model produced the words
+    audit entry records the deterministic model
 """
 
-import sys
 import types
 
+import httpx
 import pytest
 
 from signalkit.analyst.core import DETERMINISTIC_MODEL, Analyst, AnalystQuery
 
-LLM_MODEL = "claude-haiku-4-5-20251001"
+LLM_MODEL = "deepseek-chat"
 FAKE_NARRATIVE = "Narrative phrased by the fake LLM."
 
 
-class FakeMessages:
-    def __init__(self, fail: bool):
+class FakePost:
+    def __init__(self, fail: bool, content: str = FAKE_NARRATIVE):
         self.fail = fail
+        self.content = content
+        self.last_url = None
         self.last_kwargs = None
 
-    def create(self, **kwargs):
+    def __call__(self, url, **kwargs):
+        self.last_url = url
         self.last_kwargs = kwargs
         if self.fail:
-            raise RuntimeError("simulated API failure")
-        block = types.SimpleNamespace(text=FAKE_NARRATIVE)
-        return types.SimpleNamespace(content=[block])
+            raise httpx.ConnectError("simulated API failure")
+        payload = {"choices": [{"message": {"content": self.content}}]}
+        return types.SimpleNamespace(raise_for_status=lambda: None, json=lambda: payload)
 
 
-def install_fake_anthropic(monkeypatch, fail: bool) -> FakeMessages:
-    messages = FakeMessages(fail)
-
-    class FakeAnthropic:
-        def __init__(self):
-            self.messages = messages
-
-    fake_module = types.ModuleType("anthropic")
-    fake_module.Anthropic = FakeAnthropic
-    monkeypatch.setitem(sys.modules, "anthropic", fake_module)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+def install_fake_llm(monkeypatch, fail: bool, content: str = FAKE_NARRATIVE) -> FakePost:
+    fake = FakePost(fail, content)
+    monkeypatch.setattr(httpx, "post", fake)
+    monkeypatch.setenv("SIGNAL_LLM_API_KEY", "test-key")
     monkeypatch.setenv("SIGNAL_LLM_MODEL", LLM_MODEL)
-    return messages
+    monkeypatch.setenv("SIGNAL_LLM_PROVIDER", "DeepSeek")
+    return fake
 
 
 @pytest.fixture()
@@ -53,22 +52,38 @@ def analyst(tmp_path):
 
 
 def test_llm_narrative_recorded_in_audit(analyst, monkeypatch):
-    messages = install_fake_anthropic(monkeypatch, fail=False)
+    fake = install_fake_llm(monkeypatch, fail=False)
     answer = analyst.ask(AnalystQuery(question="trend?", offense="burglary"))
 
     assert answer.narrative == FAKE_NARRATIVE
     assert answer.model_used == LLM_MODEL
     logged = analyst.recent_decisions()[-1]
     assert logged.model_name == LLM_MODEL
-    assert logged.model_provider == "Anthropic"
-    assert messages.last_kwargs["model"] == LLM_MODEL
+    assert logged.model_provider == "DeepSeek"
+    assert fake.last_kwargs["json"]["model"] == LLM_MODEL
+
+
+def test_llm_request_shape(analyst, monkeypatch):
+    fake = install_fake_llm(monkeypatch, fail=False)
+    analyst.ask(AnalystQuery(offense="burglary"))
+
+    assert fake.last_url == "https://api.deepseek.com/chat/completions"
+    assert fake.last_kwargs["headers"]["Authorization"] == "Bearer test-key"
+
+
+def test_llm_base_url_configurable(analyst, monkeypatch):
+    fake = install_fake_llm(monkeypatch, fail=False)
+    monkeypatch.setenv("SIGNAL_LLM_BASE_URL", "https://example.com/v1/")
+    analyst.ask(AnalystQuery(offense="burglary"))
+
+    assert fake.last_url == "https://example.com/v1/chat/completions"
 
 
 def test_llm_prompt_contains_aggregates_only(analyst, monkeypatch):
-    messages = install_fake_anthropic(monkeypatch, fail=False)
+    fake = install_fake_llm(monkeypatch, fail=False)
     analyst.ask(AnalystQuery(offense="burglary", borough="brooklyn"))
 
-    prompt = messages.last_kwargs["messages"][0]["content"]
+    prompt = fake.last_kwargs["json"]["messages"][0]["content"]
     assert "total_complaints" in prompt  # the computed stats are present
     assert "monthly_counts" in prompt
     # raw record fields must never appear: records carry per-row law_category
@@ -76,7 +91,7 @@ def test_llm_prompt_contains_aggregates_only(analyst, monkeypatch):
 
 
 def test_llm_failure_falls_back_honestly(analyst, monkeypatch):
-    install_fake_anthropic(monkeypatch, fail=True)
+    install_fake_llm(monkeypatch, fail=True)
     answer = analyst.ask(AnalystQuery(offense="burglary"))
 
     assert answer.model_used == DETERMINISTIC_MODEL
@@ -86,7 +101,16 @@ def test_llm_failure_falls_back_honestly(analyst, monkeypatch):
     assert logged.model_provider is None
 
 
-def test_no_key_means_no_llm(analyst, monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+def test_empty_llm_content_falls_back(analyst, monkeypatch):
+    """A reasoning model that burns its budget returns empty content —
+    that must never reach a user as a blank narrative."""
+    install_fake_llm(monkeypatch, fail=False, content="")
+    answer = analyst.ask(AnalystQuery(offense="burglary"))
+
+    assert answer.model_used == DETERMINISTIC_MODEL
+    assert "NYPD recorded" in answer.narrative
+
+
+def test_no_key_means_no_llm(analyst):
     answer = analyst.ask(AnalystQuery(offense="burglary"))
     assert answer.model_used == DETERMINISTIC_MODEL

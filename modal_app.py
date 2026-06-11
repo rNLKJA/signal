@@ -25,7 +25,12 @@ app = modal.App("signal-api")
 decisions_volume = modal.Volume.from_name("signal-decisions", create_if_missing=True)
 
 
-@app.function(image=image, volumes={"/data": decisions_volume})
+# LLM narrative config (SIGNAL_LLM_* vars) lives in the "signal-llm" secret;
+# create it with: modal secret create signal-llm SIGNAL_LLM_API_KEY=... etc.
+llm_secret = modal.Secret.from_name("signal-llm")
+
+
+@app.function(image=image, volumes={"/data": decisions_volume}, secrets=[llm_secret])
 @modal.asgi_app()
 def api():
     import os

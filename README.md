@@ -51,7 +51,7 @@ For the EU AI Act, `risk_category` records the tier (`unacceptable`, `high`, `li
 The analyst layer ([`signalkit/analyst/core.py`](signalkit/analyst/core.py)) applies three governance rules of its own:
 
 - **Aggregates only.** The statistics are computed server-side by the data source (SoQL group-bys); no raw incident rows, and no PII, ever enter the system.
-- **The LLM is optional and sandboxed.** Without an API key, narratives come from a deterministic template (`signal-stats-v1`). With `ANTHROPIC_API_KEY` set, an LLM phrases the narrative — but it receives only the computed statistics, never the underlying data, and the audit entry records which model actually produced the words.
+- **The LLM is optional, sandboxed, and provider-agnostic.** Without an API key, narratives come from a deterministic template (`signal-stats-v1`). With `SIGNAL_LLM_API_KEY` set, any OpenAI-compatible model (DeepSeek by default) phrases the narrative — but it receives only the computed statistics, never the underlying data, and the audit entry records which provider and model actually produced the words. Swapping the model never weakens the trail; see `.env.example`.
 - **Anomalies trigger human review.** Months with a z-score at or beyond 2 set `human_review_required=True` in both the response and the log. A spike should be checked by a person before anyone acts on it.
 
 The log is plain JSONL: one decision per line, UTF-8, no special tooling needed to read or grep it, and `to_dicts()` hands it straight to pandas or DuckDB for analysis.
@@ -86,7 +86,7 @@ Cold aggregate queries on the historic dataset can take Socrata over a minute, s
 - [x] LLM path under test (mocked client; aggregates-only prompt enforced)
 - [x] Deployed to Modal — live at https://rnlkja--signal-api-api.modal.run
 - [x] Decision log persisted to a Modal Volume — the audit trail survives cold starts
-- [ ] LLM narrative layer enabled in deployment (needs an API key as a Modal secret)
+- [x] LLM narrative live in deployment — DeepSeek via the provider-agnostic layer, attributed per-decision in the audit log
 
 ## Reproduce
 
