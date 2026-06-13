@@ -453,7 +453,8 @@ function renderPreview(d, resId, title) {
     `<tr>${cols.map((c) => `<td>${rec[c] ?? ""}</td>`).join("")}</tr>`).join("");
   $("extra-holder").innerHTML =
     `<div class="ds-table"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-     <button type="button" id="ds-analyse" data-res="${resId}" data-title="${title}">Analyse trend</button>`;
+     <button type="button" id="ds-analyse" data-res="${resId}" data-title="${title}">Analyse trend</button>
+     <span id="ds-note" class="hint"></span>`;
   $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · catalogue preview · source: ${currentPortal}`;
   $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -461,17 +462,11 @@ function renderPreview(d, resId, title) {
 
 // A data.sa generic analysis, rendered in the same panel as a crime answer.
 function renderGenericAnalysis(d) {
+  // Only called for a successful (analysable) result; the can't-trend case is
+  // handled inline by analyseResource so the preview table stays in view.
   $("error").hidden = true;
   $("answer").hidden = false;
   setPanelMode("analysis");
-  if (!d.analysable) {
-    lastAnswer = { stats: null };
-    $("narrative").textContent = `Can't trend this table: ${d.reason}`;
-    $("chips").innerHTML = "";
-    $("gov").innerHTML = "";
-    $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
   const s = d.stats;
   lastAnswer = {
     stats: { monthly_counts: s.monthly_counts, anomalous_months: s.anomalous_months },
@@ -727,14 +722,26 @@ async function previewResource(resId, title) {
 }
 
 async function analyseResource(resId, title) {
-  $("extra-holder").innerHTML = '<p class="hint">Analysing…</p>';
+  const btn = $("ds-analyse");
+  const note = $("ds-note");
+  if (btn) { btn.disabled = true; btn.textContent = "Analysing…"; }
+  if (note) note.textContent = "";
+  const reset = () => { if (btn) { btn.disabled = false; btn.textContent = "Analyse trend"; } };
   try {
     const r = await fetch(`/resources/${resId}/analyse?title=${encodeURIComponent(title)}&portal=${currentPortal}`);
     if (!r.ok) throw new Error(r.status);
-    renderGenericAnalysis(await r.json());
+    const d = await r.json();
+    if (d.analysable) {
+      renderGenericAnalysis(d);           // upgrade the panel to the trend view
+    } else {
+      // keep the preview table; explain why it can't be trended
+      if (note) note.textContent = `Can't trend this table — ${d.reason}`;
+      reset();
+    }
     await refreshAudit();
   } catch {
-    $("extra-holder").innerHTML = '<p class="err">Analysis unavailable.</p>';
+    if (note) note.textContent = "Analysis unavailable.";
+    reset();
   }
 }
 
