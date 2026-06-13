@@ -414,7 +414,10 @@ function leafletMap(id, points, opts = {}) {
   }
   if (_maps[id]) { _maps[id].remove(); delete _maps[id]; }
   el.innerHTML = "";
-  const map = L.map(el, { scrollWheelZoom: false });
+  // Canvas renderer repaints reliably after the container is resized — the SVG
+  // renderer can leave circle markers clipped/invisible when the map is built
+  // while its panel is still being shown.
+  const map = L.map(el, { scrollWheelZoom: false, preferCanvas: true });
   _maps[id] = map;
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19, attribution: "&copy; OpenStreetMap contributors",
@@ -423,20 +426,24 @@ function leafletMap(id, points, opts = {}) {
   const maxV = Math.max(1, ...points.map((p) => p.value || 0));
   points.forEach((p, i) => {
     if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) return;
-    const radius = opts.sized ? 7 + Math.sqrt((p.value || 0) / maxV) * 26 : 5;
+    const radius = opts.sized ? 8 + Math.sqrt((p.value || 0) / maxV) * 26 : 6;
     const color = p.color || SERIES_HEX[i % SERIES_HEX.length];
     const marker = L.circleMarker([p.lat, p.lon], {
-      radius, color, weight: 1, fillColor: color, fillOpacity: 0.55,
+      radius, color: "#ffffff", weight: 1.5, fillColor: color, fillOpacity: 0.85,
     }).addTo(map);
     if (p.label) marker.bindPopup(p.label);
     if (opts.onClick && p.region) marker.on("click", () => opts.onClick(p.region));
     latlngs.push([p.lat, p.lon]);
   });
-  if (latlngs.length === 1) map.setView(latlngs[0], 11);
-  else if (latlngs.length) map.fitBounds(latlngs, { padding: [30, 30] });
-  else el.innerHTML = '<p class="hint">No mappable points in this result.</p>';
-  // the container often starts hidden/zero-size; settle the layout, then resize
-  setTimeout(() => map.invalidateSize(), 0);
+  const fit = () => {
+    if (latlngs.length === 1) map.setView(latlngs[0], 12);
+    else if (latlngs.length) map.fitBounds(latlngs, { padding: [30, 30], maxZoom: 14 });
+  };
+  fit();
+  if (!latlngs.length) el.innerHTML = '<p class="hint">No mappable points in this result.</p>';
+  // The container is often just-shown/zero-size at init; once the layout
+  // settles, resize the map and re-fit so the markers paint in the right place.
+  setTimeout(() => { map.invalidateSize(); fit(); }, 80);
 }
 
 function renderRegionMap(series) {
