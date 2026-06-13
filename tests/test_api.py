@@ -178,6 +178,20 @@ def test_decisions_csv_export(client):
     assert len(lines) >= 2  # header + at least one decision
 
 
+def test_ask_nyc_source(client):
+    body = client.post("/ask", json={"offense": "burglary", "source": "nyc"}).json()
+    assert body["stats"]["total_offences"] > 0
+    assert "NYC Open Data" in body["data_source"]
+    assert "NYPD recorded" in body["narrative"]
+
+
+def test_compare_nyc_boroughs(client):
+    body = client.post("/compare", json={"offense": "robbery", "source": "nyc"}).json()
+    regions = [s["region"] for s in body["series"]]
+    assert "BROOKLYN" in regions and "MANHATTAN" in regions
+    assert "(null)" not in regions
+
+
 def test_ask_response_contract(client):
     """The public /ask shape is frozen at 1.0 — these keys must not disappear."""
     body = client.post("/ask", json={"offense": "theft"}).json()

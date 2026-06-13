@@ -92,6 +92,17 @@ def test_live_cache_served_once_populated(monkeypatch):
     assert sa_crime._refresh_in_flight is False
 
 
+def test_nyc_snapshot_loads():
+    import signalkit.data.nyc as nyc
+    records, label = nyc.load_snapshot()
+    assert len(records) > 1000
+    assert "NYC Open Data" in label
+    regions = {r.region for r in records}
+    assert {"BROOKLYN", "MANHATTAN", "QUEENS"} <= regions
+    divisions = {r.offense_division for r in records}
+    assert divisions <= {"Felony", "Misdemeanor", "Violation"}
+
+
 def test_taxonomy_harmonisation_maps_both_vocabularies():
     # Pre- and post-2025 SA Police labels must land on the same category.
     assert sa_crime._map_offense("THEFT AND RELATED OFFENCES") == "Theft"

@@ -116,9 +116,10 @@
 <body>
 <main>
   <h1>Signal <span class="v" id="version"></span></h1>
-  <p class="tagline">A governed analyst over South Australian crime data, and a governed explorer over
-    the SA / NSW / VIC open-data portals. Every answer is audit-logged before it is returned — the
-    trail is below, live. <a href="/docs">API docs</a> · <a href="https://github.com/rNLKJA/signal">source</a></p>
+  <p class="tagline">A governed analyst over South Australian and New York City crime data, and a
+    governed explorer over the SA / NSW / VIC open-data portals. Every answer is audit-logged before
+    it is returned — the trail is below, live. <a href="/docs">API docs</a> ·
+    <a href="https://github.com/rNLKJA/signal">source</a></p>
 
   <div class="toggle modes" role="group" aria-label="Mode">
     <button type="button" id="mode-crime" aria-pressed="true">SA crime analyst</button>
@@ -126,6 +127,12 @@
   </div>
 
   <form id="ask-form">
+    <label>Source
+      <select name="source" id="source-select">
+        <option value="sa">SA Police</option>
+        <option value="nyc">NYC NYPD</option>
+      </select>
+    </label>
     <label>Offence (substring, blank = all)
       <input name="offense" list="offense-options" placeholder="theft" autocomplete="off">
       <datalist id="offense-options">
@@ -254,6 +261,26 @@ const REGION_COORDS = {
   "MURRAY BRIDGE": [139.27, -35.12], "MOUNT GAMBIER": [140.78, -37.83],
   "PORT AUGUSTA": [137.77, -32.49], "PORT LINCOLN": [135.86, -34.73],
   "WHYALLA NORRIE": [137.55, -33.03], "WHYALLA STUART": [137.58, -33.05],
+  // NYC boroughs
+  "MANHATTAN": [-73.97, 40.78], "BROOKLYN": [-73.95, 40.65], "QUEENS": [-73.80, 40.71],
+  "BRONX": [-73.87, 40.84], "STATEN ISLAND": [-74.15, 40.58],
+};
+
+// Source-specific datalist hints for the crime form.
+const SOURCE_HINTS = {
+  sa: {
+    placeholder: "theft",
+    offenses: ["Theft", "Assault and injury", "Serious criminal trespass", "Property damage",
+      "Fraud and deception", "Robbery and extortion", "Sexual offences", "Homicide and related"],
+    regions: ["Adelaide", "Salisbury", "Elizabeth", "Port Augusta", "Port Lincoln",
+      "Mount Gambier", "Murray Bridge", "Morphett Vale", "Modbury", "Prospect"],
+  },
+  nyc: {
+    placeholder: "burglary",
+    offenses: ["PETIT LARCENY", "GRAND LARCENY", "BURGLARY", "ROBBERY", "FELONY ASSAULT",
+      "ASSAULT 3 & RELATED OFFENSES", "CRIMINAL MISCHIEF & RELATED OF", "DANGEROUS DRUGS"],
+    regions: ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"],
+  },
 };
 
 async function loadVersion() {
@@ -392,7 +419,7 @@ function mapSVG(series) {
         font-size="9" fill="var(--muted)">${p.region}</text></g>`;
   }).join("");
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Map of SA regions sized by offence volume">
-    <text x="${PAD}" y="20" font-size="10" fill="var(--muted)">South Australia · bubble size = offence volume</text>
+    <text x="${PAD}" y="20" font-size="10" fill="var(--muted)">bubble size = offence volume · positioned by location</text>
     ${bubbles}</svg>`;
 }
 
@@ -567,14 +594,24 @@ function formPayload() {
     offense: f.get("offense") || null,
     region: f.get("region") || null,
     months: Number(f.get("months")),
+    source: f.get("source") || "sa",
   };
 }
+
+function applySourceHints() {
+  const src = $("source-select").value;
+  const h = SOURCE_HINTS[src] || SOURCE_HINTS.sa;
+  $("ask-form").elements.offense.placeholder = h.placeholder;
+  $("offense-options").innerHTML = h.offenses.map((o) => `<option>${o}</option>`).join("");
+  $("region-options").innerHTML = h.regions.map((o) => `<option>${o}</option>`).join("");
+}
+$("source-select").addEventListener("change", applySourceHints);
 
 async function runAsk() {
   $("ask-btn").disabled = true;
   try {
     const p = formPayload();
-    const r = await post("/ask", { question: "dashboard query", offense: p.offense, region: p.region, months: p.months });
+    const r = await post("/ask", { question: "dashboard query", offense: p.offense, region: p.region, months: p.months, source: p.source });
     r.ok ? renderAnswer(r.body) : renderError(r.status, r.body);
     await refreshAudit();
   } catch {
@@ -588,7 +625,7 @@ async function runCompare() {
   $("cmp-btn").disabled = true;
   try {
     const p = formPayload();
-    const r = await post("/compare", { question: "dashboard comparison", offense: p.offense, months: p.months });
+    const r = await post("/compare", { question: "dashboard comparison", offense: p.offense, months: p.months, source: p.source });
     r.ok ? renderCompare(r.body) : renderError(r.status, r.body);
     await refreshAudit();
   } catch {
@@ -679,6 +716,7 @@ function autorunFromURL() {
   const qp = new URLSearchParams(location.search);
   if (!qp.has("offense") && !qp.has("region")) return;
   const form = $("ask-form");
+  if (qp.get("source")) { form.elements.source.value = qp.get("source"); applySourceHints(); }
   form.elements.offense.value = qp.get("offense") || "";
   form.elements.region.value = qp.get("region") || "";
   if (qp.get("months")) form.elements.months.value = qp.get("months");

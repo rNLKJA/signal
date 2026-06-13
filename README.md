@@ -112,6 +112,7 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] National reach: the explorer also searches data.nsw.gov.au and discover.data.vic.gov.au — preview and analyse NSW/VIC datasets, not just SA
 - [x] Scheduled monthly snapshot refresh in CI, with a "data as of" date in the dashboard
 - [x] Live-path tests (mocked CKAN) and a frozen, contract-tested API — **v1.0.0**
+- [x] NYC NYPD complaint data as a selectable source alongside SA Police (same model: borough→region, law category→division); agency-aware narratives and a borough map
 
 ### Beyond 1.0.0
 

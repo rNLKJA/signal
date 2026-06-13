@@ -35,8 +35,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from signalkit.data import catalogue
-from signalkit.data.sa_crime import MonthlyRecord, get_records
+from signalkit.data import catalogue, nyc, sa_crime
+from signalkit.data.sa_crime import MonthlyRecord
 from signalkit.governance.decision_log import (
     DecisionCategory,
     DecisionEntry,
@@ -45,6 +45,19 @@ from signalkit.governance.decision_log import (
     RiskCategory,
     summarise,
 )
+
+# Default (SA) record source. Kept as a module-level name so tests can patch it;
+# _records_for routes "nyc" to the NYC layer and everything else through here.
+get_records = sa_crime.get_records
+
+SOURCE_AGENCY = {"sa": "SA Police", "nyc": "NYPD"}
+SOURCE_REGION_WORD = {"sa": "regions", "nyc": "boroughs"}
+
+
+def _records_for(source: str, offline):
+    if source == "nyc":
+        return nyc.get_records(offline)
+    return get_records(offline)
 
 DETERMINISTIC_MODEL = "signal-stats-v1 (deterministic)"
 DEFAULT_LOG_PATH = "logs/decisions.jsonl"
@@ -68,8 +81,9 @@ class AnalystQuery(BaseModel):
 
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
     offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
-    region: Optional[str] = Field(default=None, description="SA region filter, e.g. 'adelaide'")
+    region: Optional[str] = Field(default=None, description="Region/borough filter")
     months: int = Field(default=12, ge=2, le=24, description="Trailing window size in months")
+    source: str = Field(default="sa", description="Data source: sa | nyc")
 
 
 class TrendStats(BaseModel):
@@ -99,11 +113,12 @@ class TrendStats(BaseModel):
 
 
 class CompareQuery(BaseModel):
-    """Compare one offence scope across SA regions."""
+    """Compare one offence scope across regions/boroughs."""
 
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
     offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
     months: int = Field(default=12, ge=2, le=24)
+    source: str = Field(default="sa", description="Data source: sa | nyc")
 
 
 def _parse_month(value) -> Optional[str]:
@@ -296,10 +311,11 @@ def _template_narrative(stats: TrendStats, query: AnalystQuery) -> str:
         scope_bits.append(f"matching '{query.offense}'")
     if query.region:
         scope_bits.append(f"in {query.region.upper()}")
-    scope = " ".join(scope_bits) if scope_bits else "statewide"
+    scope = " ".join(scope_bits) if scope_bits else "in total"
+    agency = SOURCE_AGENCY.get(query.source, "SA Police")
 
     parts = [
-        f"Between {stats.window_start} and {stats.window_end}, SA Police recorded "
+        f"Between {stats.window_start} and {stats.window_end}, {agency} recorded "
         f"{stats.total_offences:,} offences {scope}.",
         f"The trend over the window is {stats.trend_direction}.",
     ]
@@ -386,8 +402,9 @@ def _generate_narrative(prompt: str, fallback: str) -> tuple[str, str, Optional[
 
 
 def _ask_prompt(stats: TrendStats, query: AnalystQuery) -> str:
+    agency = SOURCE_AGENCY.get(query.source, "SA Police")
     return (
-        "You are a careful crime-data analyst for South Australia. Using ONLY the "
+        f"You are a careful crime-data analyst working with {agency} data. Using ONLY the "
         "statistics below, write a 3-4 sentence plain-English summary. Do not invent "
         "numbers.\n\n"
         f"Question: {query.question or '(trend summary)'}\n"
@@ -406,7 +423,7 @@ class Analyst:
         self._offline = offline
 
     def ask(self, query: AnalystQuery) -> AnalystAnswer:
-        records, source_label = get_records(self._offline)
+        records, source_label = _records_for(query.source, self._offline)
 
         filtered = [
             r
@@ -432,7 +449,7 @@ class Analyst:
             model_name=model_used,
             model_provider=provider,
             input_summary=(
-                f"question='{query.question}' offense='{query.offense}' "
+                f"source='{query.source}' question='{query.question}' offense='{query.offense}' "
                 f"region='{query.region}' months={query.months}"
             ),
             model_output_summary=narrative[:300],
@@ -445,7 +462,7 @@ class Analyst:
                 "APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency"
             ),
             risk_category=RiskCategory.limited,
-            tags=["sa-crime", "trend-analysis"],
+            tags=[f"{query.source}-crime", "trend-analysis"],
         )
         self._logger.log(entry)
 
@@ -461,10 +478,10 @@ class Analyst:
 
     def compare(self, query: CompareQuery) -> CompareResult:
         """One offence scope, all SA regions, aligned monthly series — audit-logged."""
-        records, source_label = get_records(self._offline)
-        # The folded tail and withheld-suburb buckets are not single places, so
-        # they are excluded from a region-versus-region comparison.
-        excluded = {"OTHER SA AREAS", "NOT DISCLOSED"}
+        records, source_label = _records_for(query.source, self._offline)
+        # The folded tail, withheld-suburb and unknown-borough buckets are not
+        # single places, so they are excluded from a region-versus-region compare.
+        excluded = {"OTHER SA AREAS", "NOT DISCLOSED", "(null)"}
         filtered = [
             r
             for r in records
@@ -502,8 +519,9 @@ class Analyst:
             s.region: {"total": s.total, "yoy_pct": s.yoy_change_pct, "trend": s.trend_direction}
             for s in series
         }
+        region_word = SOURCE_REGION_WORD.get(query.source, "regions")
         fallback_parts = [
-            f"Between {window[0]} and {window[-1]}, comparing {scope} across SA regions: "
+            f"Between {window[0]} and {window[-1]}, comparing {scope} across {region_word}: "
             f"{series[0].region} recorded the most offences ({series[0].total:,}) and "
             f"{series[-1].region} the fewest ({series[-1].total:,})."
         ]
@@ -516,12 +534,12 @@ class Analyst:
                 f"{verb} {abs(biggest.yoy_change_pct)}%."
             )
         prompt = (
-            "You are a careful crime-data analyst for South Australia. Using ONLY the "
-            "per-region statistics below, write a 3-4 sentence plain-English comparison. "
-            "Do not invent numbers.\n\n"
-            f"Question: {query.question or '(region comparison)'}\n"
+            f"You are a careful crime-data analyst working with {SOURCE_AGENCY.get(query.source, 'SA Police')} "
+            f"data. Using ONLY the per-{region_word[:-1]} statistics below, write a 3-4 sentence "
+            "plain-English comparison. Do not invent numbers.\n\n"
+            f"Question: {query.question or '(comparison)'}\n"
             f"Scope: {scope}, window {window[0]} to {window[-1]}\n"
-            f"Per-region statistics: {compact}"
+            f"Statistics: {compact}"
         )
         narrative, model_used, provider = _generate_narrative(prompt, " ".join(fallback_parts))
 
@@ -530,8 +548,8 @@ class Analyst:
             model_name=model_used,
             model_provider=provider,
             input_summary=(
-                f"compare question='{query.question}' offense='{query.offense}' "
-                f"months={query.months}"
+                f"compare source='{query.source}' question='{query.question}' "
+                f"offense='{query.offense}' months={query.months}"
             ),
             model_output_summary=narrative[:300],
             data_sources=[source_label],
@@ -543,7 +561,7 @@ class Analyst:
                 "APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency"
             ),
             risk_category=RiskCategory.limited,
-            tags=["sa-crime", "region-comparison"],
+            tags=[f"{query.source}-crime", "region-comparison"],
         )
         self._logger.log(entry)
 
