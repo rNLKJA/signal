@@ -226,6 +226,7 @@
     Data: SA Police Crime statistics via data.sa.gov.au (already de-identified suburb counts; Signal
     aggregates further to month × region × offence — no PII enters the system). Governance: APS
     Mandatory AI Requirements (Jun 2026), EU AI Act Art. 50, Privacy Act 1988 (Cth). MIT licence.
+    <span id="data-asof"></span>
   </footer>
 </main>
 <div id="tip" hidden></div>
@@ -253,6 +254,13 @@ async function loadVersion() {
   try {
     const r = await fetch("/health");
     $("version").textContent = "v" + (await r.json()).version;
+  } catch { /* cosmetic only */ }
+  try {
+    const d = (await (await fetch("/api")).json()).data;
+    if (d && d.window) {
+      $("data-asof").textContent =
+        ` Data window ${d.window.start} to ${d.window.end}; snapshot fetched ${d.fetched_at}.`;
+    }
   } catch { /* cosmetic only */ }
 }
 

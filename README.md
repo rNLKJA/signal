@@ -110,11 +110,11 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Audit export (`/decisions.csv`) and a governance-summary panel in the dashboard
 - [x] Map view: SA regions as an offline bubble map, sized by volume, click to drill in
 - [x] National reach: the explorer also searches data.nsw.gov.au and discover.data.vic.gov.au — preview and analyse NSW/VIC datasets, not just SA
+- [x] Scheduled monthly snapshot refresh in CI, with a "data as of" date in the dashboard
 
 ### Planned for v1.0.0
 
 - [ ] Live-path tests and a frozen, documented API contract
-- [ ] Scheduled monthly snapshot refresh in CI
 
 ## Reproduce
 

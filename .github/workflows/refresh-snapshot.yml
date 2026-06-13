@@ -1,0 +1,35 @@
+name: Refresh snapshot
+
+# Rebuild the bundled SA Police snapshot from live data once a month, and on
+# demand. Commits only when the data actually changed.
+on:
+  schedule:
+    - cron: "0 17 1 * *"   # 1st of each month, 17:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .
+      - name: Rebuild snapshot from live data
+        run: python scripts/build_snapshot.py
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- signalkit/data/sample/sa_crime_monthly.json; then
+            echo "Snapshot unchanged — nothing to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add signalkit/data/sample/sa_crime_monthly.json
+            git commit -m "chore(data): refresh SA Police snapshot [skip ci]"
+            git push
+          fi

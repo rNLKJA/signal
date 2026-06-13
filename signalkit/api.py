@@ -45,7 +45,7 @@ from signalkit.analyst.core import (
     NoDataError,
     ReviewRequest,
 )
-from signalkit.data.sa_crime import DataUnavailable
+from signalkit.data.sa_crime import DataUnavailable, snapshot_meta
 from signalkit.ratelimit import RateLimiter
 
 DASHBOARD_PATH = Path(__file__).parent / "static" / "index.html"
@@ -82,11 +82,18 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
 
     @app.get("/api")
     def index() -> dict:
+        try:
+            meta = snapshot_meta()
+            data = {"source": meta.get("source"), "window": meta.get("window"),
+                    "fetched_at": meta.get("fetched_at")}
+        except Exception:
+            data = None
         return {
             "service": "signal",
             "version": signalkit.__version__,
             "docs": "/docs",
             "endpoints": ["/health", "/ask (POST)", "/decisions"],
+            "data": data,
         }
 
     @app.get("/health")

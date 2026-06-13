@@ -237,6 +237,12 @@ def fetch_live() -> tuple[list[MonthlyRecord], str]:
     return records, label
 
 
+def snapshot_meta() -> dict:
+    """Return just the bundled snapshot's metadata (source, window, fetched_at)."""
+    with SNAPSHOT_PATH.open() as f:
+        return json.load(f)["meta"]
+
+
 def load_snapshot() -> tuple[list[MonthlyRecord], str]:
     """Load the bundled real-data snapshot (works offline)."""
     with SNAPSHOT_PATH.open() as f:
