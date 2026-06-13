@@ -178,6 +178,42 @@ def test_decisions_csv_export(client):
     assert len(lines) >= 2  # header + at least one decision
 
 
+def test_ask_response_contract(client):
+    """The public /ask shape is frozen at 1.0 — these keys must not disappear."""
+    body = client.post("/ask", json={"offense": "theft"}).json()
+    assert set(body) >= {
+        "narrative", "stats", "decision_id", "data_source", "model_used",
+        "human_review_required", "generated_at",
+    }
+    assert set(body["stats"]) >= {
+        "window_start", "window_end", "total_offences", "monthly_counts",
+        "mom_change_pct", "yoy_change_pct", "trend_direction", "anomalous_months",
+        "top_offenses", "by_offense_division",
+    }
+
+
+def test_compare_response_contract(client):
+    body = client.post("/compare", json={"offense": "theft"}).json()
+    assert set(body) >= {
+        "window_start", "window_end", "offense_filter", "series", "narrative",
+        "decision_id", "data_source", "model_used", "human_review_required", "generated_at",
+    }
+    assert set(body["series"][0]) >= {
+        "region", "monthly_counts", "total", "yoy_change_pct",
+        "trend_direction", "anomalous_months",
+    }
+
+
+def test_governance_summary_contract(client):
+    client.post("/ask", json={"offense": "theft"})
+    body = client.get("/governance/summary").json()
+    assert set(body) >= {
+        "total_decisions", "human_review_required_count", "human_review_rate",
+        "reviews_recorded", "outstanding_reviews", "by_risk_category", "by_model",
+        "by_decision_category", "first_decision_at", "last_decision_at",
+    }
+
+
 def test_dashboard_gzipped_when_accepted(client):
     response = client.get("/", headers={"Accept-Encoding": "gzip"})
     assert response.headers.get("content-encoding") == "gzip"

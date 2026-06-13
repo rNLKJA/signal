@@ -1,5 +1,7 @@
 """Data layer: snapshot integrity, offline switching, stale-while-revalidate."""
 
+import types
+
 import pytest
 
 import signalkit.data.sa_crime as sa_crime
@@ -96,3 +98,43 @@ def test_taxonomy_harmonisation_maps_both_vocabularies():
     assert sa_crime._map_offense("THEFT") == "Theft"
     assert sa_crime._map_offense("ACTS INTENDED TO CAUSE INJURY") == "Assault and injury"
     assert sa_crime._map_offense("ASSAULT") == "Assault and injury"
+
+
+def _raw(date, suburb, l1, l2, n):
+    return {
+        "Reported Date": date, "Suburb - Incident": suburb,
+        "Offence Level 1 Description": l1, "Offence Level 2 Description": l2,
+        "Offence count": str(n),
+    }
+
+
+def test_aggregate_harmonises_across_the_taxonomy_change():
+    rows = [
+        _raw("01/07/2024", "ADELAIDE", "OFFENCES AGAINST PROPERTY", "THEFT AND RELATED OFFENCES", 3),
+        _raw("15/08/2025", "ADELAIDE", "OFFENCES AGAINST PROPERTY", "THEFT", 2),
+    ]
+    recs = sa_crime._aggregate(rows)
+    # both vocabularies collapse to one offence and one division
+    assert {r.offense for r in recs} == {"Theft"}
+    assert {r.offense_division for r in recs} == {"Offences against property"}
+    assert {r.month for r in recs} == {"2024-07", "2025-08"}
+
+
+def test_fetch_resource_falls_back_when_source_empty(monkeypatch):
+    """data.sa newest-FY datastore can be empty; the fallback must fill it in."""
+    import httpx
+
+    def fake_get(self, base, params=None):
+        sa = base.startswith("https://data.sa.gov.au")
+        records = [] if sa else [
+            _raw("01/07/2024", "ADELAIDE", "OFFENCES AGAINST PROPERTY", "THEFT", 5),
+        ]
+        return types.SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {"result": {"records": records, "total": len(records)}},
+        )
+
+    monkeypatch.setattr(httpx.Client, "get", fake_get)
+    with httpx.Client() as client:
+        rows = sa_crime._fetch_resource("res", client)
+    assert len(rows) == 1  # came from the data.gov.au fallback, not empty data.sa

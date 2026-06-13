@@ -111,10 +111,18 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Map view: SA regions as an offline bubble map, sized by volume, click to drill in
 - [x] National reach: the explorer also searches data.nsw.gov.au and discover.data.vic.gov.au — preview and analyse NSW/VIC datasets, not just SA
 - [x] Scheduled monthly snapshot refresh in CI, with a "data as of" date in the dashboard
+- [x] Live-path tests (mocked CKAN) and a frozen, contract-tested API — **v1.0.0**
 
-### Planned for v1.0.0
+### Beyond 1.0.0
 
-- [ ] Live-path tests and a frozen, documented API contract
+- [ ] Unified cross-state crime comparison (blocked on NSW/VIC publishing queryable, not spreadsheet, data)
+
+## API stability
+
+As of **v1.0.0** the public response shapes for `/ask`, `/compare`, `/decisions`,
+`/governance/summary`, and the catalogue endpoints are stable and covered by contract
+tests. Fields may be added, but existing fields will not change meaning or disappear
+without a major version bump.
 
 ## Reproduce
 
