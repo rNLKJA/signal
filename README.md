@@ -113,6 +113,7 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Scheduled monthly snapshot refresh in CI, with a "data as of" date in the dashboard
 - [x] Live-path tests (mocked CKAN) and a frozen, contract-tested API — **v1.0.0**
 - [x] NYC NYPD complaint data as a selectable source alongside SA Police (same model: borough→region, law category→division); agency-aware narratives and a borough map
+- [x] Real base map (Leaflet + OpenStreetMap): region comparison plotted on a map with click-to-drill; explorer datasets with lat/lon columns plotted as points
 
 ### Beyond 1.0.0
 

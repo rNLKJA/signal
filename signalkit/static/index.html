@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Signal — governed analyst over South Australian crime data</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
   :root {
     color-scheme: light dark;
@@ -111,6 +115,8 @@
   form[hidden] { display: none; }   /* the form{display:flex} rule overrides [hidden] otherwise */
   .ds-res-row { display: inline-flex; align-items: center; gap: .3rem; margin: 0 .4rem .35rem 0; }
   #ds-selbar { margin-bottom: .8rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  #cmp-map, #geo-map { height: 380px; margin-top: .6rem; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .leaflet-popup-content { font: inherit; }
 </style>
 </head>
 <body>
@@ -395,32 +401,68 @@ function compareSVG(series) {
     ${lines}${labels}</svg>`;
 }
 
-function mapSVG(series) {
+// --- Leaflet maps (OpenStreetMap base) ---
+const SERIES_HEX = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed"];
+const _maps = {};
+
+function leafletMap(id, points, opts = {}) {
+  const el = $(id);
+  if (typeof L === "undefined") {
+    el.innerHTML = '<p class="hint">Map unavailable (offline — base tiles need a connection).</p>';
+    return;
+  }
+  if (_maps[id]) { _maps[id].remove(); delete _maps[id]; }
+  el.innerHTML = "";
+  const map = L.map(el, { scrollWheelZoom: false });
+  _maps[id] = map;
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+  const latlngs = [];
+  const maxV = Math.max(1, ...points.map((p) => p.value || 0));
+  points.forEach((p, i) => {
+    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) return;
+    const radius = opts.sized ? 7 + Math.sqrt((p.value || 0) / maxV) * 26 : 5;
+    const color = p.color || SERIES_HEX[i % SERIES_HEX.length];
+    const marker = L.circleMarker([p.lat, p.lon], {
+      radius, color, weight: 1, fillColor: color, fillOpacity: 0.55,
+    }).addTo(map);
+    if (p.label) marker.bindPopup(p.label);
+    if (opts.onClick && p.region) marker.on("click", () => opts.onClick(p.region));
+    latlngs.push([p.lat, p.lon]);
+  });
+  if (latlngs.length === 1) map.setView(latlngs[0], 11);
+  else if (latlngs.length) map.fitBounds(latlngs, { padding: [30, 30] });
+  else el.innerHTML = '<p class="hint">No mappable points in this result.</p>';
+  // the container often starts hidden/zero-size; settle the layout, then resize
+  setTimeout(() => map.invalidateSize(), 0);
+}
+
+function renderRegionMap(series) {
   const pts = series
     .filter((s) => REGION_COORDS[s.region])
-    .map((s) => ({ region: s.region, total: s.total, lon: REGION_COORDS[s.region][0], lat: REGION_COORDS[s.region][1] }));
-  if (!pts.length) return '<p class="hint">No mappable regions in this result.</p>';
-  const W = 840, H = 380, PAD = 50;
-  const lons = pts.map((p) => p.lon), lats = pts.map((p) => p.lat);
-  const lonMin = Math.min(...lons), lonMax = Math.max(...lons);
-  const latMin = Math.min(...lats), latMax = Math.max(...lats);
-  const sx = (lon) => PAD + ((lon - lonMin) / ((lonMax - lonMin) || 1)) * (W - 2 * PAD);
-  const sy = (lat) => PAD + ((latMax - lat) / ((latMax - latMin) || 1)) * (H - 2 * PAD);
-  const maxT = Math.max(...pts.map((p) => p.total)) || 1;
-  const radius = (t) => 7 + Math.sqrt(t / maxT) * 33;
-  const bubbles = pts.map((p, i) => {
-    const cx = sx(p.lon).toFixed(1), cy = sy(p.lat).toFixed(1);
-    return `<g class="hit" tabindex="0" role="button" data-region="${p.region}"
-        data-tip="${p.region}: ${p.total.toLocaleString()} offences — click to filter"
-        aria-label="${p.region}, ${p.total.toLocaleString()} offences">
-      <circle cx="${cx}" cy="${cy}" r="${radius(p.total).toFixed(1)}"
-        fill="${SERIES_COLORS[i % 5]}" fill-opacity="0.5" stroke="${SERIES_COLORS[i % 5]}"/>
-      <text x="${cx}" y="${(sy(p.lat) + radius(p.total) + 10).toFixed(1)}" text-anchor="middle"
-        font-size="9" fill="var(--muted)">${p.region}</text></g>`;
-  }).join("");
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Map of SA regions sized by offence volume">
-    <text x="${PAD}" y="20" font-size="10" fill="var(--muted)">bubble size = offence volume · positioned by location</text>
-    ${bubbles}</svg>`;
+    .map((s, i) => ({
+      lat: REGION_COORDS[s.region][1], lon: REGION_COORDS[s.region][0],
+      value: s.total, region: s.region, color: SERIES_HEX[i % SERIES_HEX.length],
+      label: `<b>${s.region}</b><br>${s.total.toLocaleString()} offences — click to drill in`,
+    }));
+  if (!pts.length) { $("cmp-map").innerHTML = '<p class="hint">No mappable regions in this result.</p>'; return; }
+  leafletMap("cmp-map", pts, {
+    sized: true,
+    onClick: (region) => {
+      $("ask-form").elements.region.value = region;
+      runAsk();
+      $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+  });
+}
+
+// Detect latitude/longitude columns in a resource's fields.
+function geoColumns(fields) {
+  const ids = fields.map((f) => f.id);
+  const lat = ids.find((c) => /^(lat|latitude|y)$/i.test(c.trim())) || ids.find((c) => /latitude|\blat\b/i.test(c));
+  const lon = ids.find((c) => /^(lon|lng|long|longitude|x)$/i.test(c.trim())) || ids.find((c) => /longitude|\blon\b|\blng\b/i.test(c));
+  return lat && lon && lat !== lon ? { lat, lon } : null;
 }
 
 function pct(v, suffix) {
@@ -483,12 +525,21 @@ function renderPreview(d, resId, title) {
   const head = cols.map((c) => `<th>${c}</th>`).join("");
   const rows = d.records.map((rec) =>
     `<tr>${cols.map((c) => `<td>${rec[c] ?? ""}</td>`).join("")}</tr>`).join("");
+  const geo = geoColumns(d.fields);
   $("extra-holder").innerHTML =
     `<div class="ds-table"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
      <button type="button" id="ds-analyse" data-res="${resId}" data-title="${title}">Analyse trend</button>
-     <span id="ds-note" class="hint"></span>`;
+     <span id="ds-note" class="hint"></span>` +
+    (geo ? `<h2>Map</h2><p class="hint">This dataset has coordinates — plotting the previewed rows.</p><div id="geo-map"></div>` : "");
   $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · catalogue preview · source: ${currentPortal}`;
+  if (geo) {
+    const pts = d.records.map((rec) => {
+      const label = cols.slice(0, 4).map((c) => `${c}: ${rec[c] ?? ""}`).join("<br>");
+      return { lat: parseFloat(rec[geo.lat]), lon: parseFloat(rec[geo.lon]), label };
+    }).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180);
+    leafletMap("geo-map", pts);
+  }
   $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -524,7 +575,7 @@ function renderCompare(d) {
   $("cmp").hidden = false;
   $("cmp-narrative").textContent = d.narrative;
   $("cmp-holder").innerHTML = compareSVG(d.series);
-  $("cmp-map").innerHTML = mapSVG(d.series);
+  renderRegionMap(d.series);
   $("cmp-legend").innerHTML = d.series.map((s, i) => {
     const yoy = s.yoy_change_pct === null ? "" :
       ` ${s.yoy_change_pct >= 0 ? "▲" : "▼"}${Math.abs(s.yoy_change_pct)}% YoY`;
