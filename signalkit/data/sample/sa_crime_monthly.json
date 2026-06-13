@@ -1,6 +1,6 @@
 {
   "meta": {
-    "source": "SA Police Crime statistics (data.gov.au) \u2014 FY2024-25 + FY2025-26 YTD",
+    "source": "SA Police Crime statistics (data.sa.gov.au) \u2014 FY2024-25 + FY2025-26 YTD",
     "fetched_at": "2026-06-13",
     "window": {
       "start": "2024-07",

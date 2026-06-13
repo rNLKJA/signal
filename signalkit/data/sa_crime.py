@@ -3,7 +3,7 @@ signalkit/data/sa_crime.py
 ==========================
 Monthly recorded-offence aggregates from South Australia Police open data.
 
-Source: SA Police "Crime statistics" on data.gov.au — published per financial
+Source: SA Police "Crime statistics" on data.sa.gov.au — published per financial
 year as a CKAN datastore. Two financial-year resources are unioned to build a
 rolling window long enough for year-on-year comparison:
 
@@ -43,7 +43,13 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, Field
 
-CKAN_BASE = "https://data.gov.au/data/api/3/action/datastore_search"
+# data.sa.gov.au is the source portal (preferred); data.gov.au federates it and
+# is sometimes more current for the newest financial year, so it is the fallback.
+DATASTORE_BASES = [
+    "https://data.sa.gov.au/data/api/3/action/datastore_search",
+    "https://data.gov.au/data/api/3/action/datastore_search",
+]
+CRIME_DATASET_ID = "860126f7-eeb5-4fbc-be44-069aa0467d11"  # "crime-statistics" on data.sa
 PREV_FY_RESOURCE = "4a553fc6-71fe-4dac-8096-c29abc269c76"   # 2024-25
 CURRENT_FY_RESOURCE = "cfce21c4-9712-454f-b32d-0f7c989accda"  # 2025-26 YTD
 SNAPSHOT_PATH = Path(__file__).parent / "sample" / "sa_crime_monthly.json"
@@ -124,8 +130,8 @@ def _map_division(raw_l1: str) -> str:
     return DIVISION_MAP.get(_norm(raw_l1), _norm(raw_l1).title())
 
 
-def _fetch_resource(resource_id: str, client: httpx.Client) -> list[dict]:
-    """Page through one CKAN datastore resource, returning the trimmed rows."""
+def _fetch_from_base(base: str, resource_id: str, client: httpx.Client) -> list[dict]:
+    """Page through one CKAN datastore resource on one portal."""
     fields = (
         "Reported Date,Suburb - Incident,Offence Level 1 Description,"
         "Offence Level 2 Description,Offence count"
@@ -135,7 +141,7 @@ def _fetch_resource(resource_id: str, client: httpx.Client) -> list[dict]:
     page = 20000
     while True:
         resp = client.get(
-            CKAN_BASE,
+            base,
             params={
                 "resource_id": resource_id,
                 "limit": page,
@@ -153,6 +159,27 @@ def _fetch_resource(resource_id: str, client: httpx.Client) -> list[dict]:
         if offset >= result.get("total", offset):
             break
     return rows
+
+
+def _fetch_resource(resource_id: str, client: httpx.Client) -> list[dict]:
+    """Fetch one resource, preferring data.sa.gov.au with a data.gov.au fallback.
+
+    data.sa.gov.au is the source portal, but its datastore for the newest
+    financial year can be empty or mid-reindex; the federated data.gov.au copy
+    is sometimes more current. Trying the source first and falling back means
+    the current year is never silently lost.
+    """
+    last_err: Exception | None = None
+    for base in DATASTORE_BASES:
+        try:
+            rows = _fetch_from_base(base, resource_id, client)
+            if rows:
+                return rows
+        except Exception as e:  # empty datastore rejects the field list with 409
+            last_err = e
+    if last_err is not None:
+        raise last_err
+    return []
 
 
 def _aggregate(rows: list[dict]) -> list[MonthlyRecord]:
@@ -204,7 +231,7 @@ def fetch_live() -> tuple[list[MonthlyRecord], str]:
         raise DataUnavailable("Live API returned no usable rows.")
     months = sorted({r.month for r in records})
     label = (
-        "SA Police Crime statistics (data.gov.au) — FY2024-25 + FY2025-26 YTD, "
+        "SA Police Crime statistics (data.sa.gov.au) — FY2024-25 + FY2025-26 YTD, "
         f"live as of {months[-1]}"
     )
     return records, label
