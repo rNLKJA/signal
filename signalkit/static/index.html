@@ -587,10 +587,38 @@ async function previewResource(resId, title) {
     $("ds-preview").innerHTML = `
       <p class="hint">${d.total.toLocaleString()} rows total${d.truncated ? ` (showing ${d.records.length})` : ""}
         · logged as <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a></p>
-      <div class="ds-table"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+      <div class="ds-table"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+      <button type="button" id="ds-analyse" data-res="${resId}" data-title="${title}">Analyse trend</button>
+      <div id="ds-analysis"></div>`;
     await refreshAudit();
   } catch {
     $("ds-preview").innerHTML = '<p class="err">Preview unavailable.</p>';
+  }
+}
+
+async function analyseResource(resId, title) {
+  $("ds-analysis").innerHTML = '<p class="hint">Analysing…</p>';
+  try {
+    const r = await fetch(`/resources/${resId}/analyse?title=${encodeURIComponent(title)}`);
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if (!d.analysable) {
+      $("ds-analysis").innerHTML = `<p class="hint">Can't trend this table: ${d.reason}</p>`;
+      return;
+    }
+    const s = d.stats;
+    $("ds-analysis").innerHTML =
+      `<p>${d.narrative}</p>
+       <div class="chips">
+         <span class="chip">metric <b>${s.value_field}</b></span>
+         <span class="chip">trend <b>${s.trend_direction}</b></span>
+         ${pct(s.mom_change_pct, "MoM")}${pct(s.yoy_change_pct, "YoY")}
+         <span class="chip">logged <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a></span>
+       </div>
+       ${trendSVG(s.monthly_counts, s.anomalous_months, "bar")}`;
+    await refreshAudit();
+  } catch {
+    $("ds-analysis").innerHTML = '<p class="err">Analysis unavailable.</p>';
   }
 }
 
@@ -601,6 +629,12 @@ $("ds-form").addEventListener("submit", (ev) => {
 $("ds-results").addEventListener("click", (e) => {
   const el = e.target.closest("[data-res]");
   if (el) previewResource(el.dataset.res, el.dataset.title);
+});
+$("ds-preview").addEventListener("click", (e) => {
+  if (e.target.closest("#ds-analyse")) {
+    const b = e.target.closest("#ds-analyse");
+    analyseResource(b.dataset.res, b.dataset.title);
+  }
 });
 
 loadVersion();

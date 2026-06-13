@@ -116,6 +116,33 @@ def dataset_info(name_or_id: str) -> DatasetDetail | None:
     )
 
 
+def fetch_rows(resource_id: str, max_rows: int = 5000) -> tuple[list[dict], list[dict]]:
+    """Fetch up to max_rows from a datastore resource for analysis.
+
+    Returns (fields, rows) with the internal _id stripped. Paged in 1,000-row
+    requests; capped so an arbitrary dataset can never pull an unbounded set.
+    """
+    rows: list[dict] = []
+    fields: list[dict] = []
+    offset = 0
+    while len(rows) < max_rows:
+        page = min(1000, max_rows - len(rows))
+        result = _get(
+            "datastore_search",
+            {"resource_id": resource_id, "limit": page, "offset": offset},
+        )
+        if not fields:
+            fields = [f for f in result.get("fields", []) if f.get("id") != "_id"]
+        batch = [{k: v for k, v in r.items() if k != "_id"} for r in result.get("records", [])]
+        if not batch:
+            break
+        rows.extend(batch)
+        offset += len(batch)
+        if offset >= result.get("total", offset):
+            break
+    return fields, rows
+
+
 def preview_resource(resource_id: str, limit: int = 20) -> ResourcePreview:
     """Preview the first rows of a datastore-backed resource."""
     capped = max(1, min(limit, 100))

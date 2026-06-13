@@ -197,6 +197,20 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"Preview unavailable: {e}") from e
 
+    @app.get("/resources/{resource_id}/analyse")
+    def resource_analyse(
+        resource_id: str,
+        title: str = Query(default=""),
+        date_field: str = Query(default=""),
+        value_field: str = Query(default=""),
+    ) -> dict:
+        try:
+            return app.state.analyst.analyse_resource(
+                resource_id, title, date_field or None, value_field or None
+            )
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Analysis unavailable: {e}") from e
+
     return app
 
 

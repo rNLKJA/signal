@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import statistics
 import threading
 from collections import deque
@@ -103,6 +104,60 @@ class CompareQuery(BaseModel):
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
     offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
     months: int = Field(default=12, ge=2, le=24)
+
+
+def _parse_month(value) -> Optional[str]:
+    """Extract YYYY-MM from a value, handling ISO/timestamp and DD/MM/YYYY."""
+    s = str(value).strip() if value is not None else ""
+    m = re.match(r"^(\d{4})-(\d{2})", s)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}"
+    m = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{4})", s)  # DD/MM/YYYY
+    if m:
+        return f"{m.group(3)}-{int(m.group(2)):02d}"
+    return None
+
+
+def _to_float(value) -> Optional[float]:
+    try:
+        return float(str(value).replace(",", "").strip())
+    except (ValueError, AttributeError):
+        return None
+
+
+def _infer_columns(fields: list[dict], rows: list[dict]) -> tuple[Optional[str], Optional[str]]:
+    """Find a date/period column and a numeric column by sampling values."""
+    sample = rows[:200]
+    if not sample:
+        return None, None
+    ids = [f["id"] for f in fields]
+    date_field = next(
+        (fid for fid in ids
+         if sum(1 for r in sample if _parse_month(r.get(fid))) / len(sample) >= 0.7),
+        None,
+    )
+    value_field = next(
+        (fid for fid in ids
+         if fid != date_field
+         and sum(1 for r in sample if _to_float(r.get(fid)) is not None) / len(sample) >= 0.7),
+        None,
+    )
+    return date_field, value_field
+
+
+class GenericTrend(BaseModel):
+    """Trend statistics over an arbitrary data.sa dataset (date + numeric)."""
+
+    date_field: str
+    value_field: str
+    window_start: str
+    window_end: str
+    total: float
+    monthly_counts: dict[str, float]
+    trend_direction: Literal["rising", "falling", "flat"]
+    mom_change_pct: Optional[float] = None
+    yoy_change_pct: Optional[float] = None
+    anomalous_months: list[str] = Field(default_factory=list)
 
 
 class ReviewRequest(BaseModel):
@@ -572,3 +627,116 @@ class Analyst:
         out = preview.model_dump()
         out["decision_id"] = entry.decision_id
         return out
+
+    def analyse_resource(
+        self,
+        resource_id: str,
+        title: str = "",
+        date_field: str | None = None,
+        value_field: str | None = None,
+        max_rows: int = 5000,
+    ) -> dict:
+        """Run the trend engine on an arbitrary data.sa resource, if it has a
+        date and a numeric column. Falls back honestly when it cannot, rather
+        than forcing a misleading trend. Every analysis is audit-logged."""
+        try:
+            fields, rows = catalogue.fetch_rows(resource_id, max_rows)
+        except Exception:
+            return {
+                "analysable": False,
+                "reason": "This resource has no queryable data table to analyse.",
+            }
+        inferred_d, inferred_v = _infer_columns(fields, rows)
+        date_field = date_field or inferred_d
+        value_field = value_field or inferred_v
+        if not date_field or not value_field:
+            return {
+                "analysable": False,
+                "reason": "No date + numeric column detected in this dataset.",
+                "fields": fields,
+            }
+
+        monthly: dict[str, float] = {}
+        for r in rows:
+            month = _parse_month(r.get(date_field))
+            x = _to_float(r.get(value_field))
+            if month and x is not None:
+                monthly[month] = monthly.get(month, 0.0) + x
+        months = sorted(monthly)
+        if len(months) < 3:
+            return {
+                "analysable": False,
+                "reason": f"Only {len(months)} month(s) of data — at least 3 are needed to trend.",
+                "date_field": date_field,
+                "value_field": value_field,
+            }
+
+        series = [monthly[m] for m in months]
+        mom = None
+        if len(series) >= 2 and series[-2] != 0:
+            mom = round((series[-1] - series[-2]) / series[-2] * 100, 1)
+        yoy = None
+        last = months[-1]
+        prior = f"{int(last[:4]) - 1}-{last[5:]}"
+        if prior in monthly and monthly[prior] != 0:
+            yoy = round((monthly[last] - monthly[prior]) / monthly[prior] * 100, 1)
+        mean = statistics.mean(series)
+        slope = _slope(series)
+        direction = "flat"
+        if mean and abs(slope) / abs(mean) >= TREND_SLOPE_THRESHOLD:
+            direction = "rising" if slope > 0 else "falling"
+        anomalies = []
+        if len(series) >= 6:
+            stdev = statistics.pstdev(series)
+            if stdev > 0:
+                anomalies = [m for m, v in monthly.items() if abs(v - mean) / stdev >= ANOMALY_Z_THRESHOLD]
+
+        stats = GenericTrend(
+            date_field=date_field,
+            value_field=value_field,
+            window_start=months[0],
+            window_end=months[-1],
+            total=round(sum(series), 2),
+            monthly_counts={m: round(monthly[m], 2) for m in months},
+            trend_direction=direction,
+            mom_change_pct=mom,
+            yoy_change_pct=yoy,
+            anomalous_months=anomalies,
+        )
+        scope = title or f"resource {resource_id}"
+        template = (
+            f"Between {months[0]} and {months[-1]}, the monthly total of "
+            f"'{value_field}' in {scope} is {direction}. The series spans {len(months)} months."
+            + (f" Anomalous months flagged for review: {', '.join(anomalies)}." if anomalies else "")
+        )
+        prompt = (
+            "You are a careful data analyst. Using ONLY these statistics, write a 2-3 sentence "
+            "plain-English summary of the monthly trend. Do not invent numbers.\n\n"
+            f"Dataset: {scope}; metric: monthly total of '{value_field}'.\n"
+            f"Statistics: {stats.model_dump_json()}"
+        )
+        narrative, model_used, provider = _generate_narrative(prompt, template)
+        human_review = bool(anomalies)
+        entry = DecisionEntry(
+            model_name=model_used,
+            model_provider=provider,
+            input_summary=f"Generic trend of '{value_field}' by '{date_field}' in {scope}",
+            model_output_summary=narrative[:300],
+            data_sources=[f"data.sa.gov.au resource {resource_id}" + (f" ({title})" if title else "")],
+            decision_made="Returned a generic trend analysis via Signal API.",
+            decision_category=DecisionCategory.analytical,
+            confidence_score=0.95 if model_used == DETERMINISTIC_MODEL else 0.8,
+            human_review_required=human_review,
+            legislative_basis="APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency",
+            risk_category=RiskCategory.limited,
+            tags=["data.sa", "generic-analysis"],
+        )
+        self._logger.log(entry)
+        return {
+            "analysable": True,
+            "stats": stats.model_dump(),
+            "narrative": narrative,
+            "model_used": model_used,
+            "decision_id": entry.decision_id,
+            "human_review_required": human_review,
+        }

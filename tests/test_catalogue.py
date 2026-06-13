@@ -75,6 +75,49 @@ def test_unknown_dataset_404(client):
     assert client.get("/datasets/does-not-exist").status_code == 404
 
 
+def _rows_over_months(months, per_month=3):
+    fields = [{"id": "Date", "type": "text"}, {"id": "Reading", "type": "numeric"}]
+    rows = []
+    for i, mth in enumerate(months):
+        for k in range(per_month):
+            rows.append({"Date": f"{mth}-15", "Reading": str(10 + i + k)})
+    return fields, rows
+
+
+def test_generic_analysis_runs_when_date_and_numeric_present(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        catalogue, "fetch_rows",
+        lambda rid, max_rows=5000: _rows_over_months(["2025-01", "2025-02", "2025-03", "2025-04"]),
+    )
+    analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
+    result = analyst.analyse_resource("res-x", title="Sensor data")
+    assert result["analysable"] is True
+    assert result["stats"]["value_field"] == "Reading"
+    assert result["stats"]["window_start"] == "2025-01"
+    assert result["decision_id"].startswith("d-")
+    logged = analyst.recent_decisions()[-1]
+    assert "generic-analysis" in logged.tags
+
+
+def test_generic_analysis_falls_back_when_too_short(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        catalogue, "fetch_rows", lambda rid, max_rows=5000: _rows_over_months(["2025-01"]),
+    )
+    analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
+    result = analyst.analyse_resource("res-x")
+    assert result["analysable"] is False
+    assert "month" in result["reason"].lower()
+
+
+def test_generic_analysis_falls_back_when_no_numeric(tmp_path, monkeypatch):
+    fields = [{"id": "Name", "type": "text"}, {"id": "Suburb", "type": "text"}]
+    rows = [{"Name": "a", "Suburb": "ADELAIDE"}] * 10
+    monkeypatch.setattr(catalogue, "fetch_rows", lambda rid, max_rows=5000: (fields, rows))
+    analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
+    result = analyst.analyse_resource("res-x")
+    assert result["analysable"] is False
+
+
 def test_preview_is_governed(client):
     body = client.get("/resources/res-1/preview?title=Crime statistics").json()
     assert body["total"] == 95703
