@@ -19,13 +19,16 @@ from __future__ import annotations
 import httpx
 from pydantic import BaseModel
 
-# Australian open-data portals, all running CKAN with the same action API.
-# data.sa is the flagship; NSW and VIC give the explorer national reach.
+# Open-data portals. SA/NSW/VIC run CKAN; NYC runs Socrata. PORTAL_TYPE selects
+# the adapter, and PORTALS holds the public base URL (for dataset links/labels).
 PORTALS = {
     "sa": "https://data.sa.gov.au/data",
     "nsw": "https://data.nsw.gov.au/data",
     "vic": "https://discover.data.vic.gov.au",
+    "nyc": "https://data.cityofnewyork.us",
 }
+PORTAL_TYPE = {"sa": "ckan", "nsw": "ckan", "vic": "ckan", "nyc": "socrata"}
+SOCRATA_DOMAIN = {"nyc": "data.cityofnewyork.us"}
 DEFAULT_PORTAL = "sa"
 _TIMEOUT = 30.0
 
@@ -93,8 +96,92 @@ def _resources(pkg: dict) -> list[ResourceRef]:
     ]
 
 
+# --- Socrata adapter (NYC) ---
+
+def _socrata_rows(domain: str, rid: str, params: dict) -> list[dict]:
+    with httpx.Client(timeout=_TIMEOUT, headers={"User-Agent": "signalkit"}) as client:
+        resp = client.get(f"https://{domain}/resource/{rid}.json", params=params)
+        resp.raise_for_status()
+        return resp.json()
+
+
+def _socrata_search(query: str, limit: int, portal: str) -> list[DatasetSummary]:
+    domain = SOCRATA_DOMAIN[portal]
+    with httpx.Client(timeout=_TIMEOUT, headers={"User-Agent": "signalkit"}) as client:
+        resp = client.get(
+            "https://api.us.socrata.com/api/catalog/v1",
+            params={"domains": domain, "q": query, "limit": max(1, min(limit, 50)), "only": "dataset"},
+        )
+        resp.raise_for_status()
+        results = resp.json().get("results", [])
+    out = []
+    for r in results:
+        res = r.get("resource", {})
+        rid = res.get("id", "")
+        name = res.get("name") or rid
+        notes = (res.get("description") or "").strip().replace("\r", " ").replace("\n", " ")
+        out.append(DatasetSummary(
+            name=rid, title=name,
+            organisation=(r.get("classification") or {}).get("domain_category") or domain,
+            notes=notes[:280], num_resources=1,
+            datastore_resources=[ResourceRef(id=rid, name=name, format="Socrata", datastore_active=True)],
+        ))
+    return out
+
+
+def _socrata_info(rid: str, portal: str) -> DatasetDetail | None:
+    domain = SOCRATA_DOMAIN[portal]
+    try:
+        with httpx.Client(timeout=_TIMEOUT, headers={"User-Agent": "signalkit"}) as client:
+            resp = client.get(f"https://{domain}/api/views/{rid}.json")
+            resp.raise_for_status()
+            v = resp.json()
+    except httpx.HTTPStatusError:
+        return None
+    notes = (v.get("description") or "").strip().replace("\r", " ").replace("\n", " ")
+    name = v.get("name") or rid
+    return DatasetDetail(
+        name=rid, title=name, organisation=v.get("category") or domain, notes=notes[:800],
+        url=f"https://{domain}/d/{rid}",
+        resources=[ResourceRef(id=rid, name=name, format="Socrata", datastore_active=True)],
+    )
+
+
+def _socrata_preview(rid: str, limit: int, portal: str) -> ResourcePreview:
+    domain = SOCRATA_DOMAIN[portal]
+    rows = _socrata_rows(domain, rid, {"$limit": max(1, min(limit, 100))})
+    fields = [{"id": k, "type": "text"} for k in (rows[0].keys() if rows else [])]
+    try:
+        cnt = _socrata_rows(domain, rid, {"$select": "count(*)"})
+        total = int(cnt[0].get("count") or len(rows)) if cnt else len(rows)
+    except Exception:
+        total = len(rows)
+    return ResourcePreview(
+        resource_id=rid, fields=fields, records=rows, total=total, truncated=total > len(rows)
+    )
+
+
+def _socrata_fetch_rows(rid: str, max_rows: int, portal: str) -> tuple[list[dict], list[dict]]:
+    domain = SOCRATA_DOMAIN[portal]
+    rows: list[dict] = []
+    offset = 0
+    while len(rows) < max_rows:
+        page = min(1000, max_rows - len(rows))
+        batch = _socrata_rows(domain, rid, {"$limit": page, "$offset": offset})
+        if not batch:
+            break
+        rows.extend(batch)
+        offset += len(batch)
+        if len(batch) < page:
+            break
+    fields = [{"id": k, "type": "text"} for k in (rows[0].keys() if rows else [])]
+    return fields, rows
+
+
 def search_datasets(query: str = "", limit: int = 20, portal: str = DEFAULT_PORTAL) -> list[DatasetSummary]:
     """Search a portal's catalogue. Blank query returns recent datasets."""
+    if PORTAL_TYPE.get(portal) == "socrata":
+        return _socrata_search(query, limit, portal)
     result = _get(portal, "package_search", {"q": query, "rows": max(1, min(limit, 50))})
     summaries = []
     for pkg in result.get("results", []):
@@ -115,6 +202,8 @@ def search_datasets(query: str = "", limit: int = 20, portal: str = DEFAULT_PORT
 
 def dataset_info(name_or_id: str, portal: str = DEFAULT_PORTAL) -> DatasetDetail | None:
     """Full metadata for one dataset, or None if it does not exist."""
+    if PORTAL_TYPE.get(portal) == "socrata":
+        return _socrata_info(name_or_id, portal)
     try:
         pkg = _get(portal, "package_show", {"id": name_or_id})
     except httpx.HTTPStatusError:
@@ -138,6 +227,8 @@ def fetch_rows(
     Returns (fields, rows) with the internal _id stripped. Paged in 1,000-row
     requests; capped so an arbitrary dataset can never pull an unbounded set.
     """
+    if PORTAL_TYPE.get(portal) == "socrata":
+        return _socrata_fetch_rows(resource_id, max_rows, portal)
     rows: list[dict] = []
     fields: list[dict] = []
     offset = 0
@@ -162,6 +253,8 @@ def fetch_rows(
 
 def preview_resource(resource_id: str, limit: int = 20, portal: str = DEFAULT_PORTAL) -> ResourcePreview:
     """Preview the first rows of a datastore-backed resource."""
+    if PORTAL_TYPE.get(portal) == "socrata":
+        return _socrata_preview(resource_id, limit, portal)
     capped = max(1, min(limit, 100))
     result = _get(portal, "datastore_search", {"resource_id": resource_id, "limit": capped})
     fields = [f for f in result.get("fields", []) if f.get("id") != "_id"]

@@ -172,6 +172,24 @@ def test_unknown_portal_rejected(client):
     assert client.get("/datasets?q=x&portal=zz").status_code == 400
 
 
+def test_socrata_portal_routes_to_socrata_adapter(monkeypatch):
+    calls = {}
+
+    def fake_socrata_search(query, limit, portal):
+        calls["portal"] = portal
+        return [catalogue.DatasetSummary(
+            name="abcd-1234", title="NYC dataset", organisation="City Government",
+            notes="", num_resources=1,
+            datastore_resources=[catalogue.ResourceRef(
+                id="abcd-1234", name="NYC dataset", format="Socrata", datastore_active=True)],
+        )]
+
+    monkeypatch.setattr(catalogue, "_socrata_search", fake_socrata_search)
+    out = catalogue.search_datasets("crime", 5, portal="nyc")
+    assert calls["portal"] == "nyc"  # CKAN path not taken for a Socrata portal
+    assert out[0].datastore_resources[0].id == "abcd-1234"
+
+
 def test_portal_threaded_to_catalogue(tmp_path, monkeypatch):
     seen = {}
 

@@ -114,6 +114,7 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Live-path tests (mocked CKAN) and a frozen, contract-tested API — **v1.0.0**
 - [x] NYC NYPD complaint data as a selectable source alongside SA Police (same model: borough→region, law category→division); agency-aware narratives and a borough map
 - [x] Real base map (Leaflet + OpenStreetMap): region comparison plotted on a map with click-to-drill; explorer datasets with lat/lon columns plotted as points
+- [x] NYC Open Data in the explorer via a Socrata adapter (alongside the CKAN portals) — browse, preview, generic-trend, geocode-map any NYC dataset
 
 ### Beyond 1.0.0
 
