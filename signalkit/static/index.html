@@ -206,7 +206,9 @@
         <thead><tr><th>Decision</th><th>When (UTC)</th><th>Model</th><th>Input</th><th>Human review</th></tr></thead>
         <tbody id="audit-body"><tr><td colspan="5" class="hint">No decisions logged yet — ask something.</td></tr></tbody>
       </table>
-      <p class="hint" id="gov-summary"></p>
+      <div class="chips" id="gov-panel"></div>
+      <p class="hint"><a href="/decisions.csv" download>⤓ Download the full audit log (CSV)</a>
+        · <a href="/governance/summary">JSON summary</a></p>
     </div>
   </section>
 
@@ -406,10 +408,17 @@ async function refreshAudit() {
   }
   const s = await (await fetch("/governance/summary")).json();
   if (s.total_decisions) {
-    const risks = Object.entries(s.by_risk_category).map(([k, v]) => `${k} ${v}`).join(", ");
-    $("gov-summary").textContent =
-      `${s.total_decisions} decisions logged · ` +
-      `${Math.round((s.human_review_rate ?? 0) * 100)}% required human review · risk tiers: ${risks}`;
+    const risks = Object.entries(s.by_risk_category || {}).map(([k, v]) => `${k} ${v}`).join(", ");
+    const models = Object.entries(s.by_model || {})
+      .map(([k, v]) => `${k.split(" ")[0]} ${v}`).join(", ");
+    $("gov-panel").innerHTML =
+      `<span class="chip">decisions <b>${s.total_decisions}</b></span>` +
+      `<span class="chip">review rate <b>${Math.round((s.human_review_rate ?? 0) * 100)}%</b></span>` +
+      `<span class="chip">reviews recorded <b>${s.reviews_recorded ?? 0}</b></span>` +
+      `<span class="chip ${s.outstanding_reviews ? "review-yes" : "review-no"}">` +
+        `outstanding <b>${s.outstanding_reviews ?? 0}</b></span>` +
+      `<span class="chip">risk: ${risks}</span>` +
+      `<span class="chip">models: ${models}</span>`;
   }
 }
 

@@ -27,6 +27,8 @@ part of the user-facing surface, not a hidden ops file.
 
 from __future__ import annotations
 
+import csv
+import io
 import os
 from pathlib import Path
 
@@ -166,6 +168,30 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
     @app.get("/governance/summary")
     def governance_summary() -> dict:
         return app.state.analyst.governance_summary().model_dump(mode="json")
+
+    @app.get("/decisions.csv")
+    def decisions_csv(limit: int = Query(default=1000, ge=1, le=10000)) -> Response:
+        cols = [
+            "decision_id", "timestamp", "model_name", "model_provider",
+            "decision_category", "decision_made", "input_summary",
+            "model_output_summary", "data_sources", "confidence_score",
+            "human_review_required", "human_reviewer", "override_applied",
+            "override_reason", "reviews_decision_id", "risk_category",
+            "legislative_basis", "tags",
+        ]
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=cols, extrasaction="ignore")
+        writer.writeheader()
+        for entry in app.state.analyst.recent_decisions(limit):
+            row = entry.model_dump(mode="json")
+            row["data_sources"] = "; ".join(row.get("data_sources") or [])
+            row["tags"] = "; ".join(row.get("tags") or [])
+            writer.writerow(row)
+        return Response(
+            content=buf.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=signal-decisions.csv"},
+        )
 
     # --- data.sa.gov.au catalogue explorer ---
 

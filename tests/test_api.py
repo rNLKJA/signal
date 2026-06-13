@@ -167,6 +167,17 @@ def test_ask_includes_offense_division_split(client):
     assert sum(stats["by_offense_division"].values()) == stats["total_offences"]
 
 
+def test_decisions_csv_export(client):
+    client.post("/ask", json={"offense": "theft"})
+    r = client.get("/decisions.csv")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/csv")
+    assert "attachment" in r.headers.get("content-disposition", "")
+    lines = r.text.strip().splitlines()
+    assert lines[0].startswith("decision_id,timestamp,model_name")
+    assert len(lines) >= 2  # header + at least one decision
+
+
 def test_dashboard_gzipped_when_accepted(client):
     response = client.get("/", headers={"Accept-Encoding": "gzip"})
     assert response.headers.get("content-encoding") == "gzip"
