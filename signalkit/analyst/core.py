@@ -34,6 +34,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
+from signalkit.data import catalogue
 from signalkit.data.sa_crime import MonthlyRecord, get_records
 from signalkit.governance.decision_log import (
     DecisionCategory,
@@ -542,3 +543,32 @@ class Analyst:
     def governance_summary(self) -> GovernanceSummary:
         """Aggregate the audit log: review rate, risk tiers, model breakdown."""
         return summarise(self._logger.read_all())
+
+    def preview_dataset(self, resource_id: str, dataset_title: str = "", limit: int = 20) -> dict:
+        """Preview a data.sa.gov.au datastore resource, logging the lookup.
+
+        Even an ad-hoc data preview is a data-provenance event, so it gets its
+        own audit entry (retrieval category) — the explorer is governed too.
+        """
+        preview = catalogue.preview_resource(resource_id, limit)
+        scope = f" — {dataset_title}" if dataset_title else ""
+        entry = DecisionEntry(
+            model_name="data.sa preview (no model)",
+            model_provider=None,
+            input_summary=f"Preview of data.sa resource {resource_id}{scope}",
+            model_output_summary=(
+                f"Returned {len(preview.records)} of {preview.total} rows, "
+                f"{len(preview.fields)} columns."
+            ),
+            data_sources=[f"data.sa.gov.au resource {resource_id}{scope}"],
+            decision_made="Returned a catalogue data preview via Signal API.",
+            decision_category=DecisionCategory.retrieval,
+            human_review_required=False,
+            legislative_basis="APS Mandatory AI Requirements (Jun 2026) — data provenance",
+            risk_category=RiskCategory.minimal,
+            tags=["data.sa", "catalogue-preview"],
+        )
+        self._logger.log(entry)
+        out = preview.model_dump()
+        out["decision_id"] = entry.decision_id
+        return out

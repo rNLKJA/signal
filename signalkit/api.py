@@ -13,6 +13,9 @@ Endpoints:
   GET  /decisions/{decision_id} — resolve one decision_id to its full audit entry
   POST /decisions/{decision_id}/review — record a human review/override of a decision
   GET  /governance/summary     — aggregate governance posture (review rate, risk tiers)
+  GET  /datasets               — search the data.sa.gov.au catalogue
+  GET  /datasets/{name}        — metadata for one data.sa dataset
+  GET  /resources/{id}/preview — preview a datastore resource (audit-logged)
 
 Run locally:
     uvicorn signalkit.api:app --reload
@@ -32,6 +35,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 
 import signalkit
+from signalkit.data import catalogue
 from signalkit.analyst.core import (
     Analyst,
     AnalystQuery,
@@ -162,6 +166,36 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
     @app.get("/governance/summary")
     def governance_summary() -> dict:
         return app.state.analyst.governance_summary().model_dump(mode="json")
+
+    # --- data.sa.gov.au catalogue explorer ---
+
+    @app.get("/datasets")
+    def datasets(q: str = Query(default=""), limit: int = Query(default=20, ge=1, le=50)) -> list[dict]:
+        try:
+            return [d.model_dump() for d in catalogue.search_datasets(q, limit)]
+        except Exception as e:  # the portal is a live external dependency
+            raise HTTPException(status_code=502, detail=f"data.sa catalogue unavailable: {e}") from e
+
+    @app.get("/datasets/{name}")
+    def dataset_detail(name: str) -> dict:
+        try:
+            info = catalogue.dataset_info(name)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"data.sa catalogue unavailable: {e}") from e
+        if info is None:
+            raise HTTPException(status_code=404, detail=f"No dataset '{name}' on data.sa.gov.au.")
+        return info.model_dump()
+
+    @app.get("/resources/{resource_id}/preview")
+    def resource_preview(
+        resource_id: str,
+        title: str = Query(default=""),
+        limit: int = Query(default=20, ge=1, le=100),
+    ) -> dict:
+        try:
+            return app.state.analyst.preview_dataset(resource_id, title, limit)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Preview unavailable: {e}") from e
 
     return app
 

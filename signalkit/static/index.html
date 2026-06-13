@@ -101,6 +101,11 @@
   .review-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .6rem; }
   .review-form input[type="text"], .review-form > input:not([type]) { min-width: 12rem; }
   .rv-chk { display: inline-flex; align-items: center; gap: .3rem; color: var(--muted); }
+  .ds-item { padding: .6rem 0; border-bottom: 1px solid var(--border); }
+  .ds-res { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+  .ds-table { overflow-x: auto; margin-top: .6rem; }
+  .ds-table table { font-size: .8rem; }
+  .ds-table th, .ds-table td { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -176,6 +181,22 @@
   </section>
 
   <section id="error" hidden><div class="panel"><p class="err" id="error-msg"></p><p class="hint" id="error-hint"></p></div></section>
+
+  <section id="explore">
+    <div class="panel">
+      <h2>Explore data.sa.gov.au</h2>
+      <p class="hint">The same portal behind the crime data publishes 1,900+ South Australian
+        datasets. Search the catalogue and preview any with a live table — every preview is audit-logged.</p>
+      <form id="ds-form">
+        <label>Search the catalogue
+          <input name="q" placeholder="e.g. air quality, hospital, road crash" autocomplete="off">
+        </label>
+        <button type="submit" id="ds-btn">Search</button>
+      </form>
+      <div id="ds-results"></div>
+      <div id="ds-preview"></div>
+    </div>
+  </section>
 
   <section>
     <div class="panel">
@@ -524,6 +545,63 @@ function autorunFromURL() {
   if (qp.get("months")) form.elements.months.value = qp.get("months");
   runAsk();
 }
+
+// data.sa.gov.au catalogue explorer
+function renderDatasetList(list) {
+  if (!list.length) { $("ds-results").innerHTML = '<p class="hint">No datasets found.</p>'; return; }
+  $("ds-results").innerHTML = list.map((d) => `
+    <div class="ds-item">
+      <div><b>${d.title}</b> <span class="hint">· ${d.organisation}</span></div>
+      <div class="hint">${d.notes || ""}</div>
+      <div class="ds-res">${
+        d.datastore_resources.map((r) =>
+          `<button type="button" class="hit" data-res="${r.id}" data-title="${d.title} — ${r.name}">
+             ${r.name} (${r.format})</button>`).join("")
+        || '<span class="hint">no previewable table</span>'
+      }</div>
+    </div>`).join("");
+}
+
+async function searchDatasets(q) {
+  $("ds-results").innerHTML = '<p class="hint">Searching…</p>';
+  $("ds-preview").innerHTML = "";
+  try {
+    const r = await fetch(`/datasets?q=${encodeURIComponent(q)}&limit=15`);
+    if (!r.ok) throw new Error(r.status);
+    renderDatasetList(await r.json());
+  } catch {
+    $("ds-results").innerHTML = '<p class="err">data.sa catalogue unavailable right now.</p>';
+  }
+}
+
+async function previewResource(resId, title) {
+  $("ds-preview").innerHTML = '<p class="hint">Loading preview…</p>';
+  try {
+    const r = await fetch(`/resources/${resId}/preview?title=${encodeURIComponent(title)}&limit=20`);
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    const cols = d.fields.map((f) => f.id);
+    const head = cols.map((c) => `<th>${c}</th>`).join("");
+    const rows = d.records.map((rec) =>
+      `<tr>${cols.map((c) => `<td>${rec[c] ?? ""}</td>`).join("")}</tr>`).join("");
+    $("ds-preview").innerHTML = `
+      <p class="hint">${d.total.toLocaleString()} rows total${d.truncated ? ` (showing ${d.records.length})` : ""}
+        · logged as <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a></p>
+      <div class="ds-table"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    await refreshAudit();
+  } catch {
+    $("ds-preview").innerHTML = '<p class="err">Preview unavailable.</p>';
+  }
+}
+
+$("ds-form").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  searchDatasets(new FormData($("ds-form")).get("q") || "");
+});
+$("ds-results").addEventListener("click", (e) => {
+  const el = e.target.closest("[data-res]");
+  if (el) previewResource(el.dataset.res, el.dataset.title);
+});
 
 loadVersion();
 refreshAudit();
