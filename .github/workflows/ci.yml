@@ -21,3 +21,32 @@ jobs:
         run: ruff check .
       - name: Test
         run: pytest -q
+
+  docker:
+    # Only build the image once the suite is green; a broken app should never
+    # produce a "verified" container.
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t signal-ci .
+      - name: Run container
+        # Offline mode serves from the bundled snapshot, so the smoke test
+        # needs no outbound network.
+        run: docker run -d --name signal-ci -p 8000:8000 -e SIGNAL_OFFLINE=1 signal-ci
+      - name: Smoke-test /health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then
+              echo "health OK after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "container failed to become healthy; logs:"
+          docker logs signal-ci
+          exit 1
+      - name: Tear down
+        if: always()
+        run: docker rm -f signal-ci

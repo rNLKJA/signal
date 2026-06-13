@@ -59,7 +59,7 @@ def limited_client(tmp_path):
 
 
 def test_ask_429_after_limit(limited_client):
-    payload = {"offense": "burglary"}
+    payload = {"offense": "theft"}
     assert limited_client.post("/ask", json=payload).status_code == 200
     assert limited_client.post("/ask", json=payload).status_code == 200
     blocked = limited_client.post("/ask", json=payload)
@@ -69,7 +69,7 @@ def test_ask_429_after_limit(limited_client):
 
 
 def test_only_ask_is_limited(limited_client):
-    payload = {"offense": "burglary"}
+    payload = {"offense": "theft"}
     limited_client.post("/ask", json=payload)
     limited_client.post("/ask", json=payload)
     assert limited_client.post("/ask", json=payload).status_code == 429

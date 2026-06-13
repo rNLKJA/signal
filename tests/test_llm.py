@@ -55,7 +55,7 @@ def analyst(tmp_path):
 
 def test_llm_narrative_recorded_in_audit(analyst, monkeypatch):
     fake = install_fake_llm(monkeypatch, fail=False)
-    answer = analyst.ask(AnalystQuery(question="trend?", offense="burglary"))
+    answer = analyst.ask(AnalystQuery(question="trend?", offense="theft"))
 
     assert answer.narrative == FAKE_NARRATIVE
     assert answer.model_used == LLM_MODEL
@@ -67,7 +67,7 @@ def test_llm_narrative_recorded_in_audit(analyst, monkeypatch):
 
 def test_llm_request_shape(analyst, monkeypatch):
     fake = install_fake_llm(monkeypatch, fail=False)
-    analyst.ask(AnalystQuery(offense="burglary"))
+    analyst.ask(AnalystQuery(offense="theft"))
 
     assert fake.last_url == "https://api.deepseek.com/chat/completions"
     assert fake.last_kwargs["headers"]["Authorization"] == "Bearer test-key"
@@ -76,30 +76,30 @@ def test_llm_request_shape(analyst, monkeypatch):
 def test_llm_base_url_configurable(analyst, monkeypatch):
     fake = install_fake_llm(monkeypatch, fail=False)
     monkeypatch.setenv("SIGNAL_LLM_BASE_URL", "https://example.com/v1/")
-    analyst.ask(AnalystQuery(offense="burglary"))
+    analyst.ask(AnalystQuery(offense="theft"))
 
     assert fake.last_url == "https://example.com/v1/chat/completions"
 
 
 def test_llm_prompt_contains_aggregates_only(analyst, monkeypatch):
     fake = install_fake_llm(monkeypatch, fail=False)
-    analyst.ask(AnalystQuery(offense="burglary", borough="brooklyn"))
+    analyst.ask(AnalystQuery(offense="theft", region="adelaide"))
 
     prompt = fake.last_kwargs["json"]["messages"][0]["content"]
-    assert "total_complaints" in prompt  # the computed stats are present
+    assert "total_offences" in prompt  # the computed stats are present
     assert "monthly_counts" in prompt
-    # Leak canary: the query is filtered to Brooklyn, so data from any other
-    # borough appearing in the prompt would mean raw records leaked through.
-    assert "STATEN ISLAND" not in prompt
-    assert "QUEENS" not in prompt
+    # Leak canary: the query is filtered to Adelaide, so a different region
+    # appearing in the prompt would mean raw records leaked through.
+    assert "ELIZABETH" not in prompt
+    assert "WHYALLA" not in prompt
 
 
 def test_llm_failure_falls_back_honestly(analyst, monkeypatch):
     install_fake_llm(monkeypatch, fail=True)
-    answer = analyst.ask(AnalystQuery(offense="burglary"))
+    answer = analyst.ask(AnalystQuery(offense="theft"))
 
     assert answer.model_used == DETERMINISTIC_MODEL
-    assert "NYPD recorded" in answer.narrative  # template narrative
+    assert "SA Police recorded" in answer.narrative  # template narrative
     logged = analyst.recent_decisions()[-1]
     assert logged.model_name == DETERMINISTIC_MODEL
     assert logged.model_provider is None
@@ -109,14 +109,14 @@ def test_empty_llm_content_falls_back(analyst, monkeypatch):
     """A reasoning model that burns its budget returns empty content —
     that must never reach a user as a blank narrative."""
     install_fake_llm(monkeypatch, fail=False, content="")
-    answer = analyst.ask(AnalystQuery(offense="burglary"))
+    answer = analyst.ask(AnalystQuery(offense="theft"))
 
     assert answer.model_used == DETERMINISTIC_MODEL
-    assert "NYPD recorded" in answer.narrative
+    assert "SA Police recorded" in answer.narrative
 
 
 def test_no_key_means_no_llm(analyst):
-    answer = analyst.ask(AnalystQuery(offense="burglary"))
+    answer = analyst.ask(AnalystQuery(offense="theft"))
     assert answer.model_used == DETERMINISTIC_MODEL
 
 
@@ -124,8 +124,8 @@ def test_identical_queries_hit_the_cache(analyst, monkeypatch):
     """Same aggregates → one upstream call, but both decisions audit-logged
     with the (honest) LLM attribution."""
     fake = install_fake_llm(monkeypatch, fail=False)
-    first = analyst.ask(AnalystQuery(offense="burglary"))
-    second = analyst.ask(AnalystQuery(offense="burglary"))
+    first = analyst.ask(AnalystQuery(offense="theft"))
+    second = analyst.ask(AnalystQuery(offense="theft"))
 
     assert fake.calls == 1  # second narrative came from the cache
     assert first.narrative == second.narrative
@@ -136,6 +136,6 @@ def test_identical_queries_hit_the_cache(analyst, monkeypatch):
 
 def test_different_queries_miss_the_cache(analyst, monkeypatch):
     fake = install_fake_llm(monkeypatch, fail=False)
-    analyst.ask(AnalystQuery(offense="burglary"))
+    analyst.ask(AnalystQuery(offense="theft"))
     analyst.ask(AnalystQuery(offense="robbery"))
     assert fake.calls == 2

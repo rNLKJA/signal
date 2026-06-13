@@ -8,7 +8,7 @@ Endpoints:
   GET  /api                    — service index (JSON)
   GET  /health                 — liveness + version
   POST /ask                    — ask the analyst; response carries the decision_id
-  POST /compare                — one offence scope across all five boroughs
+  POST /compare                — one offence scope across SA regions
   GET  /decisions              — read back the audit trail (the governance log, live)
   GET  /decisions/{decision_id} — resolve one decision_id to its full audit entry
   GET  /governance/summary     — aggregate governance posture (review rate, risk tiers)
@@ -32,7 +32,7 @@ from fastapi.responses import HTMLResponse
 
 import signalkit
 from signalkit.analyst.core import Analyst, AnalystQuery, CompareQuery, NoDataError
-from signalkit.data.nypd import DataUnavailable
+from signalkit.data.sa_crime import DataUnavailable
 from signalkit.ratelimit import RateLimiter
 
 DASHBOARD_PATH = Path(__file__).parent / "static" / "index.html"
@@ -52,9 +52,9 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         title="Signal",
         version=signalkit.__version__,
         description=(
-            "Interactive US public-safety data product with a governed analyst layer. "
-            "Every answer is logged to an APS / EU-AI-Act aligned decision log and "
-            "returns its decision_id."
+            "Interactive South Australian crime-data product with a governed analyst "
+            "layer. Every answer is logged to an APS / EU-AI-Act aligned decision log "
+            "and returns its decision_id."
         ),
     )
     app.state.analyst = analyst or Analyst()

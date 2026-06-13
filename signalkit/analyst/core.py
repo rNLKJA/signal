@@ -1,8 +1,8 @@
 """
 signalkit/analyst/core.py
 =========================
-The analyst layer: turns a filtered slice of the complaint data into trend
-statistics and a plain-language narrative, and writes a governance
+The analyst layer: turns a filtered slice of the recorded-offence data into
+trend statistics and a plain-language narrative, and writes a governance
 DecisionEntry for every answer it produces.
 
 Governance design points:
@@ -34,7 +34,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from signalkit.data.nypd import MonthlyRecord, get_records
+from signalkit.data.sa_crime import MonthlyRecord, get_records
 from signalkit.governance.decision_log import (
     DecisionCategory,
     DecisionEntry,
@@ -65,8 +65,8 @@ class AnalystQuery(BaseModel):
     """A question to the analyst. Filters are case-insensitive substrings."""
 
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
-    offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'burglary'")
-    borough: Optional[str] = Field(default=None, description="Borough filter, e.g. 'brooklyn'")
+    offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
+    region: Optional[str] = Field(default=None, description="SA region filter, e.g. 'adelaide'")
     months: int = Field(default=12, ge=2, le=24, description="Trailing window size in months")
 
 
@@ -75,7 +75,7 @@ class TrendStats(BaseModel):
 
     window_start: str
     window_end: str
-    total_complaints: int
+    total_offences: int
     monthly_counts: dict[str, int]
     mom_change_pct: Optional[float] = Field(
         default=None, description="Last month vs the month before, percent"
@@ -90,21 +90,22 @@ class TrendStats(BaseModel):
     top_offenses: list[dict] = Field(
         default_factory=list, description="Top 5 offence categories in scope, with counts"
     )
-    by_law_category: dict[str, int] = Field(
-        default_factory=dict, description="Complaint counts by FELONY / MISDEMEANOR / VIOLATION"
+    by_offense_division: dict[str, int] = Field(
+        default_factory=dict,
+        description="Counts by ANZSOC division (against the person / against property)",
     )
 
 
 class CompareQuery(BaseModel):
-    """Compare one offence scope across all boroughs."""
+    """Compare one offence scope across SA regions."""
 
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
-    offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'burglary'")
+    offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
     months: int = Field(default=12, ge=2, le=24)
 
 
-class BoroughSeries(BaseModel):
-    borough: str
+class RegionSeries(BaseModel):
+    region: str
     monthly_counts: dict[str, int]
     total: int
     yoy_change_pct: Optional[float] = None
@@ -116,7 +117,7 @@ class CompareResult(BaseModel):
     window_start: str
     window_end: str
     offense_filter: Optional[str]
-    series: list[BoroughSeries]
+    series: list[RegionSeries]
     narrative: str
     decision_id: str
     data_source: str
@@ -185,38 +186,40 @@ def compute_stats(records: list[MonthlyRecord], months: int) -> TrendStats:
             ]
 
     offense_totals: dict[str, int] = {}
-    law_totals: dict[str, int] = {}
+    division_totals: dict[str, int] = {}
     for rec in records:
         if rec.month in monthly:
             offense_totals[rec.offense] = offense_totals.get(rec.offense, 0) + rec.count
-            law_totals[rec.law_category] = law_totals.get(rec.law_category, 0) + rec.count
+            division_totals[rec.offense_division] = (
+                division_totals.get(rec.offense_division, 0) + rec.count
+            )
     top = sorted(offense_totals.items(), key=lambda kv: -kv[1])[:5]
 
     return TrendStats(
         window_start=window[0],
         window_end=window[-1],
-        total_complaints=sum(series),
+        total_offences=sum(series),
         monthly_counts=monthly,
         mom_change_pct=mom,
         yoy_change_pct=yoy,
         trend_direction=direction,
         anomalous_months=anomalies,
         top_offenses=[{"offense": o, "count": c} for o, c in top],
-        by_law_category=dict(sorted(law_totals.items(), key=lambda kv: -kv[1])),
+        by_offense_division=dict(sorted(division_totals.items(), key=lambda kv: -kv[1])),
     )
 
 
 def _template_narrative(stats: TrendStats, query: AnalystQuery) -> str:
     scope_bits = []
     if query.offense:
-        scope_bits.append(f"offence matching '{query.offense}'")
-    if query.borough:
-        scope_bits.append(f"in {query.borough.upper()}")
-    scope = " ".join(scope_bits) if scope_bits else "all complaints citywide"
+        scope_bits.append(f"offences matching '{query.offense}'")
+    if query.region:
+        scope_bits.append(f"in {query.region.upper()}")
+    scope = " ".join(scope_bits) if scope_bits else "all offences statewide"
 
     parts = [
-        f"Between {stats.window_start} and {stats.window_end}, NYPD recorded "
-        f"{stats.total_complaints:,} complaints for {scope}.",
+        f"Between {stats.window_start} and {stats.window_end}, SA Police recorded "
+        f"{stats.total_offences:,} offences for {scope}.",
         f"The trend over the window is {stats.trend_direction}.",
     ]
     if stats.mom_change_pct is not None:
@@ -303,16 +306,17 @@ def _generate_narrative(prompt: str, fallback: str) -> tuple[str, str, Optional[
 
 def _ask_prompt(stats: TrendStats, query: AnalystQuery) -> str:
     return (
-        "You are a careful crime-data analyst. Using ONLY the statistics below, "
-        "write a 3-4 sentence plain-English summary. Do not invent numbers.\n\n"
+        "You are a careful crime-data analyst for South Australia. Using ONLY the "
+        "statistics below, write a 3-4 sentence plain-English summary. Do not invent "
+        "numbers.\n\n"
         f"Question: {query.question or '(trend summary)'}\n"
-        f"Filters: offence={query.offense or 'all'}, borough={query.borough or 'all'}\n"
+        f"Filters: offence={query.offense or 'all'}, region={query.region or 'all'}\n"
         f"Statistics: {stats.model_dump_json()}"
     )
 
 
 class Analyst:
-    """Answers queries over the complaint data and audit-logs every answer."""
+    """Answers queries over the recorded-offence data and audit-logs every answer."""
 
     def __init__(self, log_path: str | None = None, offline: bool | None = None):
         self._logger = DecisionLogger(
@@ -327,13 +331,13 @@ class Analyst:
             r
             for r in records
             if (not query.offense or query.offense.lower() in r.offense.lower())
-            and (not query.borough or query.borough.lower() in r.borough.lower())
+            and (not query.region or query.region.lower() in r.region.lower())
         ]
         if not filtered:
             raise NoDataError(
                 "No records match those filters.",
                 suggestions={
-                    "boroughs": sorted({r.borough for r in records}),
+                    "regions": sorted({r.region for r in records}),
                     "offenses": sorted({r.offense for r in records})[:30],
                 },
             )
@@ -348,7 +352,7 @@ class Analyst:
             model_provider=provider,
             input_summary=(
                 f"question='{query.question}' offense='{query.offense}' "
-                f"borough='{query.borough}' months={query.months}"
+                f"region='{query.region}' months={query.months}"
             ),
             model_output_summary=narrative[:300],
             data_sources=[source_label],
@@ -360,7 +364,7 @@ class Analyst:
                 "APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency"
             ),
             risk_category=RiskCategory.limited,
-            tags=["nypd-complaints", "trend-analysis"],
+            tags=["sa-crime", "trend-analysis"],
         )
         self._logger.log(entry)
 
@@ -375,13 +379,16 @@ class Analyst:
         )
 
     def compare(self, query: CompareQuery) -> CompareResult:
-        """One offence scope, all boroughs, aligned monthly series — audit-logged."""
+        """One offence scope, all SA regions, aligned monthly series — audit-logged."""
         records, source_label = get_records(self._offline)
+        # The folded tail and withheld-suburb buckets are not single places, so
+        # they are excluded from a region-versus-region comparison.
+        excluded = {"OTHER SA AREAS", "NOT DISCLOSED"}
         filtered = [
             r
             for r in records
             if (not query.offense or query.offense.lower() in r.offense.lower())
-            and r.borough and not r.borough.startswith("(")
+            and r.region and r.region not in excluded
         ]
         if not filtered:
             raise NoDataError(
@@ -390,16 +397,16 @@ class Analyst:
             )
 
         # Canonical window: last N months across the whole filtered scope, so
-        # every borough's series is aligned (missing cells become 0).
+        # every region's series is aligned (missing cells become 0).
         window = sorted({r.month for r in filtered})[-query.months:]
-        series: list[BoroughSeries] = []
-        for borough in sorted({r.borough for r in filtered}):
-            subset = [r for r in filtered if r.borough == borough]
+        series: list[RegionSeries] = []
+        for region in sorted({r.region for r in filtered}):
+            subset = [r for r in filtered if r.region == region]
             stats = compute_stats(subset, query.months)
             counts = {m: stats.monthly_counts.get(m, 0) for m in window}
             series.append(
-                BoroughSeries(
-                    borough=borough,
+                RegionSeries(
+                    region=region,
                     monthly_counts=counts,
                     total=sum(counts.values()),
                     yoy_change_pct=stats.yoy_change_pct,
@@ -409,30 +416,31 @@ class Analyst:
             )
         series.sort(key=lambda s: -s.total)
 
-        scope = f"offence matching '{query.offense}'" if query.offense else "all complaints"
+        scope = f"offence matching '{query.offense}'" if query.offense else "all offences"
         compact = {
-            s.borough: {"total": s.total, "yoy_pct": s.yoy_change_pct, "trend": s.trend_direction}
+            s.region: {"total": s.total, "yoy_pct": s.yoy_change_pct, "trend": s.trend_direction}
             for s in series
         }
         fallback_parts = [
-            f"Between {window[0]} and {window[-1]}, comparing {scope} across boroughs: "
-            f"{series[0].borough} recorded the most complaints ({series[0].total:,}) and "
-            f"{series[-1].borough} the fewest ({series[-1].total:,})."
+            f"Between {window[0]} and {window[-1]}, comparing {scope} across SA regions: "
+            f"{series[0].region} recorded the most offences ({series[0].total:,}) and "
+            f"{series[-1].region} the fewest ({series[-1].total:,})."
         ]
         moves = [s for s in series if s.yoy_change_pct is not None]
         if moves:
             biggest = max(moves, key=lambda s: abs(s.yoy_change_pct))
             verb = "up" if biggest.yoy_change_pct >= 0 else "down"
             fallback_parts.append(
-                f"Largest year-on-year movement: {biggest.borough}, "
+                f"Largest year-on-year movement: {biggest.region}, "
                 f"{verb} {abs(biggest.yoy_change_pct)}%."
             )
         prompt = (
-            "You are a careful crime-data analyst. Using ONLY the per-borough statistics "
-            "below, write a 3-4 sentence plain-English comparison. Do not invent numbers.\n\n"
-            f"Question: {query.question or '(borough comparison)'}\n"
+            "You are a careful crime-data analyst for South Australia. Using ONLY the "
+            "per-region statistics below, write a 3-4 sentence plain-English comparison. "
+            "Do not invent numbers.\n\n"
+            f"Question: {query.question or '(region comparison)'}\n"
             f"Scope: {scope}, window {window[0]} to {window[-1]}\n"
-            f"Per-borough statistics: {compact}"
+            f"Per-region statistics: {compact}"
         )
         narrative, model_used, provider = _generate_narrative(prompt, " ".join(fallback_parts))
 
@@ -446,7 +454,7 @@ class Analyst:
             ),
             model_output_summary=narrative[:300],
             data_sources=[source_label],
-            decision_made="Returned borough comparison to caller via Signal API.",
+            decision_made="Returned region comparison to caller via Signal API.",
             decision_category=DecisionCategory.analytical,
             confidence_score=0.95 if model_used == DETERMINISTIC_MODEL else 0.8,
             human_review_required=human_review,
@@ -454,7 +462,7 @@ class Analyst:
                 "APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency"
             ),
             risk_category=RiskCategory.limited,
-            tags=["nypd-complaints", "borough-comparison"],
+            tags=["sa-crime", "region-comparison"],
         )
         self._logger.log(entry)
 

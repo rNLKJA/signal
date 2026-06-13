@@ -34,11 +34,11 @@ def test_health(client):
 
 
 def test_ask_returns_decision_id(client):
-    response = client.post("/ask", json={"offense": "burglary", "borough": "brooklyn"})
+    response = client.post("/ask", json={"offense": "theft", "region": "adelaide"})
     assert response.status_code == 200
     body = response.json()
     assert body["decision_id"].startswith("d-")
-    assert body["stats"]["total_complaints"] > 0
+    assert body["stats"]["total_offences"] > 0
     assert body["narrative"]
 
 
@@ -51,7 +51,7 @@ def test_ask_traceable_in_decisions(client):
 def test_ask_bad_filter_404_with_suggestions(client):
     response = client.post("/ask", json={"offense": "space piracy"})
     assert response.status_code == 404
-    assert "boroughs" in response.json()["detail"]["valid_values"]
+    assert "regions" in response.json()["detail"]["valid_values"]
 
 
 def test_ask_validates_months(client):
@@ -64,7 +64,7 @@ def test_decisions_limit_validated(client):
 
 
 def test_decision_resolves_by_id(client):
-    decision_id = client.post("/ask", json={"offense": "burglary"}).json()["decision_id"]
+    decision_id = client.post("/ask", json={"offense": "theft"}).json()["decision_id"]
     entry = client.get(f"/decisions/{decision_id}").json()
     assert entry["decision_id"] == decision_id
     assert entry["model_name"]
@@ -78,7 +78,7 @@ def test_unknown_decision_id_404(client):
 
 
 def test_governance_summary(client):
-    client.post("/ask", json={"offense": "burglary"})
+    client.post("/ask", json={"offense": "theft"})
     client.post("/ask", json={"offense": "robbery"})
     summary = client.get("/governance/summary").json()
     assert summary["total_decisions"] == 2
@@ -87,12 +87,15 @@ def test_governance_summary(client):
     assert summary["first_decision_at"] <= summary["last_decision_at"]
 
 
-def test_compare_five_boroughs(client):
-    body = client.post("/compare", json={"offense": "burglary", "months": 12}).json()
-    boroughs = [s["borough"] for s in body["series"]]
-    assert len(boroughs) == 5
-    assert "BROOKLYN" in boroughs and "STATEN ISLAND" in boroughs
-    # series aligned: every borough covers the same window
+def test_compare_across_regions(client):
+    body = client.post("/compare", json={"offense": "theft", "months": 12}).json()
+    regions = [s["region"] for s in body["series"]]
+    assert "ADELAIDE" in regions
+    # the folded tail and withheld-suburb buckets are not comparable places
+    assert "OTHER SA AREAS" not in regions
+    assert "NOT DISCLOSED" not in regions
+    assert len(regions) >= 10
+    # series aligned: every region covers the same window
     windows = {tuple(s["monthly_counts"].keys()) for s in body["series"]}
     assert len(windows) == 1
     assert len(next(iter(windows))) == 12
@@ -103,7 +106,7 @@ def test_compare_five_boroughs(client):
 def test_compare_is_audit_logged(client):
     decision_id = client.post("/compare", json={"offense": "robbery"}).json()["decision_id"]
     entry = client.get(f"/decisions/{decision_id}").json()
-    assert "borough-comparison" in entry["tags"]
+    assert "region-comparison" in entry["tags"]
 
 
 def test_compare_bad_offense_404(client):
@@ -112,10 +115,10 @@ def test_compare_bad_offense_404(client):
     assert "offenses" in response.json()["detail"]["valid_values"]
 
 
-def test_ask_includes_law_category_split(client):
-    stats = client.post("/ask", json={"offense": "burglary"}).json()["stats"]
-    assert stats["by_law_category"]
-    assert sum(stats["by_law_category"].values()) == stats["total_complaints"]
+def test_ask_includes_offense_division_split(client):
+    stats = client.post("/ask", json={"offense": "theft"}).json()["stats"]
+    assert stats["by_offense_division"]
+    assert sum(stats["by_offense_division"].values()) == stats["total_offences"]
 
 
 def test_dashboard_gzipped_when_accepted(client):

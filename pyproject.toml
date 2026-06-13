@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "signalkit"
-version = "0.7.0"
-description = "Signal: interactive US public-data product with an LLM analyst layer and an APS/EU-AI-Act aligned governance log"
+version = "0.8.0"
+description = "Signal: interactive South Australian crime-data product with an LLM analyst layer and an APS/EU-AI-Act aligned governance log"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Sunchuangyu Huang (Rin)" }]
@@ -18,7 +18,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.4"]
+# httpx2 is the test client's preferred transport: Starlette's TestClient
+# deprecates legacy httpx in favour of httpx2, so installing it keeps the
+# suite warning-clean. Runtime code still uses httpx (see dependencies).
+dev = ["pytest>=8", "ruff>=0.4", "httpx2>=2.4"]
 
 [project.urls]
 Repository = "https://github.com/rNLKJA/signal"

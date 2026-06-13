@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Signal — governed analyst over NYC public-safety data</title>
+<title>Signal — governed analyst over South Australian crime data</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -85,25 +85,26 @@
 <body>
 <main>
   <h1>Signal <span class="v" id="version"></span></h1>
-  <p class="tagline">A governed analyst over NYC public-safety data. Every answer is audit-logged
+  <p class="tagline">A governed analyst over South Australian crime data. Every answer is audit-logged
     before it is returned — the trail is below, live. <a href="/docs">API docs</a> ·
     <a href="https://github.com/rNLKJA/signal">source</a></p>
 
   <form id="ask-form">
     <label>Offence (substring, blank = all)
-      <input name="offense" list="offense-options" placeholder="burglary" autocomplete="off">
+      <input name="offense" list="offense-options" placeholder="theft" autocomplete="off">
       <datalist id="offense-options">
-        <option>PETIT LARCENY</option><option>GRAND LARCENY</option><option>BURGLARY</option>
-        <option>ROBBERY</option><option>FELONY ASSAULT</option><option>ASSAULT 3</option>
-        <option>HARRASSMENT 2</option><option>CRIMINAL MISCHIEF</option><option>DANGEROUS DRUGS</option>
-        <option>VEHICLE AND TRAFFIC LAWS</option>
+        <option>Theft</option><option>Assault and injury</option><option>Serious criminal trespass</option>
+        <option>Property damage</option><option>Fraud and deception</option><option>Robbery and extortion</option>
+        <option>Sexual offences</option><option>Homicide and related</option><option>Other against property</option>
+        <option>Other against the person</option>
       </datalist>
     </label>
-    <label>Borough
-      <select name="borough">
-        <option value="">All boroughs</option>
-        <option>Manhattan</option><option>Brooklyn</option><option>Queens</option>
-        <option>Bronx</option><option>Staten Island</option>
+    <label>Region
+      <select name="region">
+        <option value="">All SA regions</option>
+        <option>Adelaide</option><option>Salisbury</option><option>Elizabeth</option>
+        <option>Port Augusta</option><option>Mount Gambier</option><option>Whyalla</option>
+        <option>Murray Bridge</option><option>Morphett Vale</option><option>Modbury</option><option>Prospect</option>
       </select>
     </label>
     <label>Months
@@ -111,7 +112,7 @@
     </label>
     <button type="submit" id="ask-btn">Ask</button>
     <button type="button" id="cmp-btn" class="secondary"
-      title="Same offence and window, all five boroughs side by side">Compare boroughs</button>
+      title="Same offence and window, SA regions side by side">Compare regions</button>
   </form>
 
   <section id="answer" hidden>
@@ -125,7 +126,7 @@
       <div id="chart-holder"></div>
       <div class="viz-row">
         <div><h2>Top offences in scope</h2><div id="top-holder"></div></div>
-        <div><h2>Law category split</h2><div id="law-holder"></div></div>
+        <div><h2>Offence division split</h2><div id="law-holder"></div></div>
       </div>
       <p class="gov" id="gov"></p>
     </div>
@@ -133,7 +134,7 @@
 
   <section id="cmp" hidden>
     <div class="panel">
-      <h2>Borough comparison</h2>
+      <h2>Region comparison</h2>
       <p id="cmp-narrative"></p>
       <div id="cmp-holder"></div>
       <div class="legend" id="cmp-legend"></div>
@@ -156,9 +157,9 @@
   </section>
 
   <footer>
-    Data: NYC Open Data, NYPD complaint datasets (server-side aggregates only — no raw incident
-    rows or PII enter the system). Governance: APS Mandatory AI Requirements (Jun 2026),
-    EU AI Act Art. 50, Privacy Act 1988 (Cth). MIT licence.
+    Data: SA Police Crime statistics via data.gov.au (already de-identified suburb counts; Signal
+    aggregates further to month × region × offence — no PII enters the system). Governance: APS
+    Mandatory AI Requirements (Jun 2026), EU AI Act Art. 50, Privacy Act 1988 (Cth). MIT licence.
   </footer>
 </main>
 
@@ -192,7 +193,7 @@ function trendSVG(monthly, anomalies, type) {
       const anomalous = anomalies.includes(month);
       return `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${anomalous ? 5 : 3}"
         fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}">
-        <title>${month}: ${v.toLocaleString()} complaints${anomalous ? " (anomaly)" : ""}</title></circle>`;
+        <title>${month}: ${v.toLocaleString()} offences${anomalous ? " (anomaly)" : ""}</title></circle>`;
     }).join("");
     marks = `<polyline points="${pts}" fill="none" stroke="var(--bar)" stroke-width="2"/>` + dots;
   } else {
@@ -201,10 +202,10 @@ function trendSVG(monthly, anomalies, type) {
       return `<rect x="${(PAD + i * bw).toFixed(1)}" y="${y(v).toFixed(1)}"
         width="${(bw * 0.78).toFixed(1)}" height="${(baseline - y(v)).toFixed(1)}" rx="2"
         fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}">
-        <title>${month}: ${v.toLocaleString()} complaints${anomalous ? " (anomaly)" : ""}</title></rect>`;
+        <title>${month}: ${v.toLocaleString()} offences${anomalous ? " (anomaly)" : ""}</title></rect>`;
     }).join("");
   }
-  const desc = `Monthly complaint counts from ${entries[0][0]} to ${entries.at(-1)[0]}, peak ${max.toLocaleString()}.`;
+  const desc = `Monthly offence counts from ${entries[0][0]} to ${entries.at(-1)[0]}, peak ${max.toLocaleString()}.`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${desc}">
     <line x1="${PAD}" y1="${baseline}" x2="${W}" y2="${baseline}" stroke="var(--border)"/>
     <text x="${PAD}" y="14" font-size="10" fill="var(--muted)">peak ${max.toLocaleString()}/month</text>
@@ -257,13 +258,13 @@ function compareSVG(series) {
     const pts = months.map((m, i) => `${x(i).toFixed(1)},${y(s.monthly_counts[m]).toFixed(1)}`).join(" ");
     const dots = months.map((m, i) =>
       `<circle cx="${x(i).toFixed(1)}" cy="${y(s.monthly_counts[m]).toFixed(1)}" r="2.5" fill="${SERIES_COLORS[si % 5]}">
-         <title>${s.borough} ${m}: ${s.monthly_counts[m].toLocaleString()}</title></circle>`).join("");
+         <title>${s.region} ${m}: ${s.monthly_counts[m].toLocaleString()}</title></circle>`).join("");
     return `<polyline points="${pts}" fill="none" stroke="${SERIES_COLORS[si % 5]}" stroke-width="2"/>` + dots;
   }).join("");
   const labels = months.map((m, i) =>
     `<text x="${x(i).toFixed(1)}" y="${baseline + 14}" text-anchor="middle" font-size="9"
        fill="var(--muted)">${i % 2 ? "" : m.slice(2)}</text>`).join("");
-  const desc = `Monthly complaints by borough, ${months[0]} to ${months.at(-1)}.`;
+  const desc = `Monthly offences by region, ${months[0]} to ${months.at(-1)}.`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${desc}">
     <line x1="${PAD}" y1="${baseline}" x2="${W - PAD}" y2="${baseline}" stroke="var(--border)"/>
     <text x="${PAD}" y="14" font-size="10" fill="var(--muted)">peak ${max.toLocaleString()}/month</text>
@@ -289,7 +290,7 @@ function renderAnswer(d) {
   $("narrative").textContent = d.narrative;
   const s = d.stats;
   $("chips").innerHTML =
-    `<span class="chip">total <b>${s.total_complaints.toLocaleString()}</b></span>` +
+    `<span class="chip">total <b>${s.total_offences.toLocaleString()}</b></span>` +
     `<span class="chip">trend <b>${s.trend_direction}</b></span>` +
     pct(s.mom_change_pct, "MoM") + pct(s.yoy_change_pct, "YoY") +
     `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">
@@ -297,7 +298,7 @@ function renderAnswer(d) {
   renderTrendChart();
   $("top-holder").innerHTML = hbarSVG(
     s.top_offenses.map((t) => ({ label: t.offense, count: t.count })), () => "var(--bar)");
-  $("law-holder").innerHTML = stackedSVG(s.by_law_category);
+  $("law-holder").innerHTML = stackedSVG(s.by_offense_division);
   $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · model <code>${d.model_used}</code> · source: ${d.data_source}`;
 }
@@ -311,7 +312,7 @@ function renderCompare(d) {
     const yoy = s.yoy_change_pct === null ? "" :
       ` ${s.yoy_change_pct >= 0 ? "▲" : "▼"}${Math.abs(s.yoy_change_pct)}% YoY`;
     return `<span><span class="sw" style="background:${SERIES_COLORS[i % 5]}"></span>
-      ${s.borough} ${s.total.toLocaleString()}${yoy}</span>`;
+      ${s.region} ${s.total.toLocaleString()}${yoy}</span>`;
   }).join("");
   $("cmp-gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · model <code>${d.model_used}</code>`;
@@ -324,8 +325,8 @@ function renderError(status, body) {
   if (status === 404 && body.detail?.valid_values) {
     $("error-msg").textContent = body.detail.message;
     const vv = body.detail.valid_values;
-    $("error-hint").textContent = vv.boroughs
-      ? "Try a borough like " + vv.boroughs.join(", ") + "."
+    $("error-hint").textContent = vv.regions
+      ? "Try a region like " + vv.regions.slice(0, 8).join(", ") + "."
       : "Try an offence like " + (vv.offenses || []).slice(0, 8).join(", ") + ".";
   } else {
     $("error-msg").textContent = `Request failed (${status}).`;
@@ -365,7 +366,7 @@ function formPayload() {
   const f = new FormData($("ask-form"));
   return {
     offense: f.get("offense") || null,
-    borough: f.get("borough") || null,
+    region: f.get("region") || null,
     months: Number(f.get("months")),
   };
 }
@@ -375,7 +376,7 @@ $("ask-form").addEventListener("submit", async (ev) => {
   $("ask-btn").disabled = true;
   try {
     const p = formPayload();
-    const r = await post("/ask", { question: "dashboard query", offense: p.offense, borough: p.borough, months: p.months });
+    const r = await post("/ask", { question: "dashboard query", offense: p.offense, region: p.region, months: p.months });
     r.ok ? renderAnswer(r.body) : renderError(r.status, r.body);
     await refreshAudit();
   } catch {
@@ -408,16 +409,16 @@ for (const [btn, type] of [["t-bar", "bar"], ["t-line", "line"]]) {
   });
 }
 
-// Shareable query links: /?offense=burglary&borough=brooklyn&months=12
+// Shareable query links: /?offense=theft&region=adelaide&months=12
 // auto-fills the form and asks on load.
 function autorunFromURL() {
   const qp = new URLSearchParams(location.search);
-  if (!qp.has("offense") && !qp.has("borough")) return;
+  if (!qp.has("offense") && !qp.has("region")) return;
   const form = $("ask-form");
   form.elements.offense.value = qp.get("offense") || "";
-  const wanted = (qp.get("borough") || "").toLowerCase();
-  for (const opt of form.elements.borough.options) {
-    if (opt.value.toLowerCase() === wanted) form.elements.borough.value = opt.value;
+  const wanted = (qp.get("region") || "").toLowerCase();
+  for (const opt of form.elements.region.options) {
+    if (opt.value.toLowerCase() === wanted) form.elements.region.value = opt.value;
   }
   if (qp.get("months")) form.elements.months.value = qp.get("months");
   form.dispatchEvent(new Event("submit", { cancelable: true }));

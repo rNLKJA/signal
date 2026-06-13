@@ -6,8 +6,8 @@ Deploy (requires a Modal account and `pip install modal && modal setup`):
     modal deploy modal_app.py
 
 The image bundles the whole signalkit package including the offline data
-snapshot, so the API serves even if the live NYC Open Data endpoint is slow
-or unreachable from the container.
+snapshot, so the API serves even if the live SA Police data.gov.au endpoint
+is slow or unreachable from the container.
 """
 
 import modal
