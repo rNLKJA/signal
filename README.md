@@ -85,6 +85,10 @@ Cold pulls still take long enough that they must never block a request, so the d
 
 ## Status and roadmap
 
+![Roadmap to v1.0.0: interactive charts done; review workflow, audit export, test and freeze API, national data, scheduled refresh, and map view planned](.github/roadmap.svg)
+
+### Shipped
+
 - [x] Governance decision log (APS / EU AI Act / Privacy Act aligned)
 - [x] Data layer over SA Police open data with offline snapshot and stale-while-revalidate
 - [x] Offence-taxonomy harmonisation across the SA Police 2025-26 revision
@@ -99,7 +103,16 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] LLM narrative live in deployment — DeepSeek via the provider-agnostic layer, attributed per-decision in the audit log
 - [x] Visual suite: bar/line toggle, region comparison (multi-series), top offences, offence-division split — all hand-rolled SVG
 - [x] Perf: LLM narrative cache (identical queries never re-spend tokens), gzip, dashboard cache headers
-- [ ] Multi-jurisdiction: ingest NSW / VIC recorded-crime tables (published as spreadsheets, not queryable APIs) into the snapshot for a national, cross-state view
+- [x] Interactive charts: custom hover tooltips, click a top offence or region to drill in, keyboard accessible
+
+### Planned for v1.0.0
+
+- [ ] Human-review workflow: record a reviewer and override reason against a decision
+- [ ] Audit export (`/decisions.csv`) and a governance-summary panel in the dashboard
+- [ ] Live-path tests and a frozen, documented API contract
+- [ ] National data: ingest NSW / VIC recorded-crime tables (published as spreadsheets, not queryable APIs) for a cross-state view
+- [ ] Scheduled monthly snapshot refresh in CI
+- [ ] Map view of SA regions
 
 ## Reproduce
 
