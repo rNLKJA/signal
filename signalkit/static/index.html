@@ -147,17 +147,18 @@
     <div class="panel">
       <p id="narrative"></p>
       <div class="chips" id="chips"></div>
-      <div class="toggle" role="group" aria-label="Chart type">
+      <div class="toggle" role="group" aria-label="Chart type" id="chart-toggle">
         <button type="button" id="t-bar" aria-pressed="true">Bars</button>
         <button type="button" id="t-line" aria-pressed="false">Line</button>
       </div>
       <div id="chart-holder"></div>
-      <div class="viz-row">
+      <div class="viz-row" id="crime-viz">
         <div><h2>Top offences in scope</h2><div id="top-holder"></div></div>
         <div><h2>Offence division split</h2><div id="law-holder"></div></div>
       </div>
+      <div id="extra-holder"></div>
       <p class="gov" id="gov"></p>
-      <details class="review">
+      <details class="review" id="review-box">
         <summary>Record human review</summary>
         <div class="review-form">
           <input id="rv-reviewer" placeholder="reviewer — email or role" autocomplete="off">
@@ -204,7 +205,7 @@
         <button type="submit" id="ds-btn">Search</button>
       </form>
       <div id="ds-results"></div>
-      <div id="ds-preview"></div>
+      <p class="hint" id="ds-status"></p>
     </div>
   </section>
 
@@ -397,15 +398,27 @@ function pct(v, suffix) {
 }
 
 function renderTrendChart() {
-  if (!lastAnswer) return;
+  if (!lastAnswer || !lastAnswer.stats) return;
   const s = lastAnswer.stats;
   $("chart-holder").innerHTML = trendSVG(s.monthly_counts, s.anomalous_months, chartType);
+}
+
+// The one answer panel serves three result kinds. setPanelMode shows only the
+// pieces that apply: crime answers get the offence/division breakdowns; data.sa
+// previews get a table; data.sa analyses get the trend chart.
+function setPanelMode(mode) {
+  $("crime-viz").style.display = mode === "crime" ? "" : "none";
+  $("chart-toggle").style.display = mode === "preview" ? "none" : "";
+  $("review-box").style.display = mode === "preview" ? "none" : "";
+  if (mode !== "preview") $("extra-holder").innerHTML = "";
+  if (mode !== "crime") $("chart-holder").innerHTML = "";
 }
 
 function renderAnswer(d) {
   lastAnswer = d;
   $("error").hidden = true;
   $("answer").hidden = false;
+  setPanelMode("crime");
   $("narrative").textContent = d.narrative;
   const s = d.stats;
   $("chips").innerHTML =
@@ -420,6 +433,61 @@ function renderAnswer(d) {
   $("law-holder").innerHTML = stackedSVG(s.by_offense_division);
   $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · model <code>${d.model_used}</code> · source: ${d.data_source}`;
+}
+
+// A data.sa preview, rendered in the same panel as a crime answer.
+function renderPreview(d, resId, title) {
+  lastAnswer = { stats: null, decision_id: d.decision_id };
+  $("error").hidden = true;
+  $("answer").hidden = false;
+  setPanelMode("preview");
+  $("narrative").textContent =
+    `Preview of ${title} — ${d.total.toLocaleString()} rows, ${d.fields.length} columns.`;
+  $("chips").innerHTML =
+    `<span class="chip">rows <b>${d.total.toLocaleString()}</b></span>` +
+    `<span class="chip">columns <b>${d.fields.length}</b></span>` +
+    `<span class="chip">${currentPortal.toUpperCase()} preview</span>`;
+  const cols = d.fields.map((f) => f.id);
+  const head = cols.map((c) => `<th>${c}</th>`).join("");
+  const rows = d.records.map((rec) =>
+    `<tr>${cols.map((c) => `<td>${rec[c] ?? ""}</td>`).join("")}</tr>`).join("");
+  $("extra-holder").innerHTML =
+    `<div class="ds-table"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+     <button type="button" id="ds-analyse" data-res="${resId}" data-title="${title}">Analyse trend</button>`;
+  $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
+    · catalogue preview · source: ${currentPortal}`;
+  $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// A data.sa generic analysis, rendered in the same panel as a crime answer.
+function renderGenericAnalysis(d) {
+  $("error").hidden = true;
+  $("answer").hidden = false;
+  setPanelMode("analysis");
+  if (!d.analysable) {
+    lastAnswer = { stats: null };
+    $("narrative").textContent = `Can't trend this table: ${d.reason}`;
+    $("chips").innerHTML = "";
+    $("gov").innerHTML = "";
+    $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const s = d.stats;
+  lastAnswer = {
+    stats: { monthly_counts: s.monthly_counts, anomalous_months: s.anomalous_months },
+    decision_id: d.decision_id,
+  };
+  $("narrative").textContent = d.narrative;
+  $("chips").innerHTML =
+    `<span class="chip">metric <b>${s.value_field}</b></span>` +
+    `<span class="chip">trend <b>${s.trend_direction}</b></span>` +
+    pct(s.mom_change_pct, "MoM") + pct(s.yoy_change_pct, "YoY") +
+    `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">
+       human review ${d.human_review_required ? "required" : "not required"}</span>`;
+  renderTrendChart();
+  $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
+    · model <code>${d.model_used}</code> · generic trend (${currentPortal})`;
+  $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderCompare(d) {
@@ -634,7 +702,7 @@ function renderDatasetList(list) {
 async function searchDatasets(q, portal) {
   currentPortal = portal || "sa";
   $("ds-results").innerHTML = '<p class="hint">Searching…</p>';
-  $("ds-preview").innerHTML = "";
+  $("ds-status").textContent = "";
   try {
     const r = await fetch(`/datasets?q=${encodeURIComponent(q)}&limit=15&portal=${currentPortal}`);
     if (!r.ok) throw new Error(r.status);
@@ -644,51 +712,29 @@ async function searchDatasets(q, portal) {
   }
 }
 
+// Preview and analysis both render into the main answer panel above.
 async function previewResource(resId, title) {
-  $("ds-preview").innerHTML = '<p class="hint">Loading preview…</p>';
+  $("ds-status").textContent = "Loading preview in the panel above…";
   try {
     const r = await fetch(`/resources/${resId}/preview?title=${encodeURIComponent(title)}&limit=20&portal=${currentPortal}`);
     if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    const cols = d.fields.map((f) => f.id);
-    const head = cols.map((c) => `<th>${c}</th>`).join("");
-    const rows = d.records.map((rec) =>
-      `<tr>${cols.map((c) => `<td>${rec[c] ?? ""}</td>`).join("")}</tr>`).join("");
-    $("ds-preview").innerHTML = `
-      <p class="hint">${d.total.toLocaleString()} rows total${d.truncated ? ` (showing ${d.records.length})` : ""}
-        · logged as <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a></p>
-      <div class="ds-table"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-      <button type="button" id="ds-analyse" data-res="${resId}" data-title="${title}">Analyse trend</button>
-      <div id="ds-analysis"></div>`;
+    renderPreview(await r.json(), resId, title);
+    $("ds-status").textContent = "";
     await refreshAudit();
   } catch {
-    $("ds-preview").innerHTML = '<p class="err">Preview unavailable.</p>';
+    $("ds-status").innerHTML = '<span class="err">Preview unavailable.</span>';
   }
 }
 
 async function analyseResource(resId, title) {
-  $("ds-analysis").innerHTML = '<p class="hint">Analysing…</p>';
+  $("extra-holder").innerHTML = '<p class="hint">Analysing…</p>';
   try {
     const r = await fetch(`/resources/${resId}/analyse?title=${encodeURIComponent(title)}&portal=${currentPortal}`);
     if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    if (!d.analysable) {
-      $("ds-analysis").innerHTML = `<p class="hint">Can't trend this table: ${d.reason}</p>`;
-      return;
-    }
-    const s = d.stats;
-    $("ds-analysis").innerHTML =
-      `<p>${d.narrative}</p>
-       <div class="chips">
-         <span class="chip">metric <b>${s.value_field}</b></span>
-         <span class="chip">trend <b>${s.trend_direction}</b></span>
-         ${pct(s.mom_change_pct, "MoM")}${pct(s.yoy_change_pct, "YoY")}
-         <span class="chip">logged <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a></span>
-       </div>
-       ${trendSVG(s.monthly_counts, s.anomalous_months, "bar")}`;
+    renderGenericAnalysis(await r.json());
     await refreshAudit();
   } catch {
-    $("ds-analysis").innerHTML = '<p class="err">Analysis unavailable.</p>';
+    $("extra-holder").innerHTML = '<p class="err">Analysis unavailable.</p>';
   }
 }
 
@@ -701,11 +747,9 @@ $("ds-results").addEventListener("click", (e) => {
   const el = e.target.closest("[data-res]");
   if (el) previewResource(el.dataset.res, el.dataset.title);
 });
-$("ds-preview").addEventListener("click", (e) => {
-  if (e.target.closest("#ds-analyse")) {
-    const b = e.target.closest("#ds-analyse");
-    analyseResource(b.dataset.res, b.dataset.title);
-  }
+$("extra-holder").addEventListener("click", (e) => {
+  const b = e.target.closest("#ds-analyse");
+  if (b) analyseResource(b.dataset.res, b.dataset.title);
 });
 
 loadVersion();
