@@ -177,6 +177,14 @@ class ReviewRequest(BaseModel):
         return self
 
 
+class AnalyseRequest(BaseModel):
+    """Request to combine and trend one or more catalogue resources."""
+
+    resource_ids: list[str] = Field(min_length=1, description="data store resource ids to combine")
+    title: str = Field(default="", description="Label for the combined dataset")
+    portal: str = Field(default="sa", description="Portal key: sa | nsw | vic")
+
+
 class RegionSeries(BaseModel):
     region: str
     monthly_counts: dict[str, int]
@@ -650,6 +658,51 @@ class Analyst:
                 "analysable": False,
                 "reason": "This resource has no queryable data table to analyse.",
             }
+        src = f"{catalogue.PORTALS.get(portal, portal)} resource {resource_id}" + (
+            f" ({title})" if title else ""
+        )
+        return self._analyse_and_log(
+            fields, rows, title or f"resource {resource_id}", portal, [src],
+            date_field, value_field, source_count=1, truncated=len(rows) >= max_rows,
+        )
+
+    def analyse_resources(
+        self, resource_ids: list[str], title: str = "", portal: str = "sa", max_rows_each: int = 20000
+    ) -> dict:
+        """Combine several catalogue resources into one series and trend them.
+
+        Each resource is fetched (row-capped) and concatenated, then analysed as
+        one dataset — e.g. several financial-year files become one long trend.
+        Large datasets are sampled at the cap; the result flags that honestly."""
+        all_fields: list[dict] = []
+        all_rows: list[dict] = []
+        used: list[str] = []
+        truncated = False
+        for rid in (resource_ids or [])[:12]:
+            try:
+                fields, rows = catalogue.fetch_rows(rid, max_rows_each, portal)
+            except Exception:
+                continue
+            if not all_fields and fields:
+                all_fields = fields
+            all_rows.extend(rows)
+            used.append(rid)
+            if len(rows) >= max_rows_each:
+                truncated = True
+        if not all_rows:
+            return {"analysable": False, "reason": "None of the selected resources have a queryable table."}
+        base = catalogue.PORTALS.get(portal, portal)
+        sources = [f"{base} resource {r}" for r in used]
+        label = title or f"{len(used)} {portal.upper()} datasets"
+        return self._analyse_and_log(
+            all_fields, all_rows, label, portal, sources,
+            None, None, source_count=len(used), truncated=truncated,
+        )
+
+    def _analyse_and_log(
+        self, fields, rows, scope, portal, sources, date_field, value_field, source_count, truncated
+    ) -> dict:
+        """Shared core: infer columns, build a monthly series, trend it, log it."""
         inferred_d, inferred_v = _infer_columns(fields, rows)
         date_field = date_field or inferred_d
         value_field = value_field or inferred_v
@@ -707,36 +760,38 @@ class Analyst:
             yoy_change_pct=yoy,
             anomalous_months=anomalies,
         )
-        scope = title or f"resource {resource_id}"
+        across = f" across {source_count} datasets" if source_count > 1 else ""
+        sample_note = " (based on a capped sample of each dataset)" if truncated else ""
         template = (
             f"Between {months[0]} and {months[-1]}, the monthly total of "
-            f"'{value_field}' in {scope} is {direction}. The series spans {len(months)} months."
+            f"'{value_field}'{across} in {scope} is {direction}. The series spans {len(months)} "
+            f"months{sample_note}."
             + (f" Anomalous months flagged for review: {', '.join(anomalies)}." if anomalies else "")
         )
         prompt = (
             "You are a careful data analyst. Using ONLY these statistics, write a 2-3 sentence "
             "plain-English summary of the monthly trend. Do not invent numbers.\n\n"
-            f"Dataset: {scope}; metric: monthly total of '{value_field}'.\n"
+            f"Dataset: {scope} ({source_count} source(s)); metric: monthly total of '{value_field}'.\n"
             f"Statistics: {stats.model_dump_json()}"
         )
         narrative, model_used, provider = _generate_narrative(prompt, template)
         human_review = bool(anomalies)
+        tags = [portal, "generic-analysis"] + (["multi-dataset"] if source_count > 1 else [])
         entry = DecisionEntry(
             model_name=model_used,
             model_provider=provider,
-            input_summary=f"Generic trend of '{value_field}' by '{date_field}' in {scope}",
+            input_summary=(
+                f"Generic trend of '{value_field}' by '{date_field}'{across} in {scope}"
+            ),
             model_output_summary=narrative[:300],
-            data_sources=[
-                f"{catalogue.PORTALS.get(portal, portal)} resource {resource_id}"
-                + (f" ({title})" if title else "")
-            ],
+            data_sources=sources,
             decision_made="Returned a generic trend analysis via Signal API.",
             decision_category=DecisionCategory.analytical,
             confidence_score=0.95 if model_used == DETERMINISTIC_MODEL else 0.8,
             human_review_required=human_review,
             legislative_basis="APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency",
             risk_category=RiskCategory.limited,
-            tags=[portal, "generic-analysis"],
+            tags=tags,
         )
         self._logger.log(entry)
         return {
@@ -746,4 +801,7 @@ class Analyst:
             "model_used": model_used,
             "decision_id": entry.decision_id,
             "human_review_required": human_review,
+            "resource_count": source_count,
+            "rows_analysed": len(rows),
+            "truncated": truncated,
         }

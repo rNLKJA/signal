@@ -109,6 +109,44 @@ def test_generic_analysis_falls_back_when_too_short(tmp_path, monkeypatch):
     assert "month" in result["reason"].lower()
 
 
+def test_multi_resource_analysis_combines(tmp_path, monkeypatch):
+    per = {
+        "r1": _rows_over_months(["2025-01", "2025-02"]),
+        "r2": _rows_over_months(["2025-03", "2025-04"]),
+    }
+    monkeypatch.setattr(
+        catalogue, "fetch_rows",
+        lambda rid, max_rows_each=20000, portal="sa": per[rid],
+    )
+    analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
+    result = analyst.analyse_resources(["r1", "r2"], title="Combined crime FYs")
+    assert result["analysable"] is True
+    assert result["resource_count"] == 2
+    assert result["stats"]["window_start"] == "2025-01"
+    assert result["stats"]["window_end"] == "2025-04"
+    logged = analyst.recent_decisions()[-1]
+    assert "multi-dataset" in logged.tags
+    assert len(logged.data_sources) == 2
+
+
+def test_multi_resource_endpoint(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        catalogue, "fetch_rows",
+        lambda rid, max_rows_each=20000, portal="sa": _rows_over_months(["2025-01", "2025-02", "2025-03"]),
+    )
+    c = TestClient(create_app(Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)))
+    r = c.post("/resources/analyse", json={"resource_ids": ["r1", "r2"], "title": "Combined", "portal": "sa"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["analysable"] is True
+    assert body["resource_count"] == 2
+
+
+def test_multi_resource_empty_ids_422(tmp_path):
+    c = TestClient(create_app(Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)))
+    assert c.post("/resources/analyse", json={"resource_ids": []}).status_code == 422
+
+
 def test_generic_analysis_falls_back_when_no_numeric(tmp_path, monkeypatch):
     fields = [{"id": "Name", "type": "text"}, {"id": "Suburb", "type": "text"}]
     rows = [{"Name": "a", "Suburb": "ADELAIDE"}] * 10

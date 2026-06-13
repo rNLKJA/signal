@@ -109,6 +109,8 @@
   .toggle.modes { margin: 0 0 1rem; }
   .toggle.modes button { padding: .45rem 1.1rem; font-size: .9rem; }
   form[hidden] { display: none; }   /* the form{display:flex} rule overrides [hidden] otherwise */
+  .ds-res-row { display: inline-flex; align-items: center; gap: .3rem; margin: 0 .4rem .35rem 0; }
+  #ds-selbar { margin-bottom: .8rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -479,7 +481,9 @@ function renderGenericAnalysis(d) {
   $("chips").innerHTML =
     `<span class="chip">metric <b>${s.value_field}</b></span>` +
     `<span class="chip">trend <b>${s.trend_direction}</b></span>` +
+    (d.resource_count > 1 ? `<span class="chip">datasets <b>${d.resource_count}</b></span>` : "") +
     pct(s.mom_change_pct, "MoM") + pct(s.yoy_change_pct, "YoY") +
+    (d.truncated ? `<span class="chip" title="Large datasets are sampled at a row cap">sampled</span>` : "") +
     `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">
        human review ${d.human_review_required ? "required" : "not required"}</span>`;
   renderTrendChart();
@@ -684,17 +688,26 @@ function autorunFromURL() {
 // data.sa.gov.au catalogue explorer
 function renderDatasetList(list) {
   if (!list.length) { $("ds-results").innerHTML = '<p class="hint">No datasets found.</p>'; return; }
-  $("ds-results").innerHTML = list.map((d) => `
+  const items = list.map((d) => `
     <div class="ds-item">
       <div><b>${d.title}</b> <span class="hint">· ${d.organisation}</span></div>
       <div class="hint">${d.notes || ""}</div>
       <div class="ds-res">${
-        d.datastore_resources.map((r) =>
-          `<button type="button" class="hit" data-res="${r.id}" data-title="${d.title} — ${r.name}">
-             ${r.name} (${r.format})</button>`).join("")
+        d.datastore_resources.map((r) => {
+          const rt = `${d.title} — ${r.name}`;
+          return `<span class="ds-res-row">
+            <input type="checkbox" class="ds-sel" data-res="${r.id}" data-title="${rt}" aria-label="Select ${rt}">
+            <button type="button" class="hit" data-res="${r.id}" data-title="${rt}">${r.name} (${r.format})</button>
+          </span>`;
+        }).join("")
         || '<span class="hint">no previewable table</span>'
       }</div>
     </div>`).join("");
+  $("ds-results").innerHTML =
+    `<div id="ds-selbar">
+       <button type="button" id="ds-analyse-sel" disabled>Analyse selected (0)</button>
+       <span class="hint">tick two or more datasets to combine them into one trend; click a name to preview</span>
+     </div>` + items;
 }
 
 async function searchDatasets(q, portal) {
@@ -753,8 +766,42 @@ $("ds-form").addEventListener("submit", (ev) => {
   const f = new FormData($("ds-form"));
   searchDatasets(f.get("q") || "", f.get("portal") || "sa");
 });
+async function analyseSelected(ids, title) {
+  $("ds-status").textContent = "Analysing the selected datasets in the panel above…";
+  try {
+    const r = await fetch("/resources/analyse", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resource_ids: ids, title, portal: currentPortal }),
+    });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if (d.analysable) {
+      renderGenericAnalysis(d);
+      $("ds-status").textContent = "";
+    } else {
+      $("ds-status").innerHTML = `<span class="err">Can't trend the selection — ${d.reason}</span>`;
+    }
+    await refreshAudit();
+  } catch {
+    $("ds-status").innerHTML = '<span class="err">Analysis unavailable.</span>';
+  }
+}
+
+$("ds-results").addEventListener("change", (e) => {
+  if (!e.target.classList.contains("ds-sel")) return;
+  const n = document.querySelectorAll("#ds-results .ds-sel:checked").length;
+  const btn = $("ds-analyse-sel");
+  if (btn) { btn.textContent = `Analyse selected (${n})`; btn.disabled = n < 2; }
+});
 $("ds-results").addEventListener("click", (e) => {
-  const el = e.target.closest("[data-res]");
+  if (e.target.closest("#ds-analyse-sel")) {
+    const picks = [...document.querySelectorAll("#ds-results .ds-sel:checked")];
+    if (picks.length >= 2) {
+      analyseSelected(picks.map((c) => c.dataset.res), `${picks.length} datasets combined (${currentPortal.toUpperCase()})`);
+    }
+    return;
+  }
+  const el = e.target.closest("button[data-res]");
   if (el) previewResource(el.dataset.res, el.dataset.title);
 });
 $("extra-holder").addEventListener("click", (e) => {

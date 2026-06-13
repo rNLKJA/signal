@@ -39,6 +39,7 @@ from fastapi.responses import HTMLResponse
 import signalkit
 from signalkit.data import catalogue
 from signalkit.analyst.core import (
+    AnalyseRequest,
     Analyst,
     AnalystQuery,
     CompareQuery,
@@ -258,6 +259,14 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
             return app.state.analyst.analyse_resource(
                 resource_id, title, date_field or None, value_field or None, portal=portal
             )
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Analysis unavailable: {e}") from e
+
+    @app.post("/resources/analyse")
+    def resources_analyse(req: AnalyseRequest) -> dict:
+        _check_portal(req.portal)
+        try:
+            return app.state.analyst.analyse_resources(req.resource_ids, req.title, req.portal)
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"Analysis unavailable: {e}") from e
 

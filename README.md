@@ -106,7 +106,7 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Perf: LLM narrative cache (identical queries never re-spend tokens), gzip, dashboard cache headers
 - [x] Interactive charts: custom hover tooltips, click a top offence or region to drill in, keyboard accessible
 - [x] Human-review workflow: record a reviewer or override (with required reason) against a decision; tracked in the governance summary
-- [x] data.sa.gov.au explorer: search 1,900+ datasets, preview any datastore resource, and run a governed generic trend on date+numeric data
+- [x] data.sa.gov.au explorer: search 1,900+ datasets, preview any datastore resource, run a governed generic trend on date+numeric data, and combine several resources into one trend (large datasets are sampled at a row cap, flagged in the result)
 - [x] Audit export (`/decisions.csv`) and a governance-summary panel in the dashboard
 - [x] Map view: SA regions as an offline bubble map, sized by volume, click to drill in
 - [x] National reach: the explorer also searches data.nsw.gov.au and discover.data.vic.gov.au — preview and analyse NSW/VIC datasets, not just SA
