@@ -106,14 +106,22 @@
   .ds-table { overflow-x: auto; margin-top: .6rem; }
   .ds-table table { font-size: .8rem; }
   .ds-table th, .ds-table td { white-space: nowrap; }
+  .toggle.modes { margin: 0 0 1rem; }
+  .toggle.modes button { padding: .45rem 1.1rem; font-size: .9rem; }
+  form[hidden] { display: none; }   /* the form{display:flex} rule overrides [hidden] otherwise */
 </style>
 </head>
 <body>
 <main>
   <h1>Signal <span class="v" id="version"></span></h1>
-  <p class="tagline">A governed analyst over South Australian crime data. Every answer is audit-logged
-    before it is returned — the trail is below, live. <a href="/docs">API docs</a> ·
-    <a href="https://github.com/rNLKJA/signal">source</a></p>
+  <p class="tagline">A governed analyst over South Australian crime data, and a governed explorer over
+    the SA / NSW / VIC open-data portals. Every answer is audit-logged before it is returned — the
+    trail is below, live. <a href="/docs">API docs</a> · <a href="https://github.com/rNLKJA/signal">source</a></p>
+
+  <div class="toggle modes" role="group" aria-label="Mode">
+    <button type="button" id="mode-crime" aria-pressed="true">SA crime analyst</button>
+    <button type="button" id="mode-explore" aria-pressed="false">Explore data.sa / NSW / VIC</button>
+  </div>
 
   <form id="ask-form">
     <label>Offence (substring, blank = all)
@@ -142,6 +150,22 @@
     <button type="button" id="cmp-btn" class="secondary"
       title="Same offence and window, SA regions side by side">Compare regions</button>
   </form>
+
+  <form id="ds-form" hidden>
+    <label>Portal
+      <select name="portal">
+        <option value="sa">SA · data.sa.gov.au</option>
+        <option value="nsw">NSW · data.nsw.gov.au</option>
+        <option value="vic">VIC · discover.data.vic.gov.au</option>
+      </select>
+    </label>
+    <label>Search the catalogue (1,900+ datasets)
+      <input name="q" placeholder="e.g. air quality, hospital, crime" autocomplete="off">
+    </label>
+    <button type="submit" id="ds-btn">Search</button>
+  </form>
+  <div id="ds-results" hidden></div>
+  <p class="hint" id="ds-status" hidden></p>
 
   <section id="answer" hidden>
     <div class="panel">
@@ -186,28 +210,6 @@
 
   <section id="error" hidden><div class="panel"><p class="err" id="error-msg"></p><p class="hint" id="error-hint"></p></div></section>
 
-  <section id="explore">
-    <div class="panel">
-      <h2>Explore data.sa.gov.au</h2>
-      <p class="hint">The same portal behind the crime data publishes 1,900+ South Australian
-        datasets. Search the catalogue and preview any with a live table — every preview is audit-logged.</p>
-      <form id="ds-form">
-        <label>Portal
-          <select name="portal">
-            <option value="sa">SA · data.sa.gov.au</option>
-            <option value="nsw">NSW · data.nsw.gov.au</option>
-            <option value="vic">VIC · discover.data.vic.gov.au</option>
-          </select>
-        </label>
-        <label>Search the catalogue
-          <input name="q" placeholder="e.g. air quality, hospital, crime" autocomplete="off">
-        </label>
-        <button type="submit" id="ds-btn">Search</button>
-      </form>
-      <div id="ds-results"></div>
-      <p class="hint" id="ds-status"></p>
-    </div>
-  </section>
 
   <section>
     <div class="panel">
@@ -238,6 +240,7 @@ const SERIES_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(
 let lastAnswer = null;
 let chartType = "bar";
 let currentPortal = "sa";
+let currentMode = "crime";
 
 // Approximate [lon, lat] for the SA regions in the snapshot. Bundled so the
 // map works fully offline — no geocoding or map-tile service.
@@ -758,6 +761,25 @@ $("extra-holder").addEventListener("click", (e) => {
   const b = e.target.closest("#ds-analyse");
   if (b) analyseResource(b.dataset.res, b.dataset.title);
 });
+
+// Mode toggle: one top control switches between the crime analyst and the
+// catalogue explorer. Results for both render in the shared answer panel.
+function setMode(mode) {
+  currentMode = mode;
+  const crime = mode === "crime";
+  $("ask-form").hidden = !crime;
+  $("ds-form").hidden = crime;
+  $("ds-results").hidden = crime;
+  $("ds-status").hidden = crime;
+  $("mode-crime").setAttribute("aria-pressed", String(crime));
+  $("mode-explore").setAttribute("aria-pressed", String(!crime));
+  // clean slate when switching: hide any prior result
+  $("answer").hidden = true;
+  $("cmp").hidden = true;
+  $("error").hidden = true;
+}
+$("mode-crime").addEventListener("click", () => setMode("crime"));
+$("mode-explore").addEventListener("click", () => setMode("explore"));
 
 loadVersion();
 refreshAudit();
