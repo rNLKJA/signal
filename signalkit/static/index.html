@@ -176,6 +176,9 @@
       <p id="cmp-narrative"></p>
       <div id="cmp-holder"></div>
       <div class="legend" id="cmp-legend"></div>
+      <h2>Region map</h2>
+      <p class="hint">Bubble size is total offences in the window. Click a region to drill in.</p>
+      <div id="cmp-map"></div>
       <p class="gov" id="cmp-gov"></p>
     </div>
   </section>
@@ -225,6 +228,18 @@ const $ = (id) => document.getElementById(id);
 const SERIES_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)"];
 let lastAnswer = null;
 let chartType = "bar";
+
+// Approximate [lon, lat] for the SA regions in the snapshot. Bundled so the
+// map works fully offline — no geocoding or map-tile service.
+const REGION_COORDS = {
+  "ADELAIDE": [138.60, -34.93], "PROSPECT": [138.59, -34.88],
+  "MODBURY": [138.68, -34.83], "SALISBURY": [138.64, -34.76],
+  "SMITHFIELD": [138.69, -34.68], "ELIZABETH": [138.67, -34.72],
+  "MORPHETT VALE": [138.52, -35.13], "OAKLANDS PARK": [138.52, -35.01],
+  "MURRAY BRIDGE": [139.27, -35.12], "MOUNT GAMBIER": [140.78, -37.83],
+  "PORT AUGUSTA": [137.77, -32.49], "PORT LINCOLN": [135.86, -34.73],
+  "WHYALLA NORRIE": [137.55, -33.03], "WHYALLA STUART": [137.58, -33.05],
+};
 
 async function loadVersion() {
   try {
@@ -331,6 +346,34 @@ function compareSVG(series) {
     ${lines}${labels}</svg>`;
 }
 
+function mapSVG(series) {
+  const pts = series
+    .filter((s) => REGION_COORDS[s.region])
+    .map((s) => ({ region: s.region, total: s.total, lon: REGION_COORDS[s.region][0], lat: REGION_COORDS[s.region][1] }));
+  if (!pts.length) return '<p class="hint">No mappable regions in this result.</p>';
+  const W = 840, H = 380, PAD = 50;
+  const lons = pts.map((p) => p.lon), lats = pts.map((p) => p.lat);
+  const lonMin = Math.min(...lons), lonMax = Math.max(...lons);
+  const latMin = Math.min(...lats), latMax = Math.max(...lats);
+  const sx = (lon) => PAD + ((lon - lonMin) / ((lonMax - lonMin) || 1)) * (W - 2 * PAD);
+  const sy = (lat) => PAD + ((latMax - lat) / ((latMax - latMin) || 1)) * (H - 2 * PAD);
+  const maxT = Math.max(...pts.map((p) => p.total)) || 1;
+  const radius = (t) => 7 + Math.sqrt(t / maxT) * 33;
+  const bubbles = pts.map((p, i) => {
+    const cx = sx(p.lon).toFixed(1), cy = sy(p.lat).toFixed(1);
+    return `<g class="hit" tabindex="0" role="button" data-region="${p.region}"
+        data-tip="${p.region}: ${p.total.toLocaleString()} offences — click to filter"
+        aria-label="${p.region}, ${p.total.toLocaleString()} offences">
+      <circle cx="${cx}" cy="${cy}" r="${radius(p.total).toFixed(1)}"
+        fill="${SERIES_COLORS[i % 5]}" fill-opacity="0.5" stroke="${SERIES_COLORS[i % 5]}"/>
+      <text x="${cx}" y="${(sy(p.lat) + radius(p.total) + 10).toFixed(1)}" text-anchor="middle"
+        font-size="9" fill="var(--muted)">${p.region}</text></g>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Map of SA regions sized by offence volume">
+    <text x="${PAD}" y="20" font-size="10" fill="var(--muted)">South Australia · bubble size = offence volume</text>
+    ${bubbles}</svg>`;
+}
+
 function pct(v, suffix) {
   if (v === null || v === undefined) return "";
   const arrow = v >= 0 ? "▲" : "▼";
@@ -368,6 +411,7 @@ function renderCompare(d) {
   $("cmp").hidden = false;
   $("cmp-narrative").textContent = d.narrative;
   $("cmp-holder").innerHTML = compareSVG(d.series);
+  $("cmp-map").innerHTML = mapSVG(d.series);
   $("cmp-legend").innerHTML = d.series.map((s, i) => {
     const yoy = s.yoy_change_pct === null ? "" :
       ` ${s.yoy_change_pct >= 0 ? "▲" : "▼"}${Math.abs(s.yoy_change_pct)}% YoY`;
@@ -542,7 +586,7 @@ function wireChart(holder) {
   });
   holder.addEventListener("focusout", hideTip);
 }
-["chart-holder", "top-holder", "law-holder", "cmp-holder", "cmp-legend"].forEach((id) => wireChart($(id)));
+["chart-holder", "top-holder", "law-holder", "cmp-holder", "cmp-legend", "cmp-map"].forEach((id) => wireChart($(id)));
 
 // Shareable query links: /?offense=theft&region=adelaide&months=12
 function autorunFromURL() {

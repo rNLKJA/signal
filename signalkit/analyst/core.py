@@ -285,14 +285,14 @@ def compute_stats(records: list[MonthlyRecord], months: int) -> TrendStats:
 def _template_narrative(stats: TrendStats, query: AnalystQuery) -> str:
     scope_bits = []
     if query.offense:
-        scope_bits.append(f"offences matching '{query.offense}'")
+        scope_bits.append(f"matching '{query.offense}'")
     if query.region:
         scope_bits.append(f"in {query.region.upper()}")
-    scope = " ".join(scope_bits) if scope_bits else "all offences statewide"
+    scope = " ".join(scope_bits) if scope_bits else "statewide"
 
     parts = [
         f"Between {stats.window_start} and {stats.window_end}, SA Police recorded "
-        f"{stats.total_offences:,} offences for {scope}.",
+        f"{stats.total_offences:,} offences {scope}.",
         f"The trend over the window is {stats.trend_direction}.",
     ]
     if stats.mom_change_pct is not None:

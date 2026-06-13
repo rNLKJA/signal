@@ -108,13 +108,13 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Human-review workflow: record a reviewer or override (with required reason) against a decision; tracked in the governance summary
 - [x] data.sa.gov.au explorer: search 1,900+ datasets, preview any datastore resource, and run a governed generic trend on date+numeric data
 - [x] Audit export (`/decisions.csv`) and a governance-summary panel in the dashboard
+- [x] Map view: SA regions as an offline bubble map, sized by volume, click to drill in
 
 ### Planned for v1.0.0
 
 - [ ] Live-path tests and a frozen, documented API contract
 - [ ] National data: ingest NSW / VIC recorded-crime tables (published as spreadsheets, not queryable APIs) for a cross-state view
 - [ ] Scheduled monthly snapshot refresh in CI
-- [ ] Map view of SA regions
 
 ## Reproduce
 
