@@ -195,21 +195,34 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
 
     # --- data.sa.gov.au catalogue explorer ---
 
+    def _check_portal(portal: str) -> None:
+        if portal not in catalogue.PORTALS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown portal '{portal}'. Choose: {', '.join(catalogue.PORTALS)}.",
+            )
+
     @app.get("/datasets")
-    def datasets(q: str = Query(default=""), limit: int = Query(default=20, ge=1, le=50)) -> list[dict]:
+    def datasets(
+        q: str = Query(default=""),
+        limit: int = Query(default=20, ge=1, le=50),
+        portal: str = Query(default="sa"),
+    ) -> list[dict]:
+        _check_portal(portal)
         try:
-            return [d.model_dump() for d in catalogue.search_datasets(q, limit)]
+            return [d.model_dump() for d in catalogue.search_datasets(q, limit, portal)]
         except Exception as e:  # the portal is a live external dependency
-            raise HTTPException(status_code=502, detail=f"data.sa catalogue unavailable: {e}") from e
+            raise HTTPException(status_code=502, detail=f"{portal} catalogue unavailable: {e}") from e
 
     @app.get("/datasets/{name}")
-    def dataset_detail(name: str) -> dict:
+    def dataset_detail(name: str, portal: str = Query(default="sa")) -> dict:
+        _check_portal(portal)
         try:
-            info = catalogue.dataset_info(name)
+            info = catalogue.dataset_info(name, portal)
         except Exception as e:
-            raise HTTPException(status_code=502, detail=f"data.sa catalogue unavailable: {e}") from e
+            raise HTTPException(status_code=502, detail=f"{portal} catalogue unavailable: {e}") from e
         if info is None:
-            raise HTTPException(status_code=404, detail=f"No dataset '{name}' on data.sa.gov.au.")
+            raise HTTPException(status_code=404, detail=f"No dataset '{name}' on {portal}.")
         return info.model_dump()
 
     @app.get("/resources/{resource_id}/preview")
@@ -217,9 +230,11 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         resource_id: str,
         title: str = Query(default=""),
         limit: int = Query(default=20, ge=1, le=100),
+        portal: str = Query(default="sa"),
     ) -> dict:
+        _check_portal(portal)
         try:
-            return app.state.analyst.preview_dataset(resource_id, title, limit)
+            return app.state.analyst.preview_dataset(resource_id, title, limit, portal)
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"Preview unavailable: {e}") from e
 
@@ -229,10 +244,12 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         title: str = Query(default=""),
         date_field: str = Query(default=""),
         value_field: str = Query(default=""),
+        portal: str = Query(default="sa"),
     ) -> dict:
+        _check_portal(portal)
         try:
             return app.state.analyst.analyse_resource(
-                resource_id, title, date_field or None, value_field or None
+                resource_id, title, date_field or None, value_field or None, portal=portal
             )
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"Analysis unavailable: {e}") from e

@@ -8,4 +8,4 @@ See ``signalkit.governance.decision_log`` for the audit-trail core and
 ``signalkit.analyst.core`` for the analyst layer that writes to it.
 """
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"

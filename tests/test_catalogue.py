@@ -11,7 +11,7 @@ from signalkit.data import catalogue
 
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
-    def fake_search(query="", limit=20):
+    def fake_search(query="", limit=20, portal="sa"):
         return [
             catalogue.DatasetSummary(
                 name="crime-statistics",
@@ -27,7 +27,7 @@ def client(tmp_path, monkeypatch):
             )
         ]
 
-    def fake_info(name_or_id):
+    def fake_info(name_or_id, portal="sa"):
         if name_or_id != "crime-statistics":
             return None
         return catalogue.DatasetDetail(
@@ -43,7 +43,7 @@ def client(tmp_path, monkeypatch):
             ],
         )
 
-    def fake_preview(resource_id, limit=20):
+    def fake_preview(resource_id, limit=20, portal="sa"):
         return catalogue.ResourcePreview(
             resource_id=resource_id,
             fields=[{"id": "Suburb", "type": "text"}, {"id": "Count", "type": "numeric"}],
@@ -87,7 +87,7 @@ def _rows_over_months(months, per_month=3):
 def test_generic_analysis_runs_when_date_and_numeric_present(tmp_path, monkeypatch):
     monkeypatch.setattr(
         catalogue, "fetch_rows",
-        lambda rid, max_rows=5000: _rows_over_months(["2025-01", "2025-02", "2025-03", "2025-04"]),
+        lambda rid, max_rows=5000, portal="sa": _rows_over_months(["2025-01", "2025-02", "2025-03", "2025-04"]),
     )
     analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
     result = analyst.analyse_resource("res-x", title="Sensor data")
@@ -101,7 +101,7 @@ def test_generic_analysis_runs_when_date_and_numeric_present(tmp_path, monkeypat
 
 def test_generic_analysis_falls_back_when_too_short(tmp_path, monkeypatch):
     monkeypatch.setattr(
-        catalogue, "fetch_rows", lambda rid, max_rows=5000: _rows_over_months(["2025-01"]),
+        catalogue, "fetch_rows", lambda rid, max_rows=5000, portal="sa": _rows_over_months(["2025-01"]),
     )
     analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
     result = analyst.analyse_resource("res-x")
@@ -112,7 +112,7 @@ def test_generic_analysis_falls_back_when_too_short(tmp_path, monkeypatch):
 def test_generic_analysis_falls_back_when_no_numeric(tmp_path, monkeypatch):
     fields = [{"id": "Name", "type": "text"}, {"id": "Suburb", "type": "text"}]
     rows = [{"Name": "a", "Suburb": "ADELAIDE"}] * 10
-    monkeypatch.setattr(catalogue, "fetch_rows", lambda rid, max_rows=5000: (fields, rows))
+    monkeypatch.setattr(catalogue, "fetch_rows", lambda rid, max_rows=5000, portal="sa": (fields, rows))
     analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
     result = analyst.analyse_resource("res-x")
     assert result["analysable"] is False
@@ -126,5 +126,22 @@ def test_preview_is_governed(client):
     # the preview must leave an audit entry (data provenance)
     entry = client.get(f"/decisions/{body['decision_id']}").json()
     assert entry["decision_category"] == "retrieval"
-    assert "data.sa" in entry["tags"]
+    assert "sa" in entry["tags"]
     assert "res-1" in entry["data_sources"][0]
+
+
+def test_unknown_portal_rejected(client):
+    assert client.get("/datasets?q=x&portal=zz").status_code == 400
+
+
+def test_portal_threaded_to_catalogue(tmp_path, monkeypatch):
+    seen = {}
+
+    def fake_search(query="", limit=20, portal="sa"):
+        seen["portal"] = portal
+        return []
+
+    monkeypatch.setattr(catalogue, "search_datasets", fake_search)
+    c = TestClient(create_app(Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)))
+    c.get("/datasets?q=crime&portal=nsw")
+    assert seen["portal"] == "nsw"

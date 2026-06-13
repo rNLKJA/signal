@@ -19,8 +19,8 @@
 <g><rect x="10" y="104" width="166" height="60" rx="8" fill="#2563eb"/>
 <text x="22" y="126" font-size="11" fill="#ffffff" opacity="0.85">04</text>
 <text x="22" y="148" font-size="13" font-weight="600" fill="#ffffff">Test &amp; freeze API</text></g>
-<g><rect x="188" y="104" width="166" height="60" rx="8" fill="#d97706"/>
-<text x="200" y="126" font-size="11" fill="#ffffff" opacity="0.85">05</text>
+<g><rect x="188" y="104" width="166" height="60" rx="8" fill="#16a34a"/>
+<text x="200" y="126" font-size="11" fill="#ffffff" opacity="0.85">05 · done</text>
 <text x="200" y="148" font-size="13" font-weight="600" fill="#ffffff">National data</text></g>
 <g><rect x="366" y="104" width="166" height="60" rx="8" fill="#d97706"/>
 <text x="378" y="126" font-size="11" fill="#ffffff" opacity="0.85">06</text>

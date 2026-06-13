@@ -599,29 +599,32 @@ class Analyst:
         """Aggregate the audit log: review rate, risk tiers, model breakdown."""
         return summarise(self._logger.read_all())
 
-    def preview_dataset(self, resource_id: str, dataset_title: str = "", limit: int = 20) -> dict:
-        """Preview a data.sa.gov.au datastore resource, logging the lookup.
+    def preview_dataset(
+        self, resource_id: str, dataset_title: str = "", limit: int = 20, portal: str = "sa"
+    ) -> dict:
+        """Preview an open-data datastore resource, logging the lookup.
 
         Even an ad-hoc data preview is a data-provenance event, so it gets its
         own audit entry (retrieval category) — the explorer is governed too.
         """
-        preview = catalogue.preview_resource(resource_id, limit)
+        preview = catalogue.preview_resource(resource_id, limit, portal)
         scope = f" — {dataset_title}" if dataset_title else ""
+        portal_base = catalogue.PORTALS.get(portal, portal)
         entry = DecisionEntry(
-            model_name="data.sa preview (no model)",
+            model_name="catalogue preview (no model)",
             model_provider=None,
-            input_summary=f"Preview of data.sa resource {resource_id}{scope}",
+            input_summary=f"Preview of {portal} resource {resource_id}{scope}",
             model_output_summary=(
                 f"Returned {len(preview.records)} of {preview.total} rows, "
                 f"{len(preview.fields)} columns."
             ),
-            data_sources=[f"data.sa.gov.au resource {resource_id}{scope}"],
+            data_sources=[f"{portal_base} resource {resource_id}{scope}"],
             decision_made="Returned a catalogue data preview via Signal API.",
             decision_category=DecisionCategory.retrieval,
             human_review_required=False,
             legislative_basis="APS Mandatory AI Requirements (Jun 2026) — data provenance",
             risk_category=RiskCategory.minimal,
-            tags=["data.sa", "catalogue-preview"],
+            tags=[portal, "catalogue-preview"],
         )
         self._logger.log(entry)
         out = preview.model_dump()
@@ -635,12 +638,13 @@ class Analyst:
         date_field: str | None = None,
         value_field: str | None = None,
         max_rows: int = 5000,
+        portal: str = "sa",
     ) -> dict:
-        """Run the trend engine on an arbitrary data.sa resource, if it has a
+        """Run the trend engine on an arbitrary catalogue resource, if it has a
         date and a numeric column. Falls back honestly when it cannot, rather
         than forcing a misleading trend. Every analysis is audit-logged."""
         try:
-            fields, rows = catalogue.fetch_rows(resource_id, max_rows)
+            fields, rows = catalogue.fetch_rows(resource_id, max_rows, portal)
         except Exception:
             return {
                 "analysable": False,
@@ -722,14 +726,17 @@ class Analyst:
             model_provider=provider,
             input_summary=f"Generic trend of '{value_field}' by '{date_field}' in {scope}",
             model_output_summary=narrative[:300],
-            data_sources=[f"data.sa.gov.au resource {resource_id}" + (f" ({title})" if title else "")],
+            data_sources=[
+                f"{catalogue.PORTALS.get(portal, portal)} resource {resource_id}"
+                + (f" ({title})" if title else "")
+            ],
             decision_made="Returned a generic trend analysis via Signal API.",
             decision_category=DecisionCategory.analytical,
             confidence_score=0.95 if model_used == DETERMINISTIC_MODEL else 0.8,
             human_review_required=human_review,
             legislative_basis="APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency",
             risk_category=RiskCategory.limited,
-            tags=["data.sa", "generic-analysis"],
+            tags=[portal, "generic-analysis"],
         )
         self._logger.log(entry)
         return {

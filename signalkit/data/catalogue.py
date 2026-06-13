@@ -19,9 +19,22 @@ from __future__ import annotations
 import httpx
 from pydantic import BaseModel
 
-PORTAL = "https://data.sa.gov.au"
-ACTION = f"{PORTAL}/data/api/3/action"
+# Australian open-data portals, all running CKAN with the same action API.
+# data.sa is the flagship; NSW and VIC give the explorer national reach.
+PORTALS = {
+    "sa": "https://data.sa.gov.au/data",
+    "nsw": "https://data.nsw.gov.au/data",
+    "vic": "https://discover.data.vic.gov.au",
+}
+DEFAULT_PORTAL = "sa"
 _TIMEOUT = 30.0
+
+
+def _portal_base(portal: str) -> str:
+    base = PORTALS.get(portal)
+    if base is None:
+        raise ValueError(f"Unknown portal '{portal}'. Choose one of: {', '.join(PORTALS)}.")
+    return base
 
 
 class ResourceRef(BaseModel):
@@ -57,9 +70,10 @@ class ResourcePreview(BaseModel):
     truncated: bool
 
 
-def _get(action: str, params: dict) -> dict:
+def _get(portal: str, action: str, params: dict) -> dict:
+    base = _portal_base(portal)
     with httpx.Client(timeout=_TIMEOUT, headers={"User-Agent": "signalkit"}) as client:
-        resp = client.get(f"{ACTION}/{action}", params=params)
+        resp = client.get(f"{base}/api/3/action/{action}", params=params)
         resp.raise_for_status()
         payload = resp.json()
     if not payload.get("success"):
@@ -79,9 +93,9 @@ def _resources(pkg: dict) -> list[ResourceRef]:
     ]
 
 
-def search_datasets(query: str = "", limit: int = 20) -> list[DatasetSummary]:
-    """Search the data.sa.gov.au catalogue. Blank query returns recent datasets."""
-    result = _get("package_search", {"q": query, "rows": max(1, min(limit, 50))})
+def search_datasets(query: str = "", limit: int = 20, portal: str = DEFAULT_PORTAL) -> list[DatasetSummary]:
+    """Search a portal's catalogue. Blank query returns recent datasets."""
+    result = _get(portal, "package_search", {"q": query, "rows": max(1, min(limit, 50))})
     summaries = []
     for pkg in result.get("results", []):
         resources = _resources(pkg)
@@ -99,10 +113,10 @@ def search_datasets(query: str = "", limit: int = 20) -> list[DatasetSummary]:
     return summaries
 
 
-def dataset_info(name_or_id: str) -> DatasetDetail | None:
+def dataset_info(name_or_id: str, portal: str = DEFAULT_PORTAL) -> DatasetDetail | None:
     """Full metadata for one dataset, or None if it does not exist."""
     try:
-        pkg = _get("package_show", {"id": name_or_id})
+        pkg = _get(portal, "package_show", {"id": name_or_id})
     except httpx.HTTPStatusError:
         return None
     notes = (pkg.get("notes") or "").strip().replace("\r", " ").replace("\n", " ")
@@ -111,12 +125,14 @@ def dataset_info(name_or_id: str) -> DatasetDetail | None:
         title=pkg.get("title") or pkg.get("name", ""),
         organisation=(pkg.get("organization") or {}).get("title", ""),
         notes=notes[:800],
-        url=f"{PORTAL}/data/dataset/{pkg.get('name', '')}",
+        url=f"{_portal_base(portal)}/dataset/{pkg.get('name', '')}",
         resources=_resources(pkg),
     )
 
 
-def fetch_rows(resource_id: str, max_rows: int = 5000) -> tuple[list[dict], list[dict]]:
+def fetch_rows(
+    resource_id: str, max_rows: int = 5000, portal: str = DEFAULT_PORTAL
+) -> tuple[list[dict], list[dict]]:
     """Fetch up to max_rows from a datastore resource for analysis.
 
     Returns (fields, rows) with the internal _id stripped. Paged in 1,000-row
@@ -128,6 +144,7 @@ def fetch_rows(resource_id: str, max_rows: int = 5000) -> tuple[list[dict], list
     while len(rows) < max_rows:
         page = min(1000, max_rows - len(rows))
         result = _get(
+            portal,
             "datastore_search",
             {"resource_id": resource_id, "limit": page, "offset": offset},
         )
@@ -143,10 +160,10 @@ def fetch_rows(resource_id: str, max_rows: int = 5000) -> tuple[list[dict], list
     return fields, rows
 
 
-def preview_resource(resource_id: str, limit: int = 20) -> ResourcePreview:
+def preview_resource(resource_id: str, limit: int = 20, portal: str = DEFAULT_PORTAL) -> ResourcePreview:
     """Preview the first rows of a datastore-backed resource."""
     capped = max(1, min(limit, 100))
-    result = _get("datastore_search", {"resource_id": resource_id, "limit": capped})
+    result = _get(portal, "datastore_search", {"resource_id": resource_id, "limit": capped})
     fields = [f for f in result.get("fields", []) if f.get("id") != "_id"]
     records = [{k: v for k, v in row.items() if k != "_id"} for row in result.get("records", [])]
     total = result.get("total", len(records))

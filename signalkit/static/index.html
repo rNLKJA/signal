@@ -191,8 +191,15 @@
       <p class="hint">The same portal behind the crime data publishes 1,900+ South Australian
         datasets. Search the catalogue and preview any with a live table — every preview is audit-logged.</p>
       <form id="ds-form">
+        <label>Portal
+          <select name="portal">
+            <option value="sa">SA · data.sa.gov.au</option>
+            <option value="nsw">NSW · data.nsw.gov.au</option>
+            <option value="vic">VIC · discover.data.vic.gov.au</option>
+          </select>
+        </label>
         <label>Search the catalogue
-          <input name="q" placeholder="e.g. air quality, hospital, road crash" autocomplete="off">
+          <input name="q" placeholder="e.g. air quality, hospital, crime" autocomplete="off">
         </label>
         <button type="submit" id="ds-btn">Search</button>
       </form>
@@ -228,6 +235,7 @@ const $ = (id) => document.getElementById(id);
 const SERIES_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)"];
 let lastAnswer = null;
 let chartType = "bar";
+let currentPortal = "sa";
 
 // Approximate [lon, lat] for the SA regions in the snapshot. Bundled so the
 // map works fully offline — no geocoding or map-tile service.
@@ -615,22 +623,23 @@ function renderDatasetList(list) {
     </div>`).join("");
 }
 
-async function searchDatasets(q) {
+async function searchDatasets(q, portal) {
+  currentPortal = portal || "sa";
   $("ds-results").innerHTML = '<p class="hint">Searching…</p>';
   $("ds-preview").innerHTML = "";
   try {
-    const r = await fetch(`/datasets?q=${encodeURIComponent(q)}&limit=15`);
+    const r = await fetch(`/datasets?q=${encodeURIComponent(q)}&limit=15&portal=${currentPortal}`);
     if (!r.ok) throw new Error(r.status);
     renderDatasetList(await r.json());
   } catch {
-    $("ds-results").innerHTML = '<p class="err">data.sa catalogue unavailable right now.</p>';
+    $("ds-results").innerHTML = '<p class="err">That catalogue is unavailable right now.</p>';
   }
 }
 
 async function previewResource(resId, title) {
   $("ds-preview").innerHTML = '<p class="hint">Loading preview…</p>';
   try {
-    const r = await fetch(`/resources/${resId}/preview?title=${encodeURIComponent(title)}&limit=20`);
+    const r = await fetch(`/resources/${resId}/preview?title=${encodeURIComponent(title)}&limit=20&portal=${currentPortal}`);
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
     const cols = d.fields.map((f) => f.id);
@@ -652,7 +661,7 @@ async function previewResource(resId, title) {
 async function analyseResource(resId, title) {
   $("ds-analysis").innerHTML = '<p class="hint">Analysing…</p>';
   try {
-    const r = await fetch(`/resources/${resId}/analyse?title=${encodeURIComponent(title)}`);
+    const r = await fetch(`/resources/${resId}/analyse?title=${encodeURIComponent(title)}&portal=${currentPortal}`);
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
     if (!d.analysable) {
@@ -677,7 +686,8 @@ async function analyseResource(resId, title) {
 
 $("ds-form").addEventListener("submit", (ev) => {
   ev.preventDefault();
-  searchDatasets(new FormData($("ds-form")).get("q") || "");
+  const f = new FormData($("ds-form"));
+  searchDatasets(f.get("q") || "", f.get("portal") || "sa");
 });
 $("ds-results").addEventListener("click", (e) => {
   const el = e.target.closest("[data-res]");
