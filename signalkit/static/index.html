@@ -80,6 +80,22 @@
   .hint { color: var(--muted); font-size: .8rem; }
   footer { margin-top: 2.5rem; color: var(--muted); font-size: .8rem; }
   footer a { color: var(--brand); }
+  #tip {
+    position: fixed; z-index: 50; pointer-events: none; max-width: 250px;
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: .3rem .55rem; font-size: .8rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.2);
+  }
+  .hit { cursor: pointer; }
+  .hit:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  svg .hit:hover { opacity: .8; }
+  .legend button.hit {
+    border: 1px solid var(--border); border-radius: 999px; background: var(--bg);
+    color: var(--muted); padding: .1rem .6rem; font: inherit; font-size: .8rem;
+    display: inline-flex; align-items: center; gap: .35rem;
+  }
+  .legend button.hit:hover { color: var(--text); border-color: var(--brand); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
@@ -99,13 +115,15 @@
         <option>Other against the person</option>
       </datalist>
     </label>
-    <label>Region
-      <select name="region">
-        <option value="">All SA regions</option>
+    <label>Region (substring, blank = all)
+      <input name="region" list="region-options" placeholder="all SA regions" autocomplete="off">
+      <datalist id="region-options">
         <option>Adelaide</option><option>Salisbury</option><option>Elizabeth</option>
-        <option>Port Augusta</option><option>Mount Gambier</option><option>Whyalla</option>
-        <option>Murray Bridge</option><option>Morphett Vale</option><option>Modbury</option><option>Prospect</option>
-      </select>
+        <option>Port Augusta</option><option>Port Lincoln</option><option>Mount Gambier</option>
+        <option>Murray Bridge</option><option>Morphett Vale</option><option>Modbury</option>
+        <option>Prospect</option><option>Oaklands Park</option><option>Smithfield</option>
+        <option>Whyalla Norrie</option><option>Whyalla Stuart</option>
+      </datalist>
     </label>
     <label>Months
       <input name="months" type="number" min="2" max="24" value="12" required>
@@ -162,6 +180,7 @@
     Mandatory AI Requirements (Jun 2026), EU AI Act Art. 50, Privacy Act 1988 (Cth). MIT licence.
   </footer>
 </main>
+<div id="tip" hidden></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -191,18 +210,18 @@ function trendSVG(monthly, anomalies, type) {
     const pts = entries.map(([, v], i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
     const dots = entries.map(([month, v], i) => {
       const anomalous = anomalies.includes(month);
+      const tip = `${month}: ${v.toLocaleString()} offences${anomalous ? " (anomaly)" : ""}`;
       return `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${anomalous ? 5 : 3}"
-        fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}">
-        <title>${month}: ${v.toLocaleString()} offences${anomalous ? " (anomaly)" : ""}</title></circle>`;
+        fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}" data-tip="${tip}"/>`;
     }).join("");
     marks = `<polyline points="${pts}" fill="none" stroke="var(--bar)" stroke-width="2"/>` + dots;
   } else {
     marks = entries.map(([month, v], i) => {
       const anomalous = anomalies.includes(month);
+      const tip = `${month}: ${v.toLocaleString()} offences${anomalous ? " (anomaly)" : ""}`;
       return `<rect x="${(PAD + i * bw).toFixed(1)}" y="${y(v).toFixed(1)}"
         width="${(bw * 0.78).toFixed(1)}" height="${(baseline - y(v)).toFixed(1)}" rx="2"
-        fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}">
-        <title>${month}: ${v.toLocaleString()} offences${anomalous ? " (anomaly)" : ""}</title></rect>`;
+        fill="${anomalous ? "var(--bar-anomaly)" : "var(--bar)"}" data-tip="${tip}"/>`;
     }).join("");
   }
   const desc = `Monthly offence counts from ${entries[0][0]} to ${entries.at(-1)[0]}, peak ${max.toLocaleString()}.`;
@@ -213,16 +232,19 @@ function trendSVG(monthly, anomalies, type) {
 }
 
 function hbarSVG(rows, colorFor) {
-  // rows: [{label, count}], horizontal bars with value labels
+  // rows: [{label, count}], horizontal bars; each row drills into that offence
   const max = Math.max(...rows.map((r) => r.count));
   const W = 420, rowH = 26, PADL = 4, H = rows.length * rowH + 4;
   const bars = rows.map((r, i) => {
     const w = max ? (r.count / max) * (W - 130) : 0;
     const yy = 4 + i * rowH;
-    return `<rect x="${PADL}" y="${yy}" width="${w.toFixed(1)}" height="16" rx="2" fill="${colorFor(r, i)}">
-        <title>${r.label}: ${r.count.toLocaleString()}</title></rect>
+    const tip = `${r.label}: ${r.count.toLocaleString()} — click to filter`;
+    return `<g class="hit" tabindex="0" role="button" data-offense="${r.label}" data-tip="${tip}"
+        aria-label="Filter to ${r.label}, ${r.count.toLocaleString()} offences">
+      <rect x="0" y="${yy - 2}" width="${W}" height="${rowH}" fill="transparent"/>
+      <rect x="${PADL}" y="${yy}" width="${w.toFixed(1)}" height="16" rx="2" fill="${colorFor(r, i)}"/>
       <text x="${PADL + w + 6}" y="${yy + 12}" font-size="10" fill="var(--text)">${r.count.toLocaleString()}</text>
-      <text x="${PADL}" y="${yy + 25}" font-size="8.5" fill="var(--muted)">${r.label}</text>`;
+      <text x="${PADL}" y="${yy + 25}" font-size="8.5" fill="var(--muted)">${r.label}</text></g>`;
   }).join("");
   const desc = rows.map((r) => `${r.label} ${r.count.toLocaleString()}`).join(", ");
   return `<svg viewBox="0 0 ${W} ${H + rows.length * 10}" role="img" aria-label="${desc}">${bars}</svg>`;
@@ -235,8 +257,8 @@ function stackedSVG(split) {
   let xPos = 0;
   const segs = Object.entries(split).map(([k, v], i) => {
     const w = total ? (v / total) * W : 0;
-    const seg = `<rect x="${xPos.toFixed(1)}" y="2" width="${w.toFixed(1)}" height="18" fill="${SERIES_COLORS[i % 5]}">
-      <title>${k}: ${v.toLocaleString()} (${Math.round((v / total) * 100)}%)</title></rect>`;
+    const seg = `<rect x="${xPos.toFixed(1)}" y="2" width="${w.toFixed(1)}" height="18"
+      fill="${SERIES_COLORS[i % 5]}" data-tip="${k}: ${v.toLocaleString()} (${Math.round((v / total) * 100)}%)"/>`;
     xPos += w;
     return seg;
   }).join("");
@@ -257,8 +279,8 @@ function compareSVG(series) {
   const lines = series.map((s, si) => {
     const pts = months.map((m, i) => `${x(i).toFixed(1)},${y(s.monthly_counts[m]).toFixed(1)}`).join(" ");
     const dots = months.map((m, i) =>
-      `<circle cx="${x(i).toFixed(1)}" cy="${y(s.monthly_counts[m]).toFixed(1)}" r="2.5" fill="${SERIES_COLORS[si % 5]}">
-         <title>${s.region} ${m}: ${s.monthly_counts[m].toLocaleString()}</title></circle>`).join("");
+      `<circle cx="${x(i).toFixed(1)}" cy="${y(s.monthly_counts[m]).toFixed(1)}" r="2.5"
+         fill="${SERIES_COLORS[si % 5]}" data-tip="${s.region} ${m}: ${s.monthly_counts[m].toLocaleString()}"/>`).join("");
     return `<polyline points="${pts}" fill="none" stroke="${SERIES_COLORS[si % 5]}" stroke-width="2"/>` + dots;
   }).join("");
   const labels = months.map((m, i) =>
@@ -311,8 +333,10 @@ function renderCompare(d) {
   $("cmp-legend").innerHTML = d.series.map((s, i) => {
     const yoy = s.yoy_change_pct === null ? "" :
       ` ${s.yoy_change_pct >= 0 ? "▲" : "▼"}${Math.abs(s.yoy_change_pct)}% YoY`;
-    return `<span><span class="sw" style="background:${SERIES_COLORS[i % 5]}"></span>
-      ${s.region} ${s.total.toLocaleString()}${yoy}</span>`;
+    return `<button type="button" class="hit" data-region="${s.region}"
+      data-tip="Filter to ${s.region}" aria-label="Filter to ${s.region}">
+      <span class="sw" style="background:${SERIES_COLORS[i % 5]}"></span>
+      ${s.region} ${s.total.toLocaleString()}${yoy}</button>`;
   }).join("");
   $("cmp-gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · model <code>${d.model_used}</code>`;
@@ -371,8 +395,7 @@ function formPayload() {
   };
 }
 
-$("ask-form").addEventListener("submit", async (ev) => {
-  ev.preventDefault();
+async function runAsk() {
   $("ask-btn").disabled = true;
   try {
     const p = formPayload();
@@ -384,9 +407,9 @@ $("ask-form").addEventListener("submit", async (ev) => {
   } finally {
     $("ask-btn").disabled = false;
   }
-});
+}
 
-$("cmp-btn").addEventListener("click", async () => {
+async function runCompare() {
   $("cmp-btn").disabled = true;
   try {
     const p = formPayload();
@@ -398,7 +421,10 @@ $("cmp-btn").addEventListener("click", async () => {
   } finally {
     $("cmp-btn").disabled = false;
   }
-});
+}
+
+$("ask-form").addEventListener("submit", (ev) => { ev.preventDefault(); runAsk(); });
+$("cmp-btn").addEventListener("click", runCompare);
 
 for (const [btn, type] of [["t-bar", "bar"], ["t-line", "line"]]) {
   $(btn).addEventListener("click", () => {
@@ -409,19 +435,59 @@ for (const [btn, type] of [["t-bar", "bar"], ["t-line", "line"]]) {
   });
 }
 
+// Custom hover tooltips + click-to-drill on the charts. Listeners are
+// delegated on the persistent holder elements, so they survive re-renders.
+function showTip(text, x, y) {
+  const t = $("tip");
+  t.textContent = text;
+  t.hidden = false;
+  t.style.left = Math.min(x + 14, window.innerWidth - t.offsetWidth - 8) + "px";
+  t.style.top = (y + 14) + "px";
+}
+const hideTip = () => { $("tip").hidden = true; };
+
+function drill(el) {
+  const form = $("ask-form");
+  if (el.dataset.offense !== undefined) form.elements.offense.value = el.dataset.offense;
+  else if (el.dataset.region !== undefined) form.elements.region.value = el.dataset.region;
+  else return;
+  hideTip();
+  runAsk();
+  $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function wireChart(holder) {
+  holder.addEventListener("mousemove", (e) => {
+    const el = e.target.closest("[data-tip]");
+    el ? showTip(el.getAttribute("data-tip"), e.clientX, e.clientY) : hideTip();
+  });
+  holder.addEventListener("mouseleave", hideTip);
+  holder.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-offense],[data-region]");
+    if (el) drill(el);
+  });
+  holder.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const el = e.target.closest("[data-offense],[data-region]");
+    if (el) { e.preventDefault(); drill(el); }
+  });
+  holder.addEventListener("focusin", (e) => {
+    const el = e.target.closest("[data-tip]");
+    if (el) { const r = el.getBoundingClientRect(); showTip(el.getAttribute("data-tip"), r.left + r.width / 2, r.top); }
+  });
+  holder.addEventListener("focusout", hideTip);
+}
+["chart-holder", "top-holder", "law-holder", "cmp-holder", "cmp-legend"].forEach((id) => wireChart($(id)));
+
 // Shareable query links: /?offense=theft&region=adelaide&months=12
-// auto-fills the form and asks on load.
 function autorunFromURL() {
   const qp = new URLSearchParams(location.search);
   if (!qp.has("offense") && !qp.has("region")) return;
   const form = $("ask-form");
   form.elements.offense.value = qp.get("offense") || "";
-  const wanted = (qp.get("region") || "").toLowerCase();
-  for (const opt of form.elements.region.options) {
-    if (opt.value.toLowerCase() === wanted) form.elements.region.value = opt.value;
-  }
+  form.elements.region.value = qp.get("region") || "";
   if (qp.get("months")) form.elements.months.value = qp.get("months");
-  form.dispatchEvent(new Event("submit", { cancelable: true }));
+  runAsk();
 }
 
 loadVersion();
