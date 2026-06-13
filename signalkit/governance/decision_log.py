@@ -60,6 +60,7 @@ class DecisionCategory(str, Enum):
     generative   = "generative"    # content creation, drafting, code generation
     retrieval    = "retrieval"     # information lookup, RAG responses
     classification = "classification"  # labelling, tagging, risk scoring
+    review       = "review"        # a human review recorded against a prior decision
     other        = "other"
 
 
@@ -155,6 +156,10 @@ class DecisionEntry(BaseModel):
         default=None,
         description="Reason for override, if override_applied is True. [EU]",
     )
+    reviews_decision_id: Optional[str] = Field(
+        default=None,
+        description="For a review event: the decision_id this review applies to. [APS]",
+    )
 
     # --- Governance context ---
     agency: Optional[str] = Field(
@@ -208,6 +213,13 @@ class GovernanceSummary(BaseModel):
     human_review_rate: Optional[float] = Field(
         default=None, description="Fraction of decisions flagged for human review (0–1)."
     )
+    reviews_recorded: int = Field(
+        default=0, description="Number of human-review events logged against decisions."
+    )
+    outstanding_reviews: int = Field(
+        default=0,
+        description="Decisions flagged for review with no review recorded yet.",
+    )
     by_risk_category: dict[str, int]
     by_model: dict[str, int]
     by_decision_category: dict[str, int]
@@ -216,21 +228,35 @@ class GovernanceSummary(BaseModel):
 
 
 def summarise(entries: list[DecisionEntry]) -> GovernanceSummary:
-    """Compute the governance summary over a list of audit entries."""
+    """Compute the governance summary over a list of audit entries.
+
+    Human-review events (category ``review``) are counted separately from the
+    decisions they review, so they never inflate the decision totals — the
+    decision rates stay honest while the review activity is still surfaced.
+    """
+    reviews = [e for e in entries if e.decision_category == DecisionCategory.review]
+    decisions = [e for e in entries if e.decision_category != DecisionCategory.review]
+    reviewed_ids = {e.reviews_decision_id for e in reviews if e.reviews_decision_id}
+
     by_risk: dict[str, int] = {}
     by_model: dict[str, int] = {}
     by_category: dict[str, int] = {}
-    review_count = 0
-    for e in entries:
+    review_required = 0
+    outstanding = 0
+    for e in decisions:
         by_risk[e.risk_category.value] = by_risk.get(e.risk_category.value, 0) + 1
         by_model[e.model_name] = by_model.get(e.model_name, 0) + 1
         by_category[e.decision_category.value] = by_category.get(e.decision_category.value, 0) + 1
         if e.human_review_required:
-            review_count += 1
+            review_required += 1
+            if e.decision_id not in reviewed_ids:
+                outstanding += 1
     return GovernanceSummary(
-        total_decisions=len(entries),
-        human_review_required_count=review_count,
-        human_review_rate=round(review_count / len(entries), 3) if entries else None,
+        total_decisions=len(decisions),
+        human_review_required_count=review_required,
+        human_review_rate=round(review_required / len(decisions), 3) if decisions else None,
+        reviews_recorded=len(reviews),
+        outstanding_reviews=outstanding,
         by_risk_category=by_risk,
         by_model=by_model,
         by_decision_category=by_category,

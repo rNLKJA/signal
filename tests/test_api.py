@@ -77,6 +77,52 @@ def test_unknown_decision_id_404(client):
     assert "d-doesnotexist" in response.json()["detail"]
 
 
+def test_record_review_logged_and_counted(client):
+    decision_id = client.post("/ask", json={"offense": "theft"}).json()["decision_id"]
+    r = client.post(
+        f"/decisions/{decision_id}/review",
+        json={"reviewer": "analyst@sapol.sa.gov.au", "note": "Looks right."},
+    )
+    assert r.status_code == 200
+    review = r.json()
+    assert review["decision_category"] == "review"
+    assert review["reviews_decision_id"] == decision_id
+    assert review["human_reviewer"] == "analyst@sapol.sa.gov.au"
+    # the review is its own audit entry, appended (log never mutated)
+    assert decision_id in [d["decision_id"] for d in client.get("/decisions").json()]
+    summary = client.get("/governance/summary").json()
+    assert summary["reviews_recorded"] == 1
+    assert summary["total_decisions"] == 1  # the review is not counted as a decision
+
+
+def test_override_requires_reason(client):
+    decision_id = client.post("/ask", json={"offense": "theft"}).json()["decision_id"]
+    bad = client.post(
+        f"/decisions/{decision_id}/review",
+        json={"reviewer": "analyst", "override": True},
+    )
+    assert bad.status_code == 422
+    ok = client.post(
+        f"/decisions/{decision_id}/review",
+        json={"reviewer": "analyst", "override": True, "override_reason": "Anomaly was a data error."},
+    )
+    assert ok.status_code == 200
+    assert ok.json()["override_applied"] is True
+
+
+def test_review_unknown_decision_404(client):
+    r = client.post("/decisions/d-nope/review", json={"reviewer": "analyst"})
+    assert r.status_code == 404
+
+
+def test_outstanding_reviews_tracked(client):
+    # an anomalous query flags human review; until reviewed it is outstanding
+    client.post("/ask", json={"offense": "theft", "region": "adelaide"})
+    before = client.get("/governance/summary").json()
+    if before["human_review_required_count"]:
+        assert before["outstanding_reviews"] == before["human_review_required_count"]
+
+
 def test_governance_summary(client):
     client.post("/ask", json={"offense": "theft"})
     client.post("/ask", json={"offense": "robbery"})

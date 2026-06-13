@@ -32,7 +32,7 @@ from collections import deque
 from datetime import datetime, timezone
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from signalkit.data.sa_crime import MonthlyRecord, get_records
 from signalkit.governance.decision_log import (
@@ -102,6 +102,23 @@ class CompareQuery(BaseModel):
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
     offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
     months: int = Field(default=12, ge=2, le=24)
+
+
+class ReviewRequest(BaseModel):
+    """A human review recorded against a prior decision."""
+
+    reviewer: str = Field(min_length=1, description="Who reviewed (email or role)")
+    override: bool = Field(default=False, description="True if the human overrode the result")
+    override_reason: Optional[str] = Field(
+        default=None, description="Required when override is true"
+    )
+    note: Optional[str] = Field(default=None, description="Optional free-text note")
+
+    @model_validator(mode="after")
+    def _reason_required_when_override(self) -> "ReviewRequest":
+        if self.override and not (self.override_reason and self.override_reason.strip()):
+            raise ValueError("override_reason is required when override is true.")
+        return self
 
 
 class RegionSeries(BaseModel):
@@ -489,6 +506,38 @@ class Analyst:
             if entry.decision_id == decision_id:
                 return entry
         return None
+
+    def record_review(self, decision_id: str, req: ReviewRequest) -> DecisionEntry | None:
+        """Record a human review of a prior decision as its own audit event.
+
+        Returns None if the decision is unknown. The review is appended (the log
+        is never mutated), references the original via ``reviews_decision_id``,
+        and closes the loop on the 'whether a human reviewed it' requirement.
+        """
+        original = self.get_decision(decision_id)
+        if original is None:
+            return None
+        verb = "Overrode" if req.override else "Confirmed"
+        entry = DecisionEntry(
+            model_name="human-review (manual)",
+            model_provider=None,
+            input_summary=f"Human review of decision {decision_id}",
+            model_output_summary=(req.note or f"{verb} by {req.reviewer}.")[:300],
+            data_sources=original.data_sources,
+            decision_made=f"{verb} decision {decision_id}.",
+            decision_category=DecisionCategory.review,
+            human_review_required=False,
+            human_reviewer=req.reviewer,
+            override_applied=req.override,
+            override_reason=req.override_reason,
+            reviews_decision_id=decision_id,
+            legislative_basis="APS Mandatory AI Requirements (Jun 2026) — human oversight",
+            risk_category=RiskCategory.minimal,
+            tags=["human-review", decision_id],
+            notes=req.note,
+        )
+        self._logger.log(entry)
+        return entry
 
     def governance_summary(self) -> GovernanceSummary:
         """Aggregate the audit log: review rate, risk tiers, model breakdown."""

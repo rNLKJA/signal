@@ -11,6 +11,7 @@ Endpoints:
   POST /compare                — one offence scope across SA regions
   GET  /decisions              — read back the audit trail (the governance log, live)
   GET  /decisions/{decision_id} — resolve one decision_id to its full audit entry
+  POST /decisions/{decision_id}/review — record a human review/override of a decision
   GET  /governance/summary     — aggregate governance posture (review rate, risk tiers)
 
 Run locally:
@@ -31,7 +32,13 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 
 import signalkit
-from signalkit.analyst.core import Analyst, AnalystQuery, CompareQuery, NoDataError
+from signalkit.analyst.core import (
+    Analyst,
+    AnalystQuery,
+    CompareQuery,
+    NoDataError,
+    ReviewRequest,
+)
 from signalkit.data.sa_crime import DataUnavailable
 from signalkit.ratelimit import RateLimiter
 
@@ -135,6 +142,16 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
     @app.get("/decisions/{decision_id}")
     def decision_by_id(decision_id: str) -> dict:
         entry = app.state.analyst.get_decision(decision_id)
+        if entry is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No decision '{decision_id}' in the audit log.",
+            )
+        return entry.model_dump(mode="json")
+
+    @app.post("/decisions/{decision_id}/review")
+    def record_review(decision_id: str, review: ReviewRequest) -> dict:
+        entry = app.state.analyst.record_review(decision_id, review)
         if entry is None:
             raise HTTPException(
                 status_code=404,

@@ -79,7 +79,8 @@ Cold pulls still take long enough that they must never block a request, so the d
 | `POST /compare` | One offence scope across SA regions: aligned monthly series, totals, YoY, trend per region. Audit-logged and rate-limited like `/ask`. |
 | `GET /decisions` | The governance log, live. Most recent entries, `limit` up to 100. |
 | `GET /decisions/{decision_id}` | Resolve any `decision_id` from an answer to its full audit entry. |
-| `GET /governance/summary` | The governance posture, quantified: review rate, risk tiers, model breakdown. |
+| `POST /decisions/{decision_id}/review` | Record a human review of a decision — reviewer, and an override with a required reason. Appended as its own audit event; the log is never mutated. |
+| `GET /governance/summary` | The governance posture, quantified: review rate, reviews recorded, outstanding reviews, risk tiers, model breakdown. |
 | `GET /health` | Liveness and version. |
 | `GET /docs` | OpenAPI docs. |
 
@@ -104,10 +105,10 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Visual suite: bar/line toggle, region comparison (multi-series), top offences, offence-division split — all hand-rolled SVG
 - [x] Perf: LLM narrative cache (identical queries never re-spend tokens), gzip, dashboard cache headers
 - [x] Interactive charts: custom hover tooltips, click a top offence or region to drill in, keyboard accessible
+- [x] Human-review workflow: record a reviewer or override (with required reason) against a decision; tracked in the governance summary
 
 ### Planned for v1.0.0
 
-- [ ] Human-review workflow: record a reviewer and override reason against a decision
 - [ ] Audit export (`/decisions.csv`) and a governance-summary panel in the dashboard
 - [ ] Live-path tests and a frozen, documented API contract
 - [ ] National data: ingest NSW / VIC recorded-crime tables (published as spreadsheets, not queryable APIs) for a cross-state view

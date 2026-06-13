@@ -96,6 +96,11 @@
   }
   .legend button.hit:hover { color: var(--text); border-color: var(--brand); }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  details.review { margin-top: .75rem; font-size: .85rem; }
+  details.review summary { cursor: pointer; color: var(--brand); }
+  .review-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .6rem; }
+  .review-form input[type="text"], .review-form > input:not([type]) { min-width: 12rem; }
+  .rv-chk { display: inline-flex; align-items: center; gap: .3rem; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -147,6 +152,16 @@
         <div><h2>Offence division split</h2><div id="law-holder"></div></div>
       </div>
       <p class="gov" id="gov"></p>
+      <details class="review">
+        <summary>Record human review</summary>
+        <div class="review-form">
+          <input id="rv-reviewer" placeholder="reviewer — email or role" autocomplete="off">
+          <label class="rv-chk"><input type="checkbox" id="rv-override"> override the result</label>
+          <input id="rv-reason" placeholder="override reason (required if overriding)" autocomplete="off">
+          <button type="button" id="rv-submit">Submit review</button>
+          <span id="rv-msg" class="hint"></span>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -425,6 +440,26 @@ async function runCompare() {
 
 $("ask-form").addEventListener("submit", (ev) => { ev.preventDefault(); runAsk(); });
 $("cmp-btn").addEventListener("click", runCompare);
+
+$("rv-submit").addEventListener("click", async () => {
+  if (!lastAnswer) return;
+  const reviewer = $("rv-reviewer").value.trim();
+  if (!reviewer) { $("rv-msg").textContent = "Enter a reviewer."; return; }
+  const override = $("rv-override").checked;
+  const payload = {
+    reviewer, override,
+    override_reason: $("rv-reason").value.trim() || null,
+    note: null,
+  };
+  const r = await post(`/decisions/${lastAnswer.decision_id}/review`, payload);
+  if (r.ok) {
+    $("rv-msg").textContent = `Review recorded — ${r.body.decision_id}.`;
+    await refreshAudit();
+  } else {
+    $("rv-msg").textContent = r.status === 422
+      ? "An override needs a reason." : `Failed (${r.status}).`;
+  }
+});
 
 for (const [btn, type] of [["t-bar", "bar"], ["t-line", "line"]]) {
   $(btn).addEventListener("click", () => {
