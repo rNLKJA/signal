@@ -117,8 +117,12 @@
   #ds-selbar { margin-bottom: .8rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
   #cmp-map, #geo-map { height: 380px; margin-top: .6rem; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
   .leaflet-popup-content { font: inherit; }
-  .gov-statement { white-space: pre-wrap; font-size: .8rem; background: var(--bg);
+  .gov-statement { font-size: .82rem; background: var(--bg);
     border: 1px solid var(--border); border-radius: 6px; padding: .7rem .9rem; margin-top: .4rem; }
+  .gov-statement h3 { font-size: .85rem; margin: .7rem 0 .2rem; }
+  .gov-statement p { margin: .2rem 0; }
+  .gov-statement ul { margin: .2rem 0 .2rem 1.1rem; padding: 0; }
+  .gov-statement li { word-break: break-word; }
   #gov-details table { font-size: .8rem; }
 </style>
 </head>
@@ -953,8 +957,22 @@ async function loadGovArtifacts() {
         }</tbody></table>`
       : '<p class="hint">No use cases logged yet — ask something.</p>';
     const ts = await (await fetch("/governance/transparency")).json();
-    const esc = (s) => s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
-    $("gov-transparency").innerHTML = `<div class="gov-statement">${esc(ts.statement)}</div>`;
+    const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+    const list = (xs) => xs.length
+      ? `<ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
+      : "<p>None recorded yet.</p>";
+    const risks = Object.entries(ts.risk_tiers).map(([k, v]) => `${k}: ${v}`).join(", ");
+    $("gov-transparency").innerHTML = `<div class="gov-statement">
+      <p><b>Agency:</b> ${esc(ts.agency)}</p>
+      <p><b>Accountable official:</b> ${esc(ts.accountable_official)}</p>
+      <p><b>Policy basis:</b> ${esc(ts.policy)}; mandatory requirements from 15 June 2026.</p>
+      <h3>What AI we use</h3>${list(ts.ai_systems)}
+      <h3>What we use it for</h3>${list(ts.purposes)}
+      <h3>What data informs it</h3>${list(ts.data_sources)}
+      <h3>Risk classification (EU AI Act tiers)</h3><p>${risks || "None recorded yet"}.</p>
+      <h3>Human oversight</h3><p>${esc(ts.human_oversight)}</p>
+      <h3>Public access and accountability</h3><p>${esc(ts.public_access)}</p>
+    </div>`;
   } catch {
     $("gov-register").innerHTML = '<p class="err">Couldn’t load governance artifacts.</p>';
   }
