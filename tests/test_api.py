@@ -167,6 +167,28 @@ def test_ask_includes_offense_division_split(client):
     assert sum(stats["by_offense_division"].values()) == stats["total_offences"]
 
 
+def test_use_case_register(client):
+    client.post("/ask", json={"offense": "theft"})
+    client.post("/compare", json={"offense": "robbery"})
+    reg = client.get("/governance/register").json()
+    assert reg["policy"].startswith("Policy for the responsible use of AI in government")
+    use_cases = {u["use_case"] for u in reg["use_cases"]}
+    assert "Crime trend analysis" in use_cases
+    assert "Regional crime comparison" in use_cases
+    row = next(u for u in reg["use_cases"] if u["use_case"] == "Crime trend analysis")
+    assert row["decisions"] >= 1
+    assert row["models"]
+
+
+def test_transparency_statement(client):
+    client.post("/ask", json={"offense": "theft"})
+    ts = client.get("/governance/transparency").json()
+    assert "AI transparency statement" in ts["statement"]
+    assert "15 June 2026" in ts["statement"]
+    assert ts["ai_systems"]
+    assert "Crime trend analysis" in ts["purposes"]
+
+
 def test_decisions_csv_export(client):
     client.post("/ask", json={"offense": "theft"})
     r = client.get("/decisions.csv")

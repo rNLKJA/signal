@@ -43,8 +43,15 @@ from signalkit.governance.decision_log import (
     DecisionLogger,
     GovernanceSummary,
     RiskCategory,
+    TransparencyStatement,
+    UseCaseRegister,
+    register,
     summarise,
+    transparency_statement,
 )
+
+DEFAULT_AGENCY = "Signal (demo · South Australia Police context)"
+DEFAULT_ACCOUNTABLE_OFFICIAL = "Accountable Official (demo)"
 
 # Default (SA) record source. Kept as a module-level name so tests can patch it;
 # _records_for routes "nyc" to the NYC layer and everything else through here.
@@ -421,6 +428,10 @@ class Analyst:
             log_path or os.environ.get("SIGNAL_LOG_PATH", DEFAULT_LOG_PATH)
         )
         self._offline = offline
+        self._agency = os.environ.get("SIGNAL_AGENCY", DEFAULT_AGENCY)
+        self._accountable_official = os.environ.get(
+            "SIGNAL_ACCOUNTABLE_OFFICIAL", DEFAULT_ACCOUNTABLE_OFFICIAL
+        )
 
     def ask(self, query: AnalystQuery) -> AnalystAnswer:
         records, source_label = _records_for(query.source, self._offline)
@@ -456,10 +467,11 @@ class Analyst:
             data_sources=[source_label],
             decision_made="Returned trend analysis to caller via Signal API.",
             decision_category=DecisionCategory.analytical,
+            use_case="Crime trend analysis",
             confidence_score=0.95 if model_used == DETERMINISTIC_MODEL else 0.8,
             human_review_required=human_review,
             legislative_basis=(
-                "APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency"
+                "Policy for the responsible use of AI in government (DTA v2.0); EU AI Act Art. 50"
             ),
             risk_category=RiskCategory.limited,
             tags=[f"{query.source}-crime", "trend-analysis"],
@@ -555,10 +567,11 @@ class Analyst:
             data_sources=[source_label],
             decision_made="Returned region comparison to caller via Signal API.",
             decision_category=DecisionCategory.analytical,
+            use_case="Regional crime comparison",
             confidence_score=0.95 if model_used == DETERMINISTIC_MODEL else 0.8,
             human_review_required=human_review,
             legislative_basis=(
-                "APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency"
+                "Policy for the responsible use of AI in government (DTA v2.0); EU AI Act Art. 50"
             ),
             risk_category=RiskCategory.limited,
             tags=[f"{query.source}-crime", "region-comparison"],
@@ -608,12 +621,13 @@ class Analyst:
             data_sources=original.data_sources,
             decision_made=f"{verb} decision {decision_id}.",
             decision_category=DecisionCategory.review,
+            use_case="Human review of AI decision",
             human_review_required=False,
             human_reviewer=req.reviewer,
             override_applied=req.override,
             override_reason=req.override_reason,
             reviews_decision_id=decision_id,
-            legislative_basis="APS Mandatory AI Requirements (Jun 2026) — human oversight",
+            legislative_basis="Policy for the responsible use of AI in government (DTA v2.0) — human oversight",
             risk_category=RiskCategory.minimal,
             tags=["human-review", decision_id],
             notes=req.note,
@@ -624,6 +638,16 @@ class Analyst:
     def governance_summary(self) -> GovernanceSummary:
         """Aggregate the audit log: review rate, risk tiers, model breakdown."""
         return summarise(self._logger.read_all())
+
+    def use_case_register(self) -> UseCaseRegister:
+        """The DTA-style register of in-scope AI use cases, live from the log."""
+        return register(self._logger.read_all(), self._agency, self._accountable_official)
+
+    def transparency(self) -> TransparencyStatement:
+        """A DTA-style AI transparency statement, generated from the log."""
+        return transparency_statement(
+            self._logger.read_all(), self._agency, self._accountable_official
+        )
 
     def preview_dataset(
         self, resource_id: str, dataset_title: str = "", limit: int = 20, portal: str = "sa"
@@ -647,8 +671,9 @@ class Analyst:
             data_sources=[f"{portal_base} resource {resource_id}{scope}"],
             decision_made="Returned a catalogue data preview via Signal API.",
             decision_category=DecisionCategory.retrieval,
+            use_case="Open-data catalogue preview",
             human_review_required=False,
-            legislative_basis="APS Mandatory AI Requirements (Jun 2026) — data provenance",
+            legislative_basis="Policy for the responsible use of AI in government (DTA v2.0) — provenance",
             risk_category=RiskCategory.minimal,
             tags=[portal, "catalogue-preview"],
         )
@@ -805,9 +830,10 @@ class Analyst:
             data_sources=sources,
             decision_made="Returned a generic trend analysis via Signal API.",
             decision_category=DecisionCategory.analytical,
+            use_case="Open-data trend analysis",
             confidence_score=0.95 if model_used == DETERMINISTIC_MODEL else 0.8,
             human_review_required=human_review,
-            legislative_basis="APS Mandatory AI Requirements (Jun 2026); EU AI Act Art. 50 transparency",
+            legislative_basis="Policy for the responsible use of AI in government (DTA v2.0); EU AI Act Art. 50",
             risk_category=RiskCategory.limited,
             tags=tags,
         )

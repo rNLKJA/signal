@@ -13,6 +13,8 @@ Endpoints:
   GET  /decisions/{decision_id} — resolve one decision_id to its full audit entry
   POST /decisions/{decision_id}/review — record a human review/override of a decision
   GET  /governance/summary     — aggregate governance posture (review rate, risk tiers)
+  GET  /governance/register    — DTA-style register of in-scope AI use cases
+  GET  /governance/transparency — DTA-style AI transparency statement, generated from the log
   GET  /datasets               — search the data.sa.gov.au catalogue
   GET  /datasets/{name}        — metadata for one data.sa dataset
   GET  /resources/{id}/preview — preview a datastore resource (audit-logged)
@@ -176,6 +178,16 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
     @app.get("/governance/summary")
     def governance_summary() -> dict:
         return app.state.analyst.governance_summary().model_dump(mode="json")
+
+    @app.get("/governance/register")
+    def governance_register() -> dict:
+        """The DTA Policy v2.0 register of in-scope AI use cases, live."""
+        return app.state.analyst.use_case_register().model_dump(mode="json")
+
+    @app.get("/governance/transparency")
+    def governance_transparency() -> dict:
+        """A DTA-style AI transparency statement, generated from the log."""
+        return app.state.analyst.transparency().model_dump(mode="json")
 
     @app.get("/decisions.csv")
     def decisions_csv(limit: int = Query(default=1000, ge=1, le=10000)) -> Response:

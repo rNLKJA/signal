@@ -117,6 +117,9 @@
   #ds-selbar { margin-bottom: .8rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
   #cmp-map, #geo-map { height: 380px; margin-top: .6rem; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
   .leaflet-popup-content { font: inherit; }
+  .gov-statement { white-space: pre-wrap; font-size: .8rem; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: .7rem .9rem; margin-top: .4rem; }
+  #gov-details table { font-size: .8rem; }
 </style>
 </head>
 <body>
@@ -236,8 +239,19 @@
         <tbody id="audit-body"><tr><td colspan="5" class="hint">No decisions logged yet — ask something.</td></tr></tbody>
       </table>
       <div class="chips" id="gov-panel"></div>
-      <p class="hint"><a href="/decisions.csv" download>⤓ Download the full audit log (CSV)</a>
-        · <a href="/governance/summary">JSON summary</a></p>
+      <details class="review" id="gov-details">
+        <summary>DTA Policy v2.0 governance artifacts — use-case register &amp; transparency statement</summary>
+        <p class="hint">Generated live from the audit log, aligned to the Australian Government's
+          Policy for the responsible use of AI in government (DTA v2.0; mandatory from 15 June 2026).</p>
+        <h2>AI use-case register</h2>
+        <div id="gov-register"></div>
+        <h2>AI transparency statement</h2>
+        <div id="gov-transparency"></div>
+      </details>
+      <p class="hint"><a href="/decisions.csv" download>⤓ Audit log (CSV)</a>
+        · <a href="/governance/register">register (JSON)</a>
+        · <a href="/governance/transparency">transparency statement (JSON)</a>
+        · <a href="/governance/summary">summary (JSON)</a></p>
     </div>
   </section>
 
@@ -924,6 +938,30 @@ function setMode(mode) {
 }
 $("mode-crime").addEventListener("click", () => setMode("crime"));
 $("mode-explore").addEventListener("click", () => setMode("explore"));
+
+// DTA Policy v2.0 artifacts — loaded on demand when the disclosure is opened.
+async function loadGovArtifacts() {
+  try {
+    const reg = await (await fetch("/governance/register")).json();
+    $("gov-register").innerHTML = reg.use_cases.length
+      ? `<table><thead><tr><th>Use case</th><th>Decisions</th><th>Risk</th>
+           <th>Review rate</th><th>Accountable reviewers</th></tr></thead><tbody>${
+          reg.use_cases.map((u) => `<tr><td>${u.use_case}</td><td>${u.decisions}</td>
+            <td>${Object.entries(u.risk_categories).map(([k, v]) => `${k} ${v}`).join(", ")}</td>
+            <td>${Math.round((u.human_review_rate ?? 0) * 100)}%</td>
+            <td>${u.accountable_reviewers.join(", ") || "—"}</td></tr>`).join("")
+        }</tbody></table>`
+      : '<p class="hint">No use cases logged yet — ask something.</p>';
+    const ts = await (await fetch("/governance/transparency")).json();
+    const esc = (s) => s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+    $("gov-transparency").innerHTML = `<div class="gov-statement">${esc(ts.statement)}</div>`;
+  } catch {
+    $("gov-register").innerHTML = '<p class="err">Couldn’t load governance artifacts.</p>';
+  }
+}
+$("gov-details").addEventListener("toggle", () => {
+  if ($("gov-details").open) loadGovArtifacts();
+});
 
 loadVersion();
 refreshAudit();

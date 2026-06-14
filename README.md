@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/rNLKJA/signal/actions/workflows/ci.yml/badge.svg)](https://github.com/rNLKJA/signal/actions/workflows/ci.yml)
 
-An interactive product over South Australian crime data, with an analyst layer and a governance log that records every AI-assisted answer in a form built to satisfy the APS Mandatory AI Requirements and the EU AI Act.
+An interactive product over South Australian and New York City crime data, with an analyst layer and a governance log that records every AI-assisted answer in a form aligned to the Australian Government's [Policy for the responsible use of AI in government](https://www.digital.gov.au/ai/ai-in-government-policy) (DTA) and the EU AI Act.
 
 **Live demo: https://rnlkja--signal-api-api.modal.run** — ask it something and watch the audit trail fill in. Queries are shareable links: [`/?offense=theft&region=adelaide`](https://rnlkja--signal-api-api.modal.run/?offense=theft&region=adelaide).
 
@@ -31,26 +31,26 @@ That `decision_id` resolves at `GET /decisions` to the full audit entry: model p
 
 ## The problem
 
-From 15 June 2026, Australian Public Service agencies must document their use of AI against four mandatory requirements: what AI system was used, what decision was made, what data informed the decision, and whether a human reviewed it. The EU AI Act (2024/1689) adds risk-tier classification and traceability obligations, and the December 2026 amendment to the Privacy Act 1988 (Cth) adds a disclosure obligation for automated decision-making.
+The Australian Government's [Policy for the responsible use of AI in government](https://www.digital.gov.au/ai/ai-in-government-policy) (DTA, Version 2.0, published 1 Dec 2025) makes AI governance mandatory across the public service. The **first mandatory requirements commence 15 June 2026**, and mandatory **AI use-case impact assessments** follow by **15 December 2026**. Agencies must designate accountable officials, maintain a register of in-scope AI use cases, publish [AI transparency statements](https://www.dta.gov.au/ai-transparency-statement), and run impact assessments. The EU AI Act (2024/1689) adds risk-tier classification and traceability, and the Privacy Act 1988 (Cth) reforms add an automated decision-making disclosure obligation.
 
-These rules are easy to nod along to and hard to actually meet, because compliance has to be captured at the moment a decision is made, not reconstructed afterwards. Signal wires the record into the request path: the analyst cannot answer without logging.
+These rules are easy to nod along to and hard to actually meet, because compliance has to be captured at the moment a decision is made, not reconstructed for an auditor afterwards. Signal wires the record into the request path: the analyst cannot answer without logging, and the use-case register and transparency statement are generated live from that log.
 
-The data deliberately sits in the same domain the author works in — South Australian policing — so the governance question is concrete rather than hypothetical.
+The data deliberately sits in the same domain the author works in — policing — so the governance question is concrete rather than hypothetical.
 
 ## Governance design
 
-The core is [`signalkit/governance/decision_log.py`](signalkit/governance/decision_log.py): a Pydantic v2 schema and an append-only JSONL logger for AI-assisted decisions. Every field maps to a specific obligation, tagged in the source as `[APS]`, `[EU]`, or `[Privacy]`.
+The core is [`signalkit/governance/decision_log.py`](signalkit/governance/decision_log.py): a Pydantic v2 schema and an append-only JSONL logger for AI-assisted decisions, plus the live artifacts the DTA policy requires.
 
-How it maps to the four APS mandatory requirements:
+How Signal maps to the DTA Policy v2.0 mandatory artifacts:
 
-| APS requirement | Field in `DecisionEntry` |
+| DTA Policy v2.0 requirement | In Signal |
 |---|---|
-| What AI system was used | `model_name`, `model_version`, `model_provider` |
-| What decision was made | `decision_made`, `decision_category` |
-| What data informed it | `data_sources`, `input_summary`, `model_output_summary` |
-| Whether a human reviewed it | `human_review_required`, `human_reviewer`, `override_applied`, `override_reason` |
+| Accountable official & use-case owner | `human_reviewer`, `officer_id`, `agency` (env-configurable) |
+| Register of in-scope AI use cases | the log itself, rolled up live at `GET /governance/register` |
+| AI transparency statement | generated from the log at `GET /governance/transparency` |
+| AI use-case impact assessment | `risk_category`, `confidence_score`, `input_summary`, `model_output_summary`, `data_sources` |
 
-For the EU AI Act, `risk_category` records the tier (`unacceptable`, `high`, `limited`, `minimal`) so high-risk uses are flagged for the logging and oversight that Annex III requires. `confidence_score` and the UTC `timestamp` support the traceability obligations. A validator enforces that any human override carries a written reason, so the record cannot claim an override without explaining it.
+Every decision also records *what AI ran, what was decided, what data informed it, and whether a human reviewed it* — the questions the policy turns on. For the EU AI Act, `risk_category` records the tier (`unacceptable`, `high`, `limited`, `minimal`) so high-risk uses are flagged for the logging and oversight that Annex III requires. `confidence_score` and the UTC `timestamp` support the traceability obligations. A validator enforces that any human override carries a written reason, so the record cannot claim an override without explaining it.
 
 The analyst layer ([`signalkit/analyst/core.py`](signalkit/analyst/core.py)) applies three governance rules of its own:
 
