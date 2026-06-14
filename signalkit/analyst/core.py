@@ -128,15 +128,47 @@ class CompareQuery(BaseModel):
     source: str = Field(default="sa", description="Data source: sa | nyc")
 
 
+_MONTH_NAMES = {
+    m: i for i, m in enumerate(
+        ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
+        start=1,
+    )
+}
+
+
 def _parse_month(value) -> Optional[str]:
-    """Extract YYYY-MM from a value, handling ISO/timestamp and DD/MM/YYYY."""
+    """Extract a sortable YYYY-MM period from many date/period formats.
+
+    Handles ISO/timestamps, DD/MM/YYYY, quarter labels (Q1 2023, Q1-2023/2024 →
+    quarter-start month), financial years (2023-24, 2023/2024 → the start year's
+    July), and month names (Jul 2023). Returns None when nothing parses, so the
+    analyser can fall back honestly rather than inventing a period."""
     s = str(value).strip() if value is not None else ""
+    if not s:
+        return None
+    # ISO / timestamp YYYY-MM (validate the month so '2023-24' falls through)
     m = re.match(r"^(\d{4})-(\d{2})", s)
-    if m:
+    if m and 1 <= int(m.group(2)) <= 12:
         return f"{m.group(1)}-{m.group(2)}"
-    m = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{4})", s)  # DD/MM/YYYY
-    if m:
+    # DD/MM/YYYY
+    m = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{4})", s)
+    if m and 1 <= int(m.group(2)) <= 12:
         return f"{m.group(3)}-{int(m.group(2)):02d}"
+    # Quarter label with a year: Q1 2023, 2023-Q1, Q1-2023/2024
+    q = re.search(r"[Qq]([1-4])", s)
+    y = re.search(r"(?:19|20)\d{2}", s)
+    if q and y:
+        return f"{y.group(0)}-{(int(q.group(1)) - 1) * 3 + 1:02d}"
+    # Financial year: 2023-24, 2023/2024, 2023/24 → start year, July (AU FY)
+    m = re.match(r"^(\d{4})[/\-](\d{2,4})$", s)
+    if m:
+        return f"{m.group(1)}-07"
+    # Month name + year: Jul 2023, July-2023, Jul-Sep 2023 (first month)
+    m = re.search(r"\b([A-Za-z]{3,9})\b", s)
+    if m and y:
+        mon = _MONTH_NAMES.get(m.group(1)[:3].lower())
+        if mon:
+            return f"{y.group(0)}-{mon:02d}"
     return None
 
 

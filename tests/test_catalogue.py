@@ -109,6 +109,22 @@ def test_generic_analysis_falls_back_when_too_short(tmp_path, monkeypatch):
     assert "month" in result["reason"].lower()
 
 
+def test_parse_month_handles_many_formats():
+    import signalkit.analyst.core as core
+    assert core._parse_month("2023-04") == "2023-04"
+    assert core._parse_month("15/08/2025") == "2025-08"
+    assert core._parse_month("2013-01-12T00:10:00") == "2013-01"
+    assert core._parse_month("Q1-2023/2024") == "2023-01"  # quarter label
+    assert core._parse_month("2023 Q3") == "2023-07"
+    assert core._parse_month("2023-24") == "2023-07"       # financial year
+    assert core._parse_month("2023/2024") == "2023-07"
+    assert core._parse_month("Jul 2023") == "2023-07"      # month name
+    assert core._parse_month("July 2023") == "2023-07"
+    assert core._parse_month("banana") is None
+    assert core._parse_month("") is None
+    assert core._parse_month("5008") is None               # a value, not a date
+
+
 def test_multi_resource_analysis_combines(tmp_path, monkeypatch):
     per = {
         "r1": _rows_over_months(["2025-01", "2025-02"]),

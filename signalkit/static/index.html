@@ -234,7 +234,7 @@
     <div class="panel">
       <table id="audit">
         <caption>Audit trail — the governance log, live (most recent first).
-          Every row satisfies the four APS mandatory AI requirements.</caption>
+          Aligned to the DTA Policy for the responsible use of AI in government (v2.0).</caption>
         <thead><tr><th>Decision</th><th>When (UTC)</th><th>Model</th><th>Input</th><th>Human review</th></tr></thead>
         <tbody id="audit-body"><tr><td colspan="5" class="hint">No decisions logged yet — ask something.</td></tr></tbody>
       </table>
@@ -793,7 +793,7 @@ function autorunFromURL() {
   form.elements.offense.value = qp.get("offense") || "";
   form.elements.region.value = qp.get("region") || "";
   if (qp.get("months")) form.elements.months.value = qp.get("months");
-  runAsk();
+  qp.get("view") === "compare" ? runCompare() : runAsk();
 }
 
 // data.sa.gov.au catalogue explorer

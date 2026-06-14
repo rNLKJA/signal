@@ -84,6 +84,8 @@ Cold pulls still take long enough that they must never block a request, so the d
 | `GET /health` | Liveness and version. |
 | `GET /docs` | OpenAPI docs. |
 
+![Region comparison on an OpenStreetMap base map — the explorer plots any geocoded dataset the same way](.github/maps.png)
+
 ## Status and roadmap
 
 ![Roadmap to v1.0.0: interactive charts done; review workflow, audit export, test and freeze API, national data, scheduled refresh, and map view planned](.github/roadmap.svg)
