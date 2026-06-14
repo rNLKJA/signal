@@ -127,6 +127,24 @@ As of **v1.0.0** the public response shapes for `/ask`, `/compare`, `/decisions`
 tests. Fields may be added, but existing fields will not change meaning or disappear
 without a major version bump.
 
+## Architecture and scaling
+
+Signal is deliberately small and self-contained, but the pieces are chosen so it could grow into a real agency deployment.
+
+- **Audit store.** The decision log is append-only JSONL (one decision per line, grep-able), and on Modal it persists to a Volume so it survives cold starts. Export it as CSV (`GET /decisions.csv`) or NDJSON (`GET /decisions.ndjson`) and load it straight into DuckDB or pandas:
+
+  ```sql
+  -- DuckDB, over the NDJSON export
+  SELECT use_case, count(*), round(avg(confidence_score), 2)
+  FROM read_json_auto('signal-decisions.ndjson')
+  GROUP BY use_case ORDER BY 2 DESC;
+  ```
+
+  At agency scale the single-writer JSONL would move behind a durable store (Postgres or object storage with an append log), keeping the same schema and the same "log on the request path" guarantee.
+- **Single container by design.** The rate limiter (in-process sliding window) and the single-writer log require exactly one container (`max_containers=1`); `min_containers=1` keeps it warm. That is a correctness pin, not just a cost choice.
+- **Optional auth.** Privileged actions (recording an official human review) lock behind an API key: set `SIGNAL_API_KEY` and callers must send `X-API-Key`. Unset (the public demo) leaves them open. The accountable official and agency stamped on every record are set with `SIGNAL_ACCOUNTABLE_OFFICIAL` and `SIGNAL_AGENCY`.
+- **Honest limits.** The catalogue explorer fetches rows client-side with a cap, so very large datasets are sampled (and flagged in the result) rather than scanned whole. Full authentication, multi-tenancy and a durable store are the next production steps, not things already shipped.
+
 ## Reproduce
 
 Requires Python 3.10 or later.

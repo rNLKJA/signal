@@ -63,6 +63,15 @@ def _client_key(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _require_api_key(request: Request) -> None:
+    """Optional auth gate. If SIGNAL_API_KEY is set, privileged endpoints require
+    a matching X-API-Key header. Unset (the public demo) leaves them open, so the
+    demo is unaffected while a real deployment can lock the privileged actions."""
+    required = os.environ.get("SIGNAL_API_KEY")
+    if required and request.headers.get("x-api-key") != required:
+        raise HTTPException(status_code=401, detail="A valid X-API-Key is required.")
+
+
 def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None = None) -> FastAPI:
     app = FastAPI(
         title="Signal",
@@ -166,7 +175,8 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         return entry.model_dump(mode="json")
 
     @app.post("/decisions/{decision_id}/review")
-    def record_review(decision_id: str, review: ReviewRequest) -> dict:
+    def record_review(decision_id: str, review: ReviewRequest, request: Request) -> dict:
+        _require_api_key(request)  # privileged: recording official oversight
         entry = app.state.analyst.record_review(decision_id, review)
         if entry is None:
             raise HTTPException(
@@ -211,6 +221,17 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
             content=buf.getvalue(),
             media_type="text/csv",
             headers={"Content-Disposition": "attachment; filename=signal-decisions.csv"},
+        )
+
+    @app.get("/decisions.ndjson")
+    def decisions_ndjson(limit: int = Query(default=1000, ge=1, le=10000)) -> Response:
+        """The audit log as newline-delimited JSON — load straight into DuckDB,
+        pandas, jq or a log pipeline."""
+        lines = "\n".join(e.model_dump_json() for e in app.state.analyst.recent_decisions(limit))
+        return Response(
+            content=lines + "\n" if lines else "",
+            media_type="application/x-ndjson",
+            headers={"Content-Disposition": "attachment; filename=signal-decisions.ndjson"},
         )
 
     # --- data.sa.gov.au catalogue explorer ---

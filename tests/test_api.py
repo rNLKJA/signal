@@ -167,6 +167,31 @@ def test_ask_includes_offense_division_split(client):
     assert sum(stats["by_offense_division"].values()) == stats["total_offences"]
 
 
+def test_review_open_without_api_key(client):
+    did = client.post("/ask", json={"offense": "theft"}).json()["decision_id"]
+    assert client.post(f"/decisions/{did}/review", json={"reviewer": "a"}).status_code == 200
+
+
+def test_review_locked_with_api_key(client, monkeypatch):
+    monkeypatch.setenv("SIGNAL_API_KEY", "secret")
+    did = client.post("/ask", json={"offense": "theft"}).json()["decision_id"]
+    assert client.post(f"/decisions/{did}/review", json={"reviewer": "a"}).status_code == 401
+    ok = client.post(
+        f"/decisions/{did}/review", json={"reviewer": "a"}, headers={"X-API-Key": "secret"}
+    )
+    assert ok.status_code == 200
+
+
+def test_decisions_ndjson_export(client):
+    import json as _json
+    client.post("/ask", json={"offense": "theft"})
+    r = client.get("/decisions.ndjson")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("application/x-ndjson")
+    first = _json.loads(r.text.strip().splitlines()[0])
+    assert first["decision_id"].startswith("d-")
+
+
 def test_use_case_register(client):
     client.post("/ask", json={"offense": "theft"})
     client.post("/compare", json={"offense": "robbery"})
