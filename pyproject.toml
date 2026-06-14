@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "signalkit"
 version = "1.6.0"
-description = "Signal: interactive South Australian crime-data product with an LLM analyst layer and an APS/EU-AI-Act aligned governance log"
+description = "Signal: governed analyst and explorer over SA/NYC crime and Australian/NYC open data, with a DTA AI Policy v2.0 aligned governance log"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Sunchuangyu Huang (Rin)" }]

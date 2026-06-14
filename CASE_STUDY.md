@@ -1,6 +1,6 @@
 # Building compliance into the request path: a case study
 
-From 15 June 2026, every Australian Public Service agency has to account for how it uses AI. The Mandatory AI Requirements ask four plain questions of any AI-assisted decision: what system was used, what was decided, what data informed it, and whether a human reviewed it. The EU AI Act adds risk classification and traceability on top, and the December 2026 amendment to the Privacy Act 1988 (Cth) adds a disclosure duty for automated decisions.
+From 15 June 2026, AI governance becomes mandatory across the Australian Public Service. The Digital Transformation Agency's Policy for the responsible use of AI in government (Version 2.0) requires every agency to designate accountable officials, keep a register of in-scope AI use cases, publish AI transparency statements, and run AI use-case impact assessments. The first requirements commence on 15 June 2026 and the mandatory impact assessments follow by 15 December 2026. The EU AI Act adds risk classification and traceability on top, and the Privacy Act 1988 (Cth) reforms add a disclosure duty for automated decisions.
 
 The rules are easy to agree with and hard to actually meet. Most teams treat the record as paperwork: something you assemble after the fact, when an auditor asks. That approach breaks down the moment you look closely, because the facts you need are freshest at the instant the decision is made and they decay quickly. Which model version answered? What was the exact data window? Did anyone actually check the spike before it went out? Reconstruct that a month later and you are guessing.
 
@@ -8,30 +8,32 @@ Signal is a small product I built to test a different idea: make the compliance 
 
 ## What it does
 
-Signal is a governed analyst over South Australian crime data. You ask it a question, for example how theft is trending in Adelaide over the last twelve months, and it returns a plain-language summary backed by real numbers: the trend direction, the month-on-month and year-on-year change, the top offence categories, and any months unusual enough to flag for review.
+Signal is a governed analyst over crime data and a governed explorer over open data. You ask it a question, for example how theft is trending in Adelaide over the last twelve months, and it returns a plain-language summary backed by real numbers: the trend direction, the month-on-month and year-on-year change, the top offence categories, and any months unusual enough to flag for review. It runs over two jurisdictions, South Australia Police and the New York City Police Department, on the same governed path.
 
-Every answer carries a `decision_id`. That id resolves to a full audit entry through a public endpoint, so anyone can trace any answer back to the model that produced it, the data that informed it, and whether a human needs to look. The audit trail is not a hidden log file. It is part of the product you can see and click.
+Beyond the crime data, the same portal behind the SA figures publishes around 1,900 open datasets, so Signal also lets you search and analyse the data.sa.gov.au, data.nsw.gov.au, data.vic.gov.au and NYC Open Data catalogues. Any dataset with a date and a number can be trended, and any dataset with coordinates is plotted on a map. Every one of those lookups is governed too.
+
+Every answer carries a decision id. That id resolves to a full audit entry through a public endpoint, so anyone can trace any answer back to the model that produced it, the data that informed it, and whether a human needs to look. The audit trail is not a hidden log file. It is part of the product you can see and click.
 
 ## The design
 
-The heart of it is one module, a decision log. It defines a typed schema for an AI-assisted decision and an append-only writer that puts one decision per line in a plain text file. Nothing exotic: you can read it with `grep` or load it straight into pandas.
+The heart of it is one module, a decision log. It defines a typed schema for an AI-assisted decision and an append-only writer that puts one decision per line in a plain text file. Nothing exotic: you can read it with grep or load it straight into pandas.
 
 The important decision was where to put the logging. In Signal the analyst physically cannot return an answer without first writing the audit entry. The two steps are welded together in the request path. There is no code path that answers a user and forgets to log, because answering is logging. This is the whole point. Compliance stops being a discipline people have to remember and becomes a property of the system.
 
-## Mapping the four APS requirements
+## Mapping to the DTA policy
 
-Each mandatory requirement maps to a specific field, so the record is structured rather than a free-text note someone hopes covers everything.
+The DTA policy does not ask for free text. It asks for specific artifacts, and Signal produces each one from the same log rather than as separate paperwork.
 
-- **What AI system was used.** The entry records the model name, version, and provider. When a large language model phrases the narrative, the entry names that model. When it falls back to the built-in deterministic template, it says so honestly. The log never claims a model that did not run.
-- **What decision was made.** A short description of the decision and a category, so decisions can be counted and grouped later.
-- **What data informed it.** The exact data sources, a summary of the input, and a summary of the output. For Signal this names the SA Police dataset and the time window, every time.
-- **Whether a human reviewed it.** A review flag, a reviewer field, and, if a human overrode the result, the reason. A validation rule refuses to accept an override without a written reason, so the record cannot quietly claim oversight that did not happen.
+- **Accountable official and use-case owner.** Each entry records who is accountable: the reviewer, the officer, and the agency. These are configured per deployment, so a real agency would see its own names here.
+- **The register of in-scope AI use cases.** The log is the register. A live endpoint rolls it up by use case, so you can see each named use, how many decisions it covers, its risk tier, the share that needed human review, and who the accountable reviewers were. The register is never out of date, because it is computed from the same decisions the product is making.
+- **The AI transparency statement.** Another endpoint generates a transparency statement straight from the log: what AI is in use, what it is used for, what data informs it, the risk classification, the human oversight in place, and how the public can trace any answer. It is generated, not hand-written, so it cannot drift from what the system actually does.
+- **The AI use-case impact assessment.** The risk tier, confidence score, input and output summaries, and data sources on every entry line up with the assessment the policy makes mandatory by December 2026.
 
-For the EU AI Act, a risk-tier field marks each decision as minimal, limited, high, or unacceptable, which is what flags the high-risk uses for the extra oversight the Act requires. A confidence score and a UTC timestamp support the traceability obligation. For the Privacy Act, the same fields already disclose when an answer was produced by an automated process and on what basis.
+For the EU AI Act, a risk-tier field marks each decision as minimal, limited, high, or unacceptable, which flags the high-risk uses for the extra oversight the Act requires. A confidence score and a UTC timestamp support the traceability obligation. For the Privacy Act, the same fields already disclose when an answer was produced by an automated process and on what basis.
 
-Two further rules sit in the analyst itself. First, it only ever sees aggregates. The source data is already de-identified suburb-level counts, and Signal aggregates it further to monthly totals by region and offence, so no individual record and no personal information enters the system at all. Second, when a month is statistically unusual, the analyst sets the human-review flag automatically. A sudden spike should be checked by a person before anyone acts on it, and the system insists on that rather than leaving it to judgement.
+Two further rules sit in the analyst itself. First, it only ever sees aggregates. The source data is already de-identified, and Signal aggregates it further to monthly totals by region and offence, so no individual record and no personal information enters the system. Second, when a month is statistically unusual, the analyst sets the human-review flag automatically. A sudden spike should be checked by a person before anyone acts on it, and the system insists on that rather than leaving it to judgement. A reviewer can then record the review or an override, and an override will not save without a written reason.
 
-## Why South Australian data
+## Why this data
 
 I work as a data analyst at South Australia Police, so I chose data from that same domain on purpose. It keeps the governance question concrete. Crime statistics are exactly the kind of sensitive, public-interest data where "how was this AI-assisted answer reached" is a real question with real consequences, not a hypothetical.
 
@@ -39,10 +41,14 @@ The data also taught me something useful. SA Police changed their offence classi
 
 ## What I would do next
 
-The honest limitation is reach. South Australia publishes clean, queryable monthly data through an open API. Most other states publish the same kind of information as spreadsheets, not live endpoints, so a national cross-state view would need a separate ingestion layer for each one. That is the next piece of work rather than a thing already done, and the README says so plainly.
+The honest limit is full agency hardening: authentication, a durable audit store, and a real owner behind the accountable-official field rather than a configurable placeholder. The explorer also samples very large datasets at a row cap rather than scanning them whole, which the product states plainly in the result. These are the next pieces of work rather than things already done.
 
 ## The takeaway
 
-The lesson I would carry into any real agency system is simple. Do not bolt governance on at the end and hope people fill in the form. Wire it into the path the work already takes, so the record writes itself. A compliance trail you have to remember to keep is a compliance trail you will eventually forget. One that the system cannot operate without is one you can actually trust.
+The lesson I would carry into any real agency system is simple. Do not bolt governance on at the end and hope people fill in the form. Wire it into the path the work already takes, so the record writes itself, and let the register and the transparency statement fall out of that same record. A compliance trail you have to remember to keep is a compliance trail you will eventually forget. One that the system cannot operate without is one you can actually trust, and one you can show a regulator on the day the rules commence.
 
 Signal is open source and live. The code, the design notes, and the running demo are linked from the [README](README.md).
+
+---
+
+*Sources: [Policy for the responsible use of AI in government (DTA)](https://www.digital.gov.au/ai/ai-in-government-policy); [AI Policy Update: Strengthening responsible use across government (DTA)](https://www.dta.gov.au/articles/ai-policy-update-strengthening-responsible-use-across-government); [AI transparency statement (DTA)](https://www.dta.gov.au/ai-transparency-statement).*
