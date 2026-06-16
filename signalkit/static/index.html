@@ -9,6 +9,13 @@
   integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Plotly (basic build) powers the interactive time-series charts. Deferred so it
+     never blocks first paint; if it fails to load (offline) the charts fall back to
+     the hand-rolled SVG renderers, so the app stays zero-dependency by default. -->
+<script defer id="plotly-cdn"
+  src="https://cdn.jsdelivr.net/npm/plotly.js-basic-dist-min@3.6.0/plotly-basic.min.js"
+  integrity="sha384-hutD8uoReku0H5v//ZjHBcWgxH9saHIo56gNA8+EOxasVT+TC8kklaB+w+5/r2Vb"
+  crossorigin="anonymous"></script>
 <style>
   :root {
     color-scheme: light dark;
@@ -66,7 +73,14 @@
   .chip b { color: var(--text); }
   .chip.review-yes { border-color: var(--bar-anomaly); color: var(--bar-anomaly); }
   .chip.review-no { border-color: var(--ok); color: var(--ok); }
-  svg { width: 100%; height: auto; display: block; margin-top: 1rem; }
+  /* Raw-SVG charts only — direct children of the holders. Plotly's own (nested)
+     SVGs must NOT inherit width:100%/height:auto/margin, which would collapse them. */
+  #chart-holder > svg, #top-holder > svg, #law-holder > svg,
+  #cmp-holder > svg, #extra-holder svg {
+    width: 100%; height: auto; display: block; margin-top: 1rem;
+  }
+  .js-plotly-plot { margin-top: 1rem; }
+  .js-plotly-plot .modebar { background: transparent !important; }
   .viz-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
   @media (max-width: 640px) { .viz-row { grid-template-columns: 1fr; } }
   .toggle { display: inline-flex; gap: 0; margin-top: .75rem; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
@@ -272,6 +286,7 @@
 const $ = (id) => document.getElementById(id);
 const SERIES_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)"];
 let lastAnswer = null;
+let lastCompare = null;
 let chartType = "bar";
 let currentPortal = "sa";
 let currentMode = "crime";
@@ -497,10 +512,128 @@ function pct(v, suffix) {
   return `<span class="chip">${suffix} <b>${arrow} ${Math.abs(v)}%</b></span>`;
 }
 
+// --- Plotly time-series charts (progressive enhancement over the SVG renderers) ---
+// Plotly is loaded deferred from a CDN. plotlyReady resolves true once it is usable
+// and false if the script fails to load (offline), in which case the SVG renderers
+// above remain the source of truth. When it does arrive after an initial SVG render,
+// reflowCharts() upgrades whatever is on screen.
+const plotlyReady = new Promise((resolve) => {
+  if (typeof Plotly !== "undefined") return resolve(true);
+  const s = $("plotly-cdn");
+  if (!s) return resolve(false);
+  s.addEventListener("load", () => resolve(true), { once: true });
+  s.addEventListener("error", () => resolve(false), { once: true });
+});
+let plotlyOK = false;
+plotlyReady.then((ok) => { plotlyOK = ok; if (ok) reflowCharts(); });
+
+// Plotly can't read CSS custom properties, and getPropertyValue returns the raw
+// light-dark(...) string rather than the resolved colour. Probe a hidden element so
+// the browser resolves it for the current colour scheme.
+function cssColor(varName) {
+  const probe = document.createElement("span");
+  probe.style.cssText = `display:none;color:var(${varName})`;
+  document.body.appendChild(probe);
+  const c = getComputedStyle(probe).color;
+  probe.remove();
+  return c;
+}
+
+const PLOT_CONFIG = {
+  displaylogo: false, responsive: true, displayModeBar: "hover",
+  modeBarButtonsToRemove: ["select2d", "lasso2d", "autoScale2d"],
+  toImageButtonOptions: { format: "png", filename: "signal-chart", scale: 2 },
+};
+
+function plotlyLayout(extra) {
+  const text = cssColor("--text"), muted = cssColor("--muted"), grid = cssColor("--border");
+  const axis = { gridcolor: grid, zerolinecolor: grid, linecolor: grid,
+    tickfont: { color: muted }, automargin: true };
+  return Object.assign({
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { family: "system-ui, -apple-system, 'Segoe UI', sans-serif", size: 12, color: muted },
+    margin: { l: 48, r: 16, t: 30, b: 40 },
+    hovermode: "closest", dragmode: "pan",
+    hoverlabel: { bgcolor: cssColor("--panel"), bordercolor: grid, font: { color: text } },
+    xaxis: axis,
+    yaxis: Object.assign({ rangemode: "tozero" }, axis),
+    legend: { font: { color: text }, orientation: "h", y: 1.14, x: 0 },
+  }, extra || {});
+}
+
+// nudge a just-shown chart (its container may have been display:none at plot time)
+function resizeSoon(holder) {
+  setTimeout(() => { if (plotlyOK && holder.offsetWidth) Plotly.Plots.resize(holder); }, 60);
+}
+
+function renderTrendPlotly(holder, monthly, anomalies, type) {
+  const months = Object.keys(monthly);
+  const counts = months.map((m) => monthly[m]);
+  const peak = Math.max(0, ...counts);
+  const bar = cssColor("--bar"), anom = cssColor("--bar-anomaly");
+  const colors = months.map((m) => anomalies.includes(m) ? anom : bar);
+  const labels = months.map((m) =>
+    `${m}: ${monthly[m].toLocaleString()} offences${anomalies.includes(m) ? " (anomaly)" : ""}`);
+  const common = { x: months, y: counts, text: labels, hovertemplate: "%{text}<extra></extra>" };
+  const trace = type === "line"
+    ? { ...common, type: "scatter", mode: "lines+markers", line: { color: bar, width: 2 },
+        marker: { color: colors, size: months.map((m) => anomalies.includes(m) ? 9 : 6) } }
+    : { ...common, type: "bar", marker: { color: colors } };
+  const layout = plotlyLayout({
+    height: 280,
+    annotations: [{ xref: "paper", yref: "paper", x: 0, y: 1.1, showarrow: false,
+      text: `peak ${peak.toLocaleString()}/month`, font: { size: 10, color: cssColor("--muted") } }],
+  });
+  Plotly.react(holder, [trace], layout, PLOT_CONFIG);
+  holder.setAttribute("role", "img");
+  holder.setAttribute("aria-label",
+    `Monthly offence counts from ${months[0]} to ${months.at(-1)}, peak ${peak.toLocaleString()}.`);
+  resizeSoon(holder);
+}
+
+function renderComparePlotly(holder, series) {
+  const months = Object.keys(series[0].monthly_counts);
+  const traces = series.map((s, i) => {
+    const c = SERIES_HEX[i % SERIES_HEX.length];
+    return { type: "scatter", mode: "lines+markers", name: s.region,
+      x: months, y: months.map((m) => s.monthly_counts[m]),
+      line: { color: c, width: 2 }, marker: { color: c, size: 5 },
+      hovertemplate: `${s.region} %{x}: %{y:,} offences<extra></extra>` };
+  });
+  Plotly.react(holder, traces, plotlyLayout({ height: 340, showlegend: true }), PLOT_CONFIG)
+    .then(() => {
+      // click a line/point to drill into that region — mirrors the legend chips below
+      holder.removeAllListeners?.("plotly_click");
+      holder.on("plotly_click", (ev) => {
+        const region = ev.points?.[0]?.data?.name;
+        if (!region) return;
+        $("ask-form").elements.region.value = region;
+        runAsk();
+        $("answer").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  holder.setAttribute("role", "img");
+  holder.setAttribute("aria-label",
+    `Monthly offences by region, ${months[0]} to ${months.at(-1)}.`);
+  resizeSoon(holder);
+}
+
+// Re-render the on-screen Plotly charts — used when Plotly finishes loading after an
+// SVG fallback, and when the OS colour scheme changes (CSS vars resolve differently).
+function reflowCharts() {
+  if (lastAnswer && lastAnswer.stats && !$("answer").hidden) renderTrendChart();
+  if (lastCompare && !$("cmp").hidden) renderComparePlotly($("cmp-holder"), lastCompare.series);
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (plotlyOK) reflowCharts();
+});
+
 function renderTrendChart() {
   if (!lastAnswer || !lastAnswer.stats) return;
   const s = lastAnswer.stats;
-  $("chart-holder").innerHTML = trendSVG(s.monthly_counts, s.anomalous_months, chartType);
+  const holder = $("chart-holder");
+  if (plotlyOK) renderTrendPlotly(holder, s.monthly_counts, s.anomalous_months, chartType);
+  else holder.innerHTML = trendSVG(s.monthly_counts, s.anomalous_months, chartType);
 }
 
 // The one answer panel serves three result kinds. setPanelMode shows only the
@@ -511,7 +644,10 @@ function setPanelMode(mode) {
   $("chart-toggle").style.display = mode === "preview" ? "none" : "";
   $("review-box").style.display = mode === "preview" ? "none" : "";
   if (mode !== "preview") $("extra-holder").innerHTML = "";
-  if (mode !== "crime") $("chart-holder").innerHTML = "";
+  if (mode !== "crime") {
+    if (plotlyOK) Plotly.purge($("chart-holder"));
+    $("chart-holder").innerHTML = "";
+  }
 }
 
 function renderAnswer(d) {
@@ -599,8 +735,10 @@ function renderGenericAnalysis(d) {
 function renderCompare(d) {
   $("error").hidden = true;
   $("cmp").hidden = false;
+  lastCompare = d;
   $("cmp-narrative").textContent = d.narrative;
-  $("cmp-holder").innerHTML = compareSVG(d.series);
+  if (plotlyOK) renderComparePlotly($("cmp-holder"), d.series);
+  else $("cmp-holder").innerHTML = compareSVG(d.series);
   renderRegionMap(d.series);
   $("cmp-legend").innerHTML = d.series.map((s, i) => {
     const yoy = s.yoy_change_pct === null ? "" :
