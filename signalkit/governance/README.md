@@ -69,12 +69,17 @@ impact_assessment(entries, agency="My Agency", accountable_official="Jane Doe")
 - **Storage is pluggable.** `DecisionLogger` keeps the governance logic (hash-chaining, verification); *where* the lines are kept is an `AuditStore` — a three-method interface (`append`, `read_lines`, `last_line`). The default is `JsonlAuditStore` (a JSONL file); `InMemoryAuditStore` is handy for tests. A durable backend (Postgres, or object storage with an append log) implements the same interface, so the tamper-evidence and the "log on the request path" guarantee hold whatever the storage.
 
   ```python
-  from signalkit.governance import DecisionLogger, JsonlAuditStore, InMemoryAuditStore
+  from signalkit.governance import (
+      DecisionLogger, JsonlAuditStore, SqliteAuditStore, InMemoryAuditStore,
+  )
 
   DecisionLogger("decisions.jsonl")          # JSONL file (default)
-  DecisionLogger(InMemoryAuditStore())       # ephemeral
+  DecisionLogger(SqliteAuditStore("audit.db"))  # a real, durable SQL database, no server
+  DecisionLogger(InMemoryAuditStore())       # ephemeral, for tests
   DecisionLogger(MyPostgresStore(dsn))       # any object with append/read_lines/last_line
   ```
+
+  `SqliteAuditStore` is a transactional, durable backend with nothing to provision — and it has the same shape as a Postgres store, so it de-risks moving to one. The tamper-evidence is identical across all of them, because it lives in `DecisionLogger`, not the storage.
 - **Accountability fields:** `agency`, `officer_id`, `human_reviewer` and a `legislative_basis` are configurable per deployment, so a real agency stamps its own names on every record.
 
 ## Where this is heading

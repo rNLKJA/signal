@@ -39,6 +39,7 @@ from signalkit.governance.audit_store import (
     AuditStore,
     InMemoryAuditStore,
     JsonlAuditStore,
+    SqliteAuditStore,
 )
 from signalkit.governance.decision_log import (
     ChainVerification,
@@ -71,6 +72,7 @@ __all__ = [
     "AuditStore",
     "JsonlAuditStore",
     "InMemoryAuditStore",
+    "SqliteAuditStore",
     # tamper-evidence
     "ChainVerification",
     "verify_chain",
