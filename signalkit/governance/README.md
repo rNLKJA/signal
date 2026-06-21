@@ -82,6 +82,24 @@ impact_assessment(entries, agency="My Agency", accountable_official="Jane Doe")
   `SqliteAuditStore` is a transactional, durable backend with nothing to provision — and it has the same shape as a Postgres store, so it de-risks moving to one. The tamper-evidence is identical across all of them, because it lives in `DecisionLogger`, not the storage.
 - **Accountability fields:** `agency`, `officer_id`, `human_reviewer` and a `legislative_basis` are configurable per deployment, so a real agency stamps its own names on every record.
 
+## Multi-tenancy
+
+One deployment can serve many organisations without their records ever mixing. `TenantLog` gives each tenant its own `DecisionLogger` over its own storage, so each has an **independent tamper-evident chain**. Isolation is structural: a tenant has no handle to another's log, and `tenant_id` is part of the signed content, so a record cannot be moved between tenants without breaking its hash.
+
+```python
+from signalkit.governance import TenantLog, tenant_for_api_key, parse_tenant_keys
+
+log = TenantLog.sqlite_dir("/var/lib/signal")      # a database per tenant
+keys = parse_tenant_keys(os.environ.get("SIGNAL_TENANT_KEYS"))  # "k-acme:acme,k-globex:globex"
+
+tenant = tenant_for_api_key(request_api_key, keys)  # defaults to "public" when unmapped
+log.log(entry, tenant_id=tenant)
+log.verify(tenant)                                  # only this tenant's chain
+log.register(tenant, agency="Acme", accountable_official="Jane")
+```
+
+A single-tenant deployment ignores all of this and uses `DecisionLogger` directly; `tenant_id` stays unset.
+
 ## Where this is heading
 
 This package is the seed of a product: a drop-in governance layer other AI systems can adopt, with a hosted control plane for compliance officers on top. See the repository [ROADMAP.md](../../ROADMAP.md).

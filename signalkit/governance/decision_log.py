@@ -190,6 +190,12 @@ class DecisionEntry(BaseModel):
     )
 
     # --- Governance context ---
+    tenant_id: Optional[str] = Field(
+        default=None,
+        description="The tenant (organisation) this decision belongs to. Part of the signed "
+                    "content, so a record cannot be moved between tenants without breaking its "
+                    "hash. None on a single-tenant deployment. [DTA]",
+    )
     agency: Optional[str] = Field(
         default=None,
         description="Government agency or organisation responsible for this decision. [DTA]",

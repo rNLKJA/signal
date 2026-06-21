@@ -61,6 +61,12 @@ from signalkit.governance.decision_log import (
     transparency_statement,
     verify_chain,
 )
+from signalkit.governance.tenancy import (
+    DEFAULT_TENANT,
+    TenantLog,
+    parse_tenant_keys,
+    tenant_for_api_key,
+)
 
 __all__ = [
     # audit log
@@ -73,6 +79,11 @@ __all__ = [
     "JsonlAuditStore",
     "InMemoryAuditStore",
     "SqliteAuditStore",
+    # multi-tenancy
+    "TenantLog",
+    "DEFAULT_TENANT",
+    "tenant_for_api_key",
+    "parse_tenant_keys",
     # tamper-evidence
     "ChainVerification",
     "verify_chain",
