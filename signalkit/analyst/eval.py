@@ -164,3 +164,139 @@ def allowed_from_totals(totals: list[int], *, extra: set[float] | None = None) -
     if extra:
         allowed |= extra
     return allowed
+
+
+# ---------------------------------------------------------------------------
+# Measuring the faithfulness check itself
+# ---------------------------------------------------------------------------
+#
+# A check you cannot measure is a check you cannot trust. This labelled set lets
+# us report how well the deterministic check actually performs, and where it is
+# blind. The honest finding: it never wrongly rejects a faithful narrative
+# (precision is high by design — it is conservative), but it cannot catch errors
+# that are not about the numbers themselves, such as attaching a correct figure
+# to the wrong subject, an unsupported editorial claim, or a wrong count that
+# slips under the relative tolerance. That gap is exactly why an LLM judge is
+# added as an independent second signal.
+
+# Figures that legitimately appear in the reference statistics for these cases.
+_BASE_ALLOWED = [4031, 6.5, 12.4, 300, 350, 407, 322, 2025, 2026, 3, 4]
+
+# Each case: a narrative, the figures it is allowed to state, the computed trend,
+# the ground-truth label, and the kind of (un)faithfulness it represents.
+EVAL_SET: list[dict] = [
+    # --- faithful (the check should pass these) ---
+    {"id": "clean-1", "label": "faithful", "category": "clean", "trend": "falling",
+     "narrative": "Between 2025-04 and 2026-03, SA Police recorded 4,031 offences. The trend "
+                  "over the window is falling. The latest month is up 6.5% on the month before. "
+                  "Year on year, the latest month is down 12.4%."},
+    {"id": "clean-2", "label": "faithful", "category": "clean", "trend": "falling",
+     "narrative": "The series is seasonal and tends to peak in March. The latest month recorded "
+                  "407 offences."},
+    {"id": "clean-3", "label": "faithful", "category": "clean-no-figures", "trend": "falling",
+     "narrative": "The trend over the window is falling."},
+    {"id": "round-1", "label": "faithful", "category": "legitimate-rounding", "trend": "falling",
+     "narrative": "Year on year, the latest month is down about 12%."},
+
+    # --- unfaithful the deterministic check SHOULD catch ---
+    {"id": "fab-1", "label": "unfaithful", "category": "fabricated-number", "trend": "falling",
+     "narrative": "Between 2025-04 and 2026-03, SA Police recorded 9,210 offences."},
+    {"id": "fab-2", "label": "unfaithful", "category": "fabricated-number", "trend": "falling",
+     "narrative": "The latest month is up 41.0% on the month before."},
+    {"id": "contra-1", "label": "unfaithful", "category": "trend-contradiction", "trend": "falling",
+     "narrative": "The trend over the window is rising."},
+    {"id": "contra-2", "label": "unfaithful", "category": "trend-contradiction", "trend": "rising",
+     "narrative": "Overall the trend over the window is falling."},
+
+    # --- unfaithful the deterministic check CANNOT catch (the honest gap) ---
+    {"id": "sem-1", "label": "unfaithful", "category": "semantic-mislabel", "trend": "falling",
+     "narrative": "Robbery accounts for 4,031 offences in Adelaide."},  # 4031 is the theft total
+    {"id": "sem-2", "label": "unfaithful", "category": "semantic-mislabel", "trend": "falling",
+     "narrative": "Theft fell by 12.4% in Whyalla."},  # 12.4% is Adelaide's, not Whyalla's
+    {"id": "claim-1", "label": "unfaithful", "category": "unsupported-claim", "trend": "falling",
+     "narrative": "The trend over the window is falling, which reflects successful policing operations."},
+    {"id": "claim-2", "label": "unfaithful", "category": "unsupported-claim", "trend": "falling",
+     "narrative": "These numbers show the area is now safe."},
+    {"id": "tol-1", "label": "unfaithful", "category": "tolerance-leak", "trend": "falling",
+     "narrative": "Between 2025-04 and 2026-03, SA Police recorded 3,900 offences."},  # off by 131
+]
+
+
+def _binary_metrics(y_true_unfaithful: list[bool], y_pred_unfaithful: list[bool]) -> dict:
+    """Precision/recall/F1/accuracy with 'unfaithful' as the positive class."""
+    tp = sum(1 for t, p in zip(y_true_unfaithful, y_pred_unfaithful) if t and p)
+    fp = sum(1 for t, p in zip(y_true_unfaithful, y_pred_unfaithful) if (not t) and p)
+    tn = sum(1 for t, p in zip(y_true_unfaithful, y_pred_unfaithful) if (not t) and (not p))
+    fn = sum(1 for t, p in zip(y_true_unfaithful, y_pred_unfaithful) if t and (not p))
+    precision = tp / (tp + fp) if (tp + fp) else None
+    recall = tp / (tp + fn) if (tp + fn) else None
+    f1 = (2 * precision * recall / (precision + recall)
+          if precision and recall else None)
+    total = tp + fp + tn + fn
+    return {
+        "precision": round(precision, 3) if precision is not None else None,
+        "recall": round(recall, 3) if recall is not None else None,
+        "f1": round(f1, 3) if f1 is not None else None,
+        "accuracy": round((tp + tn) / total, 3) if total else None,
+        "confusion": {"tp": tp, "fp": fp, "tn": tn, "fn": fn},
+    }
+
+
+def measure_check(judge_fn=None) -> dict:
+    """Measure the faithfulness check against the labelled set.
+
+    ``judge_fn(narrative, allowed, trend_direction) -> bool | None`` is an optional
+    independent second opinion (the LLM judge); ``True`` means it judged the
+    narrative faithful. When provided, the result also reports the judge's own
+    precision/recall and how often it agrees with the deterministic check.
+    """
+    y_true = [c["label"] == "unfaithful" for c in EVAL_SET]
+    det_pred, judge_pred = [], []
+    det_missed, by_category = [], {}
+
+    for c in EVAL_SET:
+        allowed = {float(x) for x in _BASE_ALLOWED}
+        report = evaluate(c["narrative"], allowed, trend_direction=c["trend"])
+        det_unfaithful = not report.passed
+        det_pred.append(det_unfaithful)
+
+        true_unfaithful = c["label"] == "unfaithful"
+        if true_unfaithful and not det_unfaithful:
+            det_missed.append(c["id"])
+        cat = by_category.setdefault(c["category"], {"n": 0, "det_correct": 0})
+        cat["n"] += 1
+        if det_unfaithful == true_unfaithful:
+            cat["det_correct"] += 1
+
+        if judge_fn is not None:
+            verdict = judge_fn(c["narrative"], allowed, c["trend"])
+            judge_pred.append(None if verdict is None else (not verdict))
+
+    result = {
+        "labelled_cases": len(EVAL_SET),
+        "positive_class": "unfaithful",
+        "deterministic_check": {
+            **_binary_metrics(y_true, det_pred),
+            "missed_case_ids": det_missed,
+            "by_category": by_category,
+            "note": "Conservative by design: it never rejects a faithful narrative "
+                    "(precision 1.0), but it only checks figures and trend direction, so "
+                    "it cannot catch a correct figure attached to the wrong subject, an "
+                    "unsupported claim, or a wrong count inside the relative tolerance.",
+        },
+    }
+    if judge_fn is not None and all(p is not None for p in judge_pred) and judge_pred:
+        result["llm_judge"] = {
+            **_binary_metrics(y_true, judge_pred),
+            "agreement_with_deterministic": round(
+                sum(1 for d, j in zip(det_pred, judge_pred) if d == j) / len(EVAL_SET), 3
+            ),
+            "note": "An independent LLM judge over the same labelled set, intended to catch "
+                    "the semantic errors the deterministic check is blind to.",
+        }
+    else:
+        result["llm_judge"] = {
+            "available": False,
+            "note": "Set SIGNAL_LLM_API_KEY to measure the LLM judge as a second signal.",
+        }
+    return result

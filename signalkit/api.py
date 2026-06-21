@@ -219,6 +219,11 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         """A DTA-style AI use-case impact assessment, generated from the log."""
         return app.state.analyst.impact_assessment().model_dump(mode="json")
 
+    @app.get("/governance/faithfulness-eval")
+    def governance_faithfulness_eval() -> dict:
+        """How well the faithfulness check itself performs, against a labelled set."""
+        return app.state.analyst.faithfulness_validation()
+
     @app.get("/decisions.csv")
     def decisions_csv(limit: int = Query(default=1000, ge=1, le=10000)) -> Response:
         cols = [
