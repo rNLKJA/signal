@@ -166,6 +166,14 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         entries = app.state.analyst.recent_decisions(limit)
         return [e.model_dump(mode="json") for e in entries]
 
+    @app.get("/decisions/verify")
+    def verify_decisions() -> dict:
+        """Re-walk the audit log's hash chain and report whether it is intact.
+
+        Registered before /decisions/{decision_id} so 'verify' is not read as an id.
+        """
+        return app.state.analyst.verify_log().model_dump(mode="json")
+
     @app.get("/decisions/{decision_id}")
     def decision_by_id(decision_id: str) -> dict:
         entry = app.state.analyst.get_decision(decision_id)

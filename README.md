@@ -65,6 +65,8 @@ The analyst layer ([`signalkit/analyst/core.py`](signalkit/analyst/core.py)) app
 
 The log is plain JSONL: one decision per line, UTF-8, no special tooling needed to read or grep it, and `to_dicts()` hands it straight to pandas or DuckDB for analysis.
 
+**The trail is tamper-evident.** Each entry carries the hash of the entry before it (`prev_hash`) and a hash of its own content (`entry_hash`), so the log is a chain. Editing, deleting or reordering any past decision breaks the chain, and `GET /decisions/verify` re-walks it and reports exactly where. This turns the audit trail from "we wrote it down" into "we can show it was not changed" — the integrity the EU AI Act's traceability obligation expects. The dashboard shows a live `🔒 audit chain verified` badge with the head-hash digest. Entries written before this shipped carry no hash; they are reported honestly as legacy rather than failing the check.
+
 A short write-up of the design and the compliance reasoning is in [CASE_STUDY.md](CASE_STUDY.md).
 
 ## The data
@@ -96,6 +98,7 @@ On the dashboard these surface as a **forecast cone** on the trend chart, a **mo
 | `POST /ask` | Ask the analyst. Filters: `offense`, `region` (substring), `months` (2–24). Returns narrative, stats (trend, anomalies, top offences, offence-division split), and the `decision_id`. Rate-limited per client (default 20/min, `429` + `Retry-After` beyond that). |
 | `POST /compare` | One offence scope across SA regions: aligned monthly series, totals, YoY, trend per region. Audit-logged and rate-limited like `/ask`. |
 | `GET /decisions` | The governance log, live. Most recent entries, `limit` up to 100. |
+| `GET /decisions/verify` | Re-walk the audit log's hash chain and report whether it is intact, with the head-hash digest and the `decision_id` of any break. |
 | `GET /decisions/{decision_id}` | Resolve any `decision_id` from an answer to its full audit entry. |
 | `POST /decisions/{decision_id}/review` | Record a human review of a decision — reviewer, and an override with a required reason. Appended as its own audit event; the log is never mutated. |
 | `GET /governance/summary` | The governance posture, quantified: review rate, reviews recorded, outstanding reviews, risk tiers, model breakdown. |

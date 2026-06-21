@@ -93,6 +93,8 @@
   }
   .chip b { color: var(--text); }
   .chip.review-yes { border-color: var(--bar-anomaly); color: var(--bar-anomaly); }
+  .chip.verified { border-color: #2ea44f; color: light-dark(#1a7f37, #4ac26b); }
+  .chip.tampered { border-color: var(--bar-anomaly); color: var(--bar-anomaly); font-weight: 600; }
   .chip.review-no { border-color: var(--ok); color: var(--ok); }
   /* Raw-SVG charts only — direct children of the holders. Plotly's own (nested)
      SVGs must NOT inherit width:100%/height:auto/margin, which would collapse them. */
@@ -934,6 +936,21 @@ function renderError(status, body) {
   }
 }
 
+// Tamper-evidence: re-walk the audit log's hash chain and show the verdict.
+async function fetchVerify() {
+  try { return await (await fetch("/decisions/verify")).json(); }
+  catch { return null; }
+}
+function integrityChip(v) {
+  if (!v) return "";
+  if (v.valid) {
+    const n = v.chained_entries ?? 0;
+    const digest = (v.head_hash || "").slice(0, 8);
+    return `<span class="chip verified" title="Each entry carries the hash of the one before it. ${n} entries re-verified; digest ${v.head_hash || "n/a"}.">🔒 audit chain verified${digest ? ` · ${digest}` : ""}</span>`;
+  }
+  return `<span class="chip tampered" title="${(v.reason || "chain broken").replace(/"/g, "")}">⚠ tamper detected${v.broken_at ? ` at ${v.broken_at}` : ""}</span>`;
+}
+
 async function refreshAudit() {
   const rows = await (await fetch("/decisions?limit=10")).json();
   if (rows.length) {
@@ -951,6 +968,7 @@ async function refreshAudit() {
     const models = Object.entries(s.by_model || {})
       .map(([k, v]) => `${k.split(" ")[0]} ${v}`).join(", ");
     $("gov-panel").innerHTML =
+      integrityChip(await fetchVerify()) +
       `<span class="chip">decisions <b>${s.total_decisions}</b></span>` +
       `<span class="chip">review rate <b>${Math.round((s.human_review_rate ?? 0) * 100)}%</b></span>` +
       `<span class="chip">reviews recorded <b>${s.reviews_recorded ?? 0}</b></span>` +

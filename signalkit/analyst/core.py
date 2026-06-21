@@ -40,6 +40,7 @@ from signalkit.data.sa_crime import MonthlyRecord
 from signalkit.analyst import stats as tstats
 from signalkit.analyst.eval import allowed_from_stats, allowed_from_totals, evaluate
 from signalkit.governance.decision_log import (
+    ChainVerification,
     DecisionCategory,
     DecisionEntry,
     DecisionLogger,
@@ -786,6 +787,10 @@ class Analyst:
     def recent_decisions(self, limit: int = 20) -> list[DecisionEntry]:
         """Read back the most recent audit entries (newest last)."""
         return self._logger.read_all()[-limit:]
+
+    def verify_log(self) -> "ChainVerification":
+        """Re-walk the audit log and confirm its tamper-evident hash chain."""
+        return self._logger.verify()
 
     def get_decision(self, decision_id: str) -> DecisionEntry | None:
         """Resolve a decision_id from an /ask response to its full audit entry."""
