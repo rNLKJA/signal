@@ -38,7 +38,12 @@ from pydantic import BaseModel, Field, model_validator
 from signalkit.data import catalogue, nyc, sa_crime
 from signalkit.data.sa_crime import MonthlyRecord
 from signalkit.analyst import stats as tstats
-from signalkit.analyst.eval import allowed_from_stats, allowed_from_totals, evaluate
+from signalkit.analyst.eval import (
+    allowed_from_stats,
+    allowed_from_totals,
+    evaluate,
+    measure_check,
+)
 from signalkit.governance.decision_log import (
     ChainVerification,
     DecisionCategory,
@@ -557,6 +562,60 @@ def _generate_narrative(prompt: str, fallback: str) -> tuple[str, str, Optional[
     return narrative, model, provider
 
 
+def _llm_judge(narrative: str, allowed: set, trend_direction: str) -> Optional[bool]:
+    """An independent LLM verdict on whether a narrative is faithful to the figures.
+
+    Returns True (faithful), False (unfaithful), or None when no key is set or the
+    call fails. This is the second signal the deterministic check cannot be: it can
+    judge whether a correct number is attached to the wrong subject, or a claim the
+    figures do not support, which the figure/trend check is blind to.
+    """
+    api_key = os.environ.get("SIGNAL_LLM_API_KEY")
+    if not api_key:
+        return None
+    model = os.environ.get("SIGNAL_LLM_MODEL", DEFAULT_LLM_MODEL)
+    base_url = os.environ.get("SIGNAL_LLM_BASE_URL", DEFAULT_LLM_BASE_URL)
+    figures = ", ".join(
+        str(int(x) if float(x).is_integer() else x) for x in sorted(allowed)
+    )
+    prompt = (
+        "You are auditing a data narrative for faithfulness to a fixed set of computed "
+        "figures. The narrative may only state facts those figures support.\n"
+        f"Allowed figures: {figures}\n"
+        f"Computed trend direction: {trend_direction}\n"
+        "Mark it UNFAITHFUL if it states a number not in the figures, attaches a figure "
+        "to the wrong subject or place, contradicts the trend, or makes a claim the "
+        "figures do not support. Otherwise mark it FAITHFUL.\n"
+        "Answer with exactly one word: FAITHFUL or UNFAITHFUL.\n\n"
+        f"Narrative: {narrative}"
+    )
+    try:
+        out = _llm_complete(prompt, model, base_url, api_key)
+    except Exception:
+        return None
+    up = out.strip().upper()
+    if "UNFAITHFUL" in up:
+        return False
+    if "FAITHFUL" in up:
+        return True
+    return None
+
+
+# The faithfulness-check validation is computed against a static labelled set, so
+# it is cached per process. The judge variant reuses the LLM client's own cache.
+_validation_cache: dict = {}
+
+
+def compute_validation() -> dict:
+    """Measure the faithfulness check (deterministic + LLM judge if a key is set)."""
+    key = "with-judge" if os.environ.get("SIGNAL_LLM_API_KEY") else "deterministic-only"
+    if key not in _validation_cache:
+        _validation_cache[key] = measure_check(
+            judge_fn=_llm_judge if key == "with-judge" else None
+        )
+    return _validation_cache[key]
+
+
 def _ask_prompt(stats: TrendStats, query: AnalystQuery) -> str:
     agency = SOURCE_AGENCY.get(query.source, "SA Police")
     return (
@@ -876,7 +935,12 @@ class Analyst:
             version=signalkit.__version__,
             llm_model=os.environ.get("SIGNAL_LLM_MODEL", DEFAULT_LLM_MODEL),
             deterministic_model=DETERMINISTIC_MODEL,
+            check_validation=compute_validation(),
         )
+
+    def faithfulness_validation(self) -> dict:
+        """Measured precision/recall of the faithfulness check against the labelled set."""
+        return compute_validation()
 
     def preview_dataset(
         self, resource_id: str, dataset_title: str = "", limit: int = 20, portal: str = "sa"

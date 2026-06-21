@@ -491,6 +491,7 @@ class ModelCard(BaseModel):
     policy: str = "Policy for the responsible use of AI in government (DTA, v2.0)"
     components: list[dict]
     narrative_eval: dict
+    check_validation: dict = {}  # measured precision/recall of the faithfulness check itself
     data_sources: list[str]
     intended_use: str
     out_of_scope: list[str]
@@ -506,8 +507,10 @@ def model_card(
     version: str,
     llm_model: str,
     deterministic_model: str,
+    check_validation: dict | None = None,
 ) -> ModelCard:
     """Generate the analyst model card, with live faithfulness results."""
+    check_validation = check_validation or {}
     scored = [e for e in entries if e.faithfulness_score is not None]
     mean_faith = round(sum(e.faithfulness_score for e in scored) / len(scored), 3) if scored else None
     fallbacks = sum(1 for e in entries if "faithfulness-fallback" in (e.tags or []))
@@ -565,7 +568,8 @@ def model_card(
         f"- Decisions evaluated: {len(scored)}\n"
         f"- Mean faithfulness: {mean_faith if mean_faith is not None else 'n/a'}\n"
         f"- Fallbacks to template: {fallbacks}\n\n"
-        f"## Intended use\n{intended_use}\n\n"
+        + _check_validation_section(check_validation)
+        + f"## Intended use\n{intended_use}\n\n"
         f"## Out of scope\n" + "".join(f"- {x}\n" for x in out_of_scope)
         + "\n## Limitations\n" + "".join(f"- {x}\n" for x in limitations)
         + f"\n## Data sources\n{', '.join(sources) or 'None recorded yet'}.\n"
@@ -576,12 +580,38 @@ def model_card(
         accountable_official=accountable_official,
         components=components,
         narrative_eval=narrative_eval,
+        check_validation=check_validation,
         data_sources=sources,
         intended_use=intended_use,
         out_of_scope=out_of_scope,
         limitations=limitations,
         card=card,
     )
+
+
+def _check_validation_section(cv: dict) -> str:
+    """Render the measured precision/recall of the faithfulness check for the card."""
+    det = cv.get("deterministic_check") if cv else None
+    if not det:
+        return ""
+    lines = (
+        f"## How good is the faithfulness check?\n"
+        f"Measured against {cv['labelled_cases']} hand-labelled narratives "
+        f"(positive class: unfaithful).\n\n"
+        f"- Deterministic check: precision {det['precision']}, recall {det['recall']}, "
+        f"F1 {det['f1']} (confusion {det['confusion']}).\n"
+        f"- {det['note']}\n"
+    )
+    judge = cv.get("llm_judge") or {}
+    if judge.get("precision") is not None:
+        lines += (
+            f"- LLM judge (second signal): precision {judge['precision']}, recall "
+            f"{judge['recall']}, agreement with the deterministic check "
+            f"{judge['agreement_with_deterministic']}.\n"
+        )
+    else:
+        lines += f"- LLM judge: {judge.get('note', 'not measured.')}\n"
+    return lines + "\n"
 
 
 _RISK_ORDER = {"unacceptable": 3, "high": 2, "limited": 1, "minimal": 0}

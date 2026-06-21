@@ -22,6 +22,8 @@ def _isolated_narrative_cache():
     """The narrative cache is process-global; tests must not share it."""
     core._narrative_cache.clear()
     core._narrative_cache_order.clear()
+    core._validation_cache.clear()
     yield
     core._narrative_cache.clear()
     core._narrative_cache_order.clear()
+    core._validation_cache.clear()

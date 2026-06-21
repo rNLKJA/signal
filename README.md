@@ -102,6 +102,7 @@ On the dashboard these surface as a **forecast cone** on the trend chart, a **mo
 | `GET /decisions/{decision_id}` | Resolve any `decision_id` from an answer to its full audit entry. |
 | `POST /decisions/{decision_id}/review` | Record a human review of a decision — reviewer, and an override with a required reason. Appended as its own audit event; the log is never mutated. |
 | `GET /governance/summary` | The governance posture, quantified: review rate, reviews recorded, outstanding reviews, risk tiers, model breakdown. |
+| `GET /governance/faithfulness-eval` | How well the faithfulness check itself performs: precision/recall against a labelled set, the cases it misses, and the LLM-judge second signal. |
 | `GET /health` | Liveness and version. |
 | `GET /docs` | OpenAPI docs. |
 
@@ -118,7 +119,7 @@ The parts worth a closer look:
 - **Governance on the request path, enforced.** The analyst physically cannot answer without first writing a typed audit entry — every answer funnels through one logging choke point, and a conformance test drives each endpoint (including error paths) and fails CI if any answer's `decision_id` is not in the log. The guarantee is checked, not just asserted. Aligned to the DTA Policy v2.0, the EU AI Act, and the Privacy Act 1988 (Cth).
 - **All three mandatory DTA artefacts, generated live.** The use-case register, transparency statement, and AI use-case impact assessment are computed from the same log the product writes — never hand-authored, so they can't drift from what the system actually does.
 - **Real statistics, not just percentages.** Mann-Kendall trend significance, robust Sen slopes with CIs, seasonal decomposition and a forecast with prediction intervals ([`stats.py`](signalkit/analyst/stats.py)) — surfaced as a forecast cone, a seasonal heatmap and a *Statistical reading* card, and stated in the narrative with their *p*-values. See [Statistical analysis](#statistical-analysis).
-- **The LLM is checked, not just logged.** Every model-written narrative is deterministically verified against the computed figures (no fabricated numbers, no trend it contradicts). A narrative that fails is rejected, the deterministic template is served instead, and the rejection is logged with a faithfulness score.
+- **The LLM is checked — and the check is measured.** Every model-written narrative is deterministically verified against the computed figures (no fabricated numbers, no trend it contradicts); a failure is rejected, the deterministic template is served, and the rejection is logged with a faithfulness score. The check's *own* accuracy is measured against a hand-labelled set and reported in the model card (`GET /governance/faithfulness-eval`): precision 1.0 (it never wrongly rejects a faithful narrative) and a known recall gap on semantic errors, which is why an LLM judge runs as an independent second signal. Honest about what the check can and cannot catch.
 - **Two jurisdictions, one governed path.** SA Police and NYC NYPD run through the same analyst, plus a governed explorer over ~1,900 open datasets across data.sa / NSW / VIC and NYC Open Data.
 - **Live and durable.** Deployed on Modal with the audit log persisted to a Volume, so the trail survives cold starts. Frozen, contract-tested API at **v1.0.0**; tests, CI, and a health-checked Docker image.
 
