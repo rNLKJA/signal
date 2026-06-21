@@ -4,6 +4,8 @@ The point of the chain is that altering, deleting or reordering a logged
 decision is *detectable*. These tests prove the detection, not just the happy path.
 """
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -119,6 +121,29 @@ def test_legacy_entries_are_counted_not_failed(tmp_path):
     assert report.valid is True
     assert report.legacy_entries == 2
     assert report.chained_entries == 2
+
+
+def test_hash_survives_schema_evolution(tmp_path):
+    """Adding an optional field later must not break the hash of older entries.
+
+    Simulates an entry written before parent_decision_id / child_decision_ids
+    existed: dropping them from the JSON and re-parsing (so they come back as
+    defaults) must reproduce the same content hash.
+    """
+    log = _logger(tmp_path)
+    log.log(_entry("a"))
+    entry = log.read_all()[0]
+    original = entry.content_hash()
+
+    raw = json.loads(entry.to_jsonl_line())
+    raw.pop("parent_decision_id", None)
+    raw.pop("child_decision_ids", None)
+    older_schema = DecisionEntry.model_validate(raw)
+
+    assert older_schema.content_hash() == original
+    # ...so a real edit is still caught: a non-default change shifts the hash.
+    raw["decision_made"] = "EDITED"
+    assert DecisionEntry.model_validate(raw).content_hash() != original
 
 
 def test_unchained_entry_after_chain_is_detected(tmp_path):

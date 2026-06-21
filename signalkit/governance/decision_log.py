@@ -253,8 +253,16 @@ class DecisionEntry(BaseModel):
         prev_hash IS included, which is what chains each entry to the one before
         it. Serialisation is canonical (sorted keys, no whitespace) so the hash is
         reproducible by anyone re-reading the log.
+
+        Fields left at their default (None, empty list, …) are excluded, so adding
+        a new optional field to the schema does not change the hash of entries
+        written before it existed. Without this, every schema addition would break
+        the chain for past records — a tamper-evident log has to survive its own
+        evolution. Tamper detection is unaffected: changing a field away from its
+        default still changes the hash, and changing one back to its default drops
+        it from the canonical form, which also changes the hash.
         """
-        payload = self.model_dump(mode="json", exclude={"entry_hash"})
+        payload = self.model_dump(mode="json", exclude={"entry_hash"}, exclude_defaults=True)
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
