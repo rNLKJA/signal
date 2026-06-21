@@ -44,7 +44,7 @@ The data deliberately sits in the same domain the author works in — policing �
 
 ## Governance design
 
-The core is [`signalkit/governance/decision_log.py`](signalkit/governance/decision_log.py): a Pydantic v2 schema and an append-only JSONL logger for AI-assisted decisions, plus the live artifacts the DTA policy requires.
+The core is the [`signalkit.governance`](signalkit/governance/README.md) package: a Pydantic v2 schema and an append-only, hash-chained JSONL logger for AI-assisted decisions, plus the live artifacts the DTA policy requires. It is **standalone** — it depends only on Pydantic and the standard library, with no tie to the crime-data app, so it can be dropped into any AI system (`from signalkit.governance import DecisionEntry, DecisionLogger`). That reusable layer, not the crime data, is the product Signal is built to become; see [its README](signalkit/governance/README.md) and the [ROADMAP](ROADMAP.md).
 
 How Signal maps to the DTA Policy v2.0 mandatory artifacts:
 
