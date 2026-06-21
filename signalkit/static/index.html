@@ -104,6 +104,11 @@
     border-radius: 6px; padding: .3rem .55rem; font-size: .8rem;
     box-shadow: 0 2px 10px rgba(0,0,0,.2);
   }
+  .fairness {
+    border-left: 3px solid var(--bar-anomaly); background: color-mix(in srgb, var(--bar-anomaly) 8%, transparent);
+    padding: .55rem .75rem; border-radius: 0 6px 6px 0; font-size: .85rem; color: var(--text); margin: .8rem 0;
+  }
+  .fairness::before { content: "⚖ "; }
   .hit { cursor: pointer; }
   .hit:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
   svg .hit:hover { opacity: .8; }
@@ -238,6 +243,7 @@
       <p id="cmp-narrative"></p>
       <div id="cmp-holder"></div>
       <div class="legend" id="cmp-legend"></div>
+      <p class="fairness" id="cmp-fairness" hidden></p>
       <h2>Region map</h2>
       <p class="hint">Bubble size is total offences in the window. Click a region to drill in.</p>
       <div id="cmp-map"></div>
@@ -762,6 +768,9 @@ function renderCompare(d) {
   $("cmp").hidden = false;
   lastCompare = d;
   $("cmp-narrative").textContent = d.narrative;
+  const fair = $("cmp-fairness");
+  fair.textContent = d.fairness_note || "";
+  fair.hidden = !d.fairness_note;
   if (plotlyOK) renderComparePlotly($("cmp-holder"), d.series);
   else $("cmp-holder").innerHTML = compareSVG(d.series);
   renderRegionMap(d.series);
@@ -1135,6 +1144,7 @@ async function loadGovArtifacts() {
       <h3>What data informs it</h3>${list(ts.data_sources)}
       <h3>Risk classification (EU AI Act tiers)</h3><p>${risks || "None recorded yet"}.</p>
       <h3>Human oversight</h3><p>${esc(ts.human_oversight)}</p>
+      ${ts.fairness ? `<h3>Fairness</h3><p>${esc(ts.fairness)}</p>` : ""}
       <h3>Public access and accountability</h3><p>${esc(ts.public_access)}</p>
     </div>`;
     const mc = await (await fetch("/governance/model-card")).json();

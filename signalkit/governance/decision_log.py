@@ -330,6 +330,7 @@ class TransparencyStatement(BaseModel):
     data_sources: list[str]
     risk_tiers: dict[str, int]
     human_oversight: str
+    fairness: str = ""
     public_access: str
     statement: str
 
@@ -415,6 +416,12 @@ def transparency_statement(
         f"recorded against the decision. {review_required} of {len(entries)} logged "
         "decisions were flagged for human review."
     )
+    fairness = (
+        "Outputs are aggregate counts, not rates. Differences between regions can reflect "
+        "population size, reporting behaviour and policing intensity as much as actual "
+        "offending, so the figures are not used to rank or target places, communities or "
+        "individuals; comparisons carry this caveat explicitly."
+    )
     public = (
         "Every AI-assisted answer carries a decision_id, and the full audit trail "
         "is a public endpoint (GET /decisions). The use-case register and this "
@@ -432,13 +439,14 @@ def transparency_statement(
         f"## Risk classification (EU AI Act tiers)\n"
         f"{', '.join(f'{k}: {v}' for k, v in sorted(risks.items())) or 'None recorded yet'}.\n\n"
         f"## Human oversight\n{oversight}\n\n"
+        f"## Fairness\n{fairness}\n\n"
         f"## Public access and accountability\n{public}\n"
     )
     return TransparencyStatement(
         agency=agency, accountable_official=accountable_official,
         ai_systems=systems, purposes=purposes, data_sources=sources,
-        risk_tiers=risks, human_oversight=oversight, public_access=public,
-        statement=statement,
+        risk_tiers=risks, human_oversight=oversight, fairness=fairness,
+        public_access=public, statement=statement,
     )
 
 
