@@ -44,7 +44,7 @@ from signalkit.analyst.eval import (
     evaluate,
     measure_check,
 )
-from signalkit.governance.decision_log import (
+from signalkit.governance import (
     ChainVerification,
     DecisionCategory,
     DecisionEntry,
