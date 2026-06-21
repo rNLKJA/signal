@@ -15,6 +15,7 @@ Endpoints:
   GET  /governance/summary     — aggregate governance posture (review rate, risk tiers)
   GET  /governance/register    — DTA-style register of in-scope AI use cases
   GET  /governance/transparency — DTA-style AI transparency statement, generated from the log
+  GET  /governance/model-card  — analyst model card with live narrative-faithfulness results
   GET  /datasets               — search the data.sa.gov.au catalogue
   GET  /datasets/{name}        — metadata for one data.sa dataset
   GET  /resources/{id}/preview — preview a datastore resource (audit-logged)
@@ -198,6 +199,11 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
     def governance_transparency() -> dict:
         """A DTA-style AI transparency statement, generated from the log."""
         return app.state.analyst.transparency().model_dump(mode="json")
+
+    @app.get("/governance/model-card")
+    def governance_model_card() -> dict:
+        """A model card for the analyst, with live faithfulness-eval results."""
+        return app.state.analyst.model_card().model_dump(mode="json")
 
     @app.get("/decisions.csv")
     def decisions_csv(limit: int = Query(default=1000, ge=1, le=10000)) -> Response:
