@@ -256,9 +256,9 @@ def forecast(
         points.append(
             ForecastPoint(
                 month=target_month,
-                point=round(max(0.0, point), 1),
-                lo=round(max(0.0, point - band), 1),
-                hi=round(point + band, 1),
+                point=float(round(max(0.0, point), 1)),
+                lo=float(round(max(0.0, point - band), 1)),
+                hi=float(round(point + band, 1)),
             )
         )
 
