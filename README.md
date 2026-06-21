@@ -158,7 +158,9 @@ The parts worth a closer look:
 
 </details>
 
-### Beyond 1.0.0
+### Beyond 1.0.0 — the path to a product
+
+The sellable thing inside Signal is the governance layer, not the crime data — the crime analyst is its reference implementation. The plan runs from a portfolio project to a product worth paying for; see [ROADMAP.md](ROADMAP.md). In short: **v2** proves the governance (tamper-evident log ✓, a logging-invariant conformance test, a measured faithfulness eval, and the governance core extracted as a package); **v3** governs a multi-step analyst and hardens the deployment (durable store, multi-tenant, auth); **v4** productises it (a drop-in SDK and a hosted compliance control plane); **v5** makes it sellable (procurement-grade controls, an auditor-ready compliance report mapped to ISO 42001 / NIST AI RMF / the DTA requirements, and the commercial assets).
 
 - [ ] Unified cross-state crime comparison (blocked on NSW/VIC publishing queryable, not spreadsheet, data)
 
