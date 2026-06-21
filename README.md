@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-An interactive product over South Australian and New York City crime data, with an analyst layer and a governance log that records every AI-assisted answer in a form aligned to the Australian Government's [Policy for the responsible use of AI in government](https://www.digital.gov.au/ai/ai-in-government-policy) (DTA) and the EU AI Act.
+An interactive product over South Australian and New York City crime data, with a statistical analyst layer — Mann-Kendall trend tests, robust Sen slopes, seasonal decomposition and forecasts — and a governance log that records every AI-assisted answer in a form aligned to the Australian Government's [Policy for the responsible use of AI in government](https://www.digital.gov.au/ai/ai-in-government-policy) (DTA) and the EU AI Act.
 
 **Live demo: https://rnlkja--signal-api-api.modal.run** — ask it something and watch the audit trail fill in. Queries are shareable links: [`/?offense=theft&region=adelaide`](https://rnlkja--signal-api-api.modal.run/?offense=theft&region=adelaide).
 
@@ -75,6 +75,19 @@ SA Police revised their Offence Level 2 labels for 2025-26 (for example "THEFT A
 
 Cold pulls still take long enough that they must never block a request, so the data layer is stale-while-revalidate: requests are answered instantly from a bundled real-data snapshot (or the last live cache) while a background thread refreshes live data for subsequent calls. The `data_source` field in every response and audit entry states exactly which was used. The long tail of small suburbs is folded into one `OTHER SA AREAS` bucket so the region axis stays comparable.
 
+## Statistical analysis
+
+A month-on-month percentage tells you what changed; it doesn't tell you whether the change is real. The analyst layer ([`signalkit/analyst/stats.py`](signalkit/analyst/stats.py)) computes the figures a statistician would actually trust on a short monthly crime series, and every one of them flows through the same audit log and faithfulness eval as the rest of the answer:
+
+| Question | Method | Why this one |
+|---|---|---|
+| Is the trend real, or noise? | **Mann-Kendall** trend test (tie-corrected variance, two-sided *p*) | Non-parametric — assumes neither normality nor linearity, the standard for environmental and crime series. Reports significance, not just direction. |
+| How steep is it, robustly? | **Sen (Theil-Sen) slope** with 95% CI | A median of pairwise slopes, so one anomalous month can't drag the estimate. |
+| How much is just the calendar? | Additive **seasonal decomposition** (robust Theil-Sen detrend) | Crime is seasonal; the SA series peaks in March and troughs in July. Flagged *indicative* below two full years — honest about what ~21 months can support. |
+| What comes next, with what uncertainty? | Deseasonalised **level-plus-trend forecast** with an empirical prediction interval | Transparent and explainable on purpose: every projected figure traces to a named method, which is what lets the forecast itself be governed and faithfulness-checked. |
+
+On the dashboard these surface as a **forecast cone** on the trend chart, a **month × year seasonal heatmap**, and a plain-language *Statistical reading* card. In the narrative they read as, for example: *"A Mann-Kendall test finds no statistically significant trend (p=0.07), so the movement is within normal variation. The series is seasonal (strength 0.75), typically peaking in March."* The point is not the maths for its own sake — it is that a governed AI answer should state what it actually knows, and how confident it is, in terms an auditor can check.
+
 ## API
 
 | Endpoint | What it does |
@@ -101,6 +114,7 @@ The parts worth a closer look:
 
 - **Governance on the request path.** The analyst physically cannot answer without first writing a typed audit entry — so the record can never go missing. Aligned to the DTA Policy v2.0, the EU AI Act, and the Privacy Act 1988 (Cth).
 - **All three mandatory DTA artefacts, generated live.** The use-case register, transparency statement, and AI use-case impact assessment are computed from the same log the product writes — never hand-authored, so they can't drift from what the system actually does.
+- **Real statistics, not just percentages.** Mann-Kendall trend significance, robust Sen slopes with CIs, seasonal decomposition and a forecast with prediction intervals ([`stats.py`](signalkit/analyst/stats.py)) — surfaced as a forecast cone, a seasonal heatmap and a *Statistical reading* card, and stated in the narrative with their *p*-values. See [Statistical analysis](#statistical-analysis).
 - **The LLM is checked, not just logged.** Every model-written narrative is deterministically verified against the computed figures (no fabricated numbers, no trend it contradicts). A narrative that fails is rejected, the deterministic template is served instead, and the rejection is logged with a faithfulness score.
 - **Two jurisdictions, one governed path.** SA Police and NYC NYPD run through the same analyst, plus a governed explorer over ~1,900 open datasets across data.sa / NSW / VIC and NYC Open Data.
 - **Live and durable.** Deployed on Modal with the audit log persisted to a Volume, so the trail survives cold starts. Frozen, contract-tested API at **v1.0.0**; tests, CI, and a health-checked Docker image.
@@ -137,6 +151,7 @@ The parts worth a closer look:
 - [x] Narrative faithfulness eval + model card: every LLM-written narrative is deterministically checked against the computed statistics (no fabricated figures, no trend contradiction); a narrative that fails is rejected and the deterministic template is served instead, with the rejection logged. Faithfulness is shown on the answer and in the audit table, and the live model card (`/governance/model-card`) reports the mean score and fallback count
 - [x] AI use-case impact assessment (`/governance/impact-assessment`): the third DTA Policy v2.0 artefact (mandatory from 15 Dec 2026), generated live from the audit log — one assessment per in-scope use case with affected groups, risks, mitigations (citing the faithfulness eval and human-review rate), fairness considerations and residual risk. Rendered in the dashboard governance panel alongside the register, transparency statement and model card
 - [x] Fairness lens on comparisons: every region/borough comparison carries an explicit disparate-impact caveat — raw counts are not rates and may reflect population, reporting and policing intensity rather than offending, so they must not be used to rank or target places or people. Surfaced in the compare view and in the transparency statement
+- [x] Statistical analysis layer (`signalkit/analyst/stats.py`, numpy + scipy): Mann-Kendall trend significance, robust Sen/Theil-Sen slope with CI, additive seasonal decomposition (with an honest under-two-years flag), and a deseasonalised level+trend forecast with empirical prediction intervals — wired into the narrative and faithfulness eval, and visualised as a forecast cone, a month × year seasonal heatmap and a *Statistical reading* card
 
 </details>
 

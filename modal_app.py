@@ -14,7 +14,10 @@ import modal
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
-    .pip_install("pydantic>=2,<3", "fastapi>=0.110", "uvicorn>=0.29", "httpx>=0.27")
+    .pip_install(
+        "pydantic>=2,<3", "fastapi>=0.110", "uvicorn>=0.29", "httpx>=0.27",
+        "numpy>=1.26", "scipy>=1.11",
+    )
     .add_local_dir("signalkit", remote_path="/root/signalkit")
 )
 

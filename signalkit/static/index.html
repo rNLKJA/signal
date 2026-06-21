@@ -58,6 +58,13 @@
   h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
   h1 .v { color: var(--muted); font-weight: 400; font-size: 1rem; }
   h2 { font-size: 1rem; margin: 0 0 .5rem; }
+  .h2-sub { font-weight: 400; color: var(--muted); font-size: .8rem; }
+  .stat-list { list-style: none; padding: 0; margin: 0; font-size: .85rem; line-height: 1.5; }
+  .stat-list li { padding: .15rem 0; border-bottom: 1px solid var(--panel); }
+  .stat-list li:last-child { border-bottom: 0; }
+  .stat-list b { font-weight: 600; }
+  .stat-sig { color: var(--bar); font-weight: 600; }
+  .stat-flat { color: var(--muted); font-weight: 600; }
   .tagline { color: var(--muted); margin: 0 0 1.5rem; }
   .tagline a { color: var(--brand); }
   form {
@@ -199,7 +206,7 @@
       </datalist>
     </label>
     <label>Months
-      <input name="months" type="number" min="2" max="24" value="12" required>
+      <input name="months" type="number" min="2" max="24" value="18" required>
     </label>
     <button type="submit" id="ask-btn">Ask</button>
     <button type="button" id="cmp-btn" class="secondary"
@@ -235,6 +242,10 @@
       <div class="viz-row" id="crime-viz">
         <div><h2>Top offences in scope</h2><div id="top-holder"></div></div>
         <div><h2>Offence division split</h2><div id="law-holder"></div></div>
+      </div>
+      <div class="viz-row" id="stat-viz">
+        <div><h2>Seasonal pattern <span class="h2-sub">month × year</span></h2><div id="season-holder"></div></div>
+        <div><h2>Statistical reading</h2><div id="stat-card"></div></div>
       </div>
       <div id="extra-holder"></div>
       <p class="gov" id="gov"></p>
@@ -610,7 +621,7 @@ function resizeSoon(holder) {
   setTimeout(() => { if (plotlyOK && holder.offsetWidth) Plotly.Plots.resize(holder); }, 60);
 }
 
-function renderTrendPlotly(holder, monthly, anomalies, type) {
+function renderTrendPlotly(holder, monthly, anomalies, type, forecast) {
   const months = Object.keys(monthly);
   const counts = months.map((m) => monthly[m]);
   const peak = Math.max(0, ...counts);
@@ -623,16 +634,114 @@ function renderTrendPlotly(holder, monthly, anomalies, type) {
     ? { ...common, type: "scatter", mode: "lines+markers", line: { color: bar, width: 2 },
         marker: { color: colors, size: months.map((m) => anomalies.includes(m) ? 9 : 6) } }
     : { ...common, type: "bar", marker: { color: colors } };
+  const data = [trace];
+
+  // Forecast cone: a dotted projection from the last actual month, with the
+  // prediction interval shaded behind it. The shaded band is two scatter traces
+  // (upper then lower with fill:"tonexty"), so the fill lands between them.
+  let fcNote = "";
+  if (forecast && forecast.length) {
+    const fc = cssColor("--bar-anomaly");
+    const lastM = months.at(-1), lastY = counts.at(-1);
+    const xs = [lastM, ...forecast.map((f) => f.month)];
+    const hi = [lastY, ...forecast.map((f) => f.hi)];
+    const lo = [lastY, ...forecast.map((f) => f.lo)];
+    const yPt = [lastY, ...forecast.map((f) => f.point)];
+    const fcText = ["", ...forecast.map((f) =>
+      `forecast ${f.month}: ~${Math.round(f.point)} (PI ${Math.round(f.lo)}–${Math.round(f.hi)})`)];
+    data.push(
+      { x: xs, y: hi, type: "scatter", mode: "lines", line: { width: 0 },
+        hoverinfo: "skip", showlegend: false },
+      { x: xs, y: lo, type: "scatter", mode: "lines", line: { width: 0 }, fill: "tonexty",
+        fillcolor: "rgba(242,139,130,.16)", hoverinfo: "skip", showlegend: false },
+      { x: xs, y: yPt, type: "scatter", mode: "lines+markers", name: "forecast",
+        line: { color: fc, width: 2, dash: "dot" }, marker: { color: fc, size: 5 },
+        text: fcText, hovertemplate: "%{text}<extra></extra>" },
+    );
+    fcNote = ` Dotted line projects the next ${forecast.length} months with a prediction interval.`;
+  }
+
   const layout = plotlyLayout({
     height: 280,
     annotations: [{ xref: "paper", yref: "paper", x: 0, y: 1.1, showarrow: false,
       text: `peak ${peak.toLocaleString()}/month`, font: { size: 10, color: cssColor("--muted") } }],
   });
-  Plotly.react(holder, [trace], layout, PLOT_CONFIG);
+  Plotly.react(holder, data, layout, PLOT_CONFIG);
   holder.setAttribute("role", "img");
   holder.setAttribute("aria-label",
-    `Monthly offence counts from ${months[0]} to ${months.at(-1)}, peak ${peak.toLocaleString()}.`);
+    `Monthly offence counts from ${months[0]} to ${months.at(-1)}, peak ${peak.toLocaleString()}.${fcNote}`);
   resizeSoon(holder);
+}
+
+// Seasonal heatmap — calendar month (columns) × year (rows), shaded by volume.
+// Same months line up vertically, so a seasonal pattern reads at a glance.
+// Hand-rolled SVG: the Plotly "basic" build has no heatmap trace, and an SVG
+// grid keeps the chart dependency-free and theme-aware like the others.
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function renderSeasonHeatmap(holder, monthly) {
+  const years = [...new Set(Object.keys(monthly).map((m) => m.slice(0, 4)))].sort();
+  if (!years.length) { holder.innerHTML = ""; return; }
+  const present = Object.values(monthly);
+  const max = Math.max(1, ...present);
+  const cw = 40, ch = 26, padL = 44, padT = 18, gap = 3;
+  const W = padL + 12 * cw, H = padT + years.length * ch + 4;
+
+  const monthLabels = MONTH_ABBR.map((m, i) =>
+    `<text x="${padL + i * cw + cw / 2}" y="${padT - 6}" text-anchor="middle"
+       font-size="10" fill="var(--muted)">${m}</text>`).join("");
+
+  let cells = "";
+  years.forEach((y, r) => {
+    cells += `<text x="${padL - 8}" y="${padT + r * ch + ch / 2 + 4}" text-anchor="end"
+        font-size="10" fill="var(--muted)">${y}</text>`;
+    MONTH_ABBR.forEach((_, c) => {
+      const key = `${y}-${String(c + 1).padStart(2, "0")}`;
+      const x = padL + c * cw + gap / 2, yy = padT + r * ch + gap / 2;
+      const w = cw - gap, h = ch - gap;
+      if (key in monthly) {
+        const v = monthly[key];
+        const op = (0.16 + 0.84 * (v / max)).toFixed(3);
+        cells += `<rect x="${x}" y="${yy}" width="${w}" height="${h}" rx="3"
+            fill="var(--bar)" fill-opacity="${op}"><title>${key}: ${v.toLocaleString()} offences</title></rect>`;
+      } else {
+        cells += `<rect x="${x}" y="${yy}" width="${w}" height="${h}" rx="3"
+            fill="var(--panel)" stroke="var(--border)" stroke-width="1"/>`;
+      }
+    });
+  });
+
+  holder.innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img"
+       aria-label="Seasonal heatmap: monthly offence volume by calendar month and year, darker is higher.">
+      ${monthLabels}${cells}
+    </svg>`;
+}
+
+// Statistical reading — the inferential layer made legible next to the chart.
+function statCardHTML(s) {
+  if (s == null || s.trend_p_value == null) {
+    return '<p class="hint">Window too short for inferential statistics (needs ≥ 4 months).</p>';
+  }
+  const sig = s.trend_significant
+    ? `<span class="stat-sig">significant ${s.trend_direction} trend</span>`
+    : `<span class="stat-flat">no significant trend</span>`;
+  const ci = Array.isArray(s.sen_slope_ci)
+    ? ` <span class="hint">(95% CI ${s.sen_slope_ci[0]} to ${s.sen_slope_ci[1]})</span>` : "";
+  const rows = [
+    `<li><b>Mann-Kendall:</b> ${sig} (p=${s.trend_p_value})</li>`,
+    `<li><b>Sen slope:</b> ${s.sen_slope_per_month} offences/month${ci}</li>`,
+  ];
+  if (s.seasonal_strength != null) {
+    const peak = MONTH_ABBR[(s.seasonal_peak_month || 1) - 1];
+    const trough = MONTH_ABBR[(s.seasonal_trough_month || 1) - 1];
+    const cav = s.seasonality_established ? "" : ' <span class="hint">· indicative (&lt;2yr)</span>';
+    rows.push(`<li><b>Seasonality:</b> strength ${s.seasonal_strength}, peak ${peak}, trough ${trough}${cav}</li>`);
+  }
+  if (s.forecast && s.forecast.length) {
+    rows.push(`<li><b>Forecast:</b> ${s.forecast.map((f) => `${f.month} ~${Math.round(f.point)}`).join(", ")}</li>`);
+  }
+  return `<ul class="stat-list">${rows.join("")}</ul>`;
 }
 
 function renderComparePlotly(holder, series) {
@@ -665,7 +774,12 @@ function renderComparePlotly(holder, series) {
 // Re-render the on-screen Plotly charts — used when Plotly finishes loading after an
 // SVG fallback, and when the OS colour scheme changes (CSS vars resolve differently).
 function reflowCharts() {
-  if (lastAnswer && lastAnswer.stats && !$("answer").hidden) renderTrendChart();
+  if (lastAnswer && lastAnswer.stats && !$("answer").hidden) {
+    renderTrendChart();
+    if ($("crime-viz").style.display !== "none") {
+      renderSeasonHeatmap($("season-holder"), lastAnswer.stats.monthly_counts);
+    }
+  }
   if (lastCompare && !$("cmp").hidden) renderComparePlotly($("cmp-holder"), lastCompare.series);
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
@@ -676,7 +790,7 @@ function renderTrendChart() {
   if (!lastAnswer || !lastAnswer.stats) return;
   const s = lastAnswer.stats;
   const holder = $("chart-holder");
-  if (plotlyOK) renderTrendPlotly(holder, s.monthly_counts, s.anomalous_months, chartType);
+  if (plotlyOK) renderTrendPlotly(holder, s.monthly_counts, s.anomalous_months, chartType, s.forecast);
   else holder.innerHTML = trendSVG(s.monthly_counts, s.anomalous_months, chartType);
 }
 
@@ -685,12 +799,14 @@ function renderTrendChart() {
 // previews get a table; data.sa analyses get the trend chart.
 function setPanelMode(mode) {
   $("crime-viz").style.display = mode === "crime" ? "" : "none";
+  $("stat-viz").style.display = mode === "crime" ? "" : "none";
   $("chart-toggle").style.display = mode === "preview" ? "none" : "";
   $("review-box").style.display = mode === "preview" ? "none" : "";
   if (mode !== "preview") $("extra-holder").innerHTML = "";
   if (mode !== "crime") {
     if (plotlyOK) Plotly.purge($("chart-holder"));
     $("chart-holder").innerHTML = "";
+    $("season-holder").innerHTML = "";  // plain SVG, no Plotly state to purge
   }
 }
 
@@ -712,6 +828,8 @@ function renderAnswer(d) {
   $("top-holder").innerHTML = hbarSVG(
     s.top_offenses.map((t) => ({ label: t.offense, count: t.count })), () => "var(--bar)");
   $("law-holder").innerHTML = stackedSVG(s.by_offense_division);
+  renderSeasonHeatmap($("season-holder"), s.monthly_counts);
+  $("stat-card").innerHTML = statCardHTML(s);
   $("gov").innerHTML = `Decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
     · model <code>${d.model_used}</code> · source: ${d.data_source}`;
 }

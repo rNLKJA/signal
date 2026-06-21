@@ -133,6 +133,28 @@ def allowed_from_stats(stats) -> set[float]:
     allowed.update(float(v) for v in stats.by_offense_division.values())
     for label in (stats.window_start, stats.window_end, *stats.monthly_counts.keys()):
         allowed |= _year_month_parts(label)
+
+    # Inferential figures (added v1.13) — let a narrative quote the p-value, the
+    # robust slope and its CI, the seasonal strength/months, and the forecast.
+    def _add(*values):
+        for v in values:
+            if v is None:
+                continue
+            allowed.add(abs(float(v)))
+            allowed.add(abs(float(round(v))))
+
+    _add(getattr(stats, "trend_p_value", None))
+    _add(getattr(stats, "sen_slope_per_month", None))
+    _add(getattr(stats, "seasonal_strength", None))
+    _add(getattr(stats, "seasonal_peak_month", None))
+    _add(getattr(stats, "seasonal_trough_month", None))
+    strength = getattr(stats, "seasonal_strength", None)
+    if strength is not None:
+        _add(round(strength * 100))  # tolerate "75%" phrasing of strength 0.75
+    for bound in getattr(stats, "sen_slope_ci", None) or []:
+        _add(bound)
+    for point in getattr(stats, "forecast", None) or []:
+        _add(point.get("point"), point.get("lo"), point.get("hi"))
     return allowed
 
 

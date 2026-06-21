@@ -71,6 +71,25 @@ def test_compute_stats_anomaly_flagged():
     assert "2025-08" in stats.anomalous_months
 
 
+def test_compute_stats_populates_inferential_layer():
+    # A strong, steady rise over 12 months: Mann-Kendall should call it significant.
+    stats = compute_stats(_records([100 + 10 * i for i in range(12)]), months=12)
+    assert stats.trend_significant is True
+    assert stats.trend_p_value is not None and stats.trend_p_value < 0.05
+    assert stats.sen_slope_per_month is not None and stats.sen_slope_per_month > 0
+    assert stats.sen_slope_ci is not None and len(stats.sen_slope_ci) == 2
+    assert stats.forecast and len(stats.forecast) == 3
+    assert {"month", "point", "lo", "hi"} <= set(stats.forecast[0])
+
+
+def test_narrative_states_named_statistical_methods(analyst):
+    # Over the full real window the narrative should read like a statistician's:
+    # significance, and a forecast, not just descriptive percentages.
+    answer = analyst.ask(AnalystQuery(offense="theft", region="adelaide", months=21))
+    assert "Mann-Kendall" in answer.narrative
+    assert "Projected next months" in answer.narrative
+
+
 def test_anomaly_sets_human_review(tmp_path, monkeypatch):
     analyst = Analyst(log_path=str(tmp_path / "d.jsonl"), offline=True)
     monkeypatch.setattr(

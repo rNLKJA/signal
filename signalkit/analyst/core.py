@@ -37,6 +37,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from signalkit.data import catalogue, nyc, sa_crime
 from signalkit.data.sa_crime import MonthlyRecord
+from signalkit.analyst import stats as tstats
 from signalkit.analyst.eval import allowed_from_stats, allowed_from_totals, evaluate
 from signalkit.governance.decision_log import (
     DecisionCategory,
@@ -139,6 +140,38 @@ class TrendStats(BaseModel):
         default_factory=dict,
         description="Counts by ANZSOC division (against the person / against property)",
     )
+    # Inferential statistics (signalkit.analyst.stats) — added at v1.13, all optional.
+    trend_significant: Optional[bool] = Field(
+        default=None, description="Mann-Kendall: is the monotonic trend significant at α=0.05"
+    )
+    trend_p_value: Optional[float] = Field(
+        default=None, description="Mann-Kendall two-sided p-value"
+    )
+    sen_slope_per_month: Optional[float] = Field(
+        default=None, description="Robust Theil-Sen slope, offences per month"
+    )
+    sen_slope_ci: Optional[list[float]] = Field(
+        default=None, description="95% confidence interval for the Sen slope, [lo, hi]"
+    )
+    seasonal_strength: Optional[float] = Field(
+        default=None, description="0..1 — share of detrended variance explained by season"
+    )
+    seasonal_peak_month: Optional[int] = Field(
+        default=None, description="Calendar month (1-12) of the seasonal peak"
+    )
+    seasonal_trough_month: Optional[int] = Field(
+        default=None, description="Calendar month (1-12) of the seasonal trough"
+    )
+    seasonality_established: Optional[bool] = Field(
+        default=None, description="True once two full years (24 months) are observed"
+    )
+    forecast: list[dict] = Field(
+        default_factory=list,
+        description="Next-N-month forecast: each {month, point, lo, hi}",
+    )
+    forecast_method: Optional[str] = Field(
+        default=None, description="How the forecast was produced"
+    )
 
 
 class CompareQuery(BaseModel):
@@ -153,6 +186,13 @@ class CompareQuery(BaseModel):
 _MONTH_NAMES = {
     m: i for i, m in enumerate(
         ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
+        start=1,
+    )
+}
+_MONTH_NAME = {
+    i: m for i, m in enumerate(
+        ["January", "February", "March", "April", "May", "June",
+         "July", "August", "September", "October", "November", "December"],
         start=1,
     )
 }
@@ -355,6 +395,13 @@ def compute_stats(records: list[MonthlyRecord], months: int) -> TrendStats:
             )
     top = sorted(offense_totals.items(), key=lambda kv: -kv[1])[:5]
 
+    # Inferential layer: significance, robust slope, seasonality and a short forecast.
+    fseries = [float(v) for v in series]
+    mk = tstats.mann_kendall(fseries)
+    sen = tstats.sen_slope(fseries)
+    season = tstats.seasonal_decompose(window, fseries)
+    fc = tstats.forecast(window, fseries, horizon=3)
+
     return TrendStats(
         window_start=window[0],
         window_end=window[-1],
@@ -366,6 +413,20 @@ def compute_stats(records: list[MonthlyRecord], months: int) -> TrendStats:
         anomalous_months=anomalies,
         top_offenses=[{"offense": o, "count": c} for o, c in top],
         by_offense_division=dict(sorted(division_totals.items(), key=lambda kv: -kv[1])),
+        trend_significant=(mk.significant if mk else None),
+        trend_p_value=(mk.p_value if mk else None),
+        sen_slope_per_month=(sen.slope_per_month if sen else None),
+        sen_slope_ci=([sen.lo, sen.hi] if sen else None),
+        seasonal_strength=(season.seasonal_strength if season else None),
+        seasonal_peak_month=(season.peak_month if season else None),
+        seasonal_trough_month=(season.trough_month if season else None),
+        seasonality_established=(season.established if season else None),
+        forecast=(
+            [{"month": p.month, "point": p.point, "lo": p.lo, "hi": p.hi} for p in fc.points]
+            if fc
+            else []
+        ),
+        forecast_method=(fc.method if fc else None),
     )
 
 
@@ -389,6 +450,36 @@ def _template_narrative(stats: TrendStats, query: AnalystQuery) -> str:
     if stats.yoy_change_pct is not None:
         verb = "up" if stats.yoy_change_pct >= 0 else "down"
         parts.append(f"Year on year, the latest month is {verb} {abs(stats.yoy_change_pct)}%.")
+
+    # Inferential reading: significance over direction, then seasonality, then forecast.
+    if stats.trend_p_value is not None:
+        if stats.trend_significant:
+            parts.append(
+                f"A Mann-Kendall test confirms the {stats.trend_direction} trend is statistically "
+                f"significant (p={stats.trend_p_value})"
+                + (
+                    f", at about {stats.sen_slope_per_month} offences per month."
+                    if stats.sen_slope_per_month is not None
+                    else "."
+                )
+            )
+        else:
+            parts.append(
+                "A Mann-Kendall test finds no statistically significant trend "
+                f"(p={stats.trend_p_value}), so the movement is within normal variation."
+            )
+    if stats.seasonal_strength is not None and stats.seasonal_strength >= 0.3:
+        peak = _MONTH_NAME.get(stats.seasonal_peak_month or 0, "")
+        trough = _MONTH_NAME.get(stats.seasonal_trough_month or 0, "")
+        caveat = "" if stats.seasonality_established else " (indicative — under two years of data)"
+        parts.append(
+            f"The series is seasonal (strength {stats.seasonal_strength}), typically peaking in "
+            f"{peak} and easing in {trough}{caveat}."
+        )
+    if stats.forecast:
+        pts = ", ".join(f"{f['month']} ~{int(f['point'])}" for f in stats.forecast)
+        parts.append(f"Projected next months: {pts} (with widening prediction intervals).")
+
     if stats.anomalous_months:
         parts.append(
             "Anomalous months flagged for human review: "
