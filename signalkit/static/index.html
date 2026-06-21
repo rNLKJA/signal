@@ -253,8 +253,8 @@
       <table id="audit">
         <caption>Audit trail — the governance log, live (most recent first).
           Aligned to the DTA Policy for the responsible use of AI in government (v2.0).</caption>
-        <thead><tr><th>Decision</th><th>When (UTC)</th><th>Model</th><th>Input</th><th>Human review</th></tr></thead>
-        <tbody id="audit-body"><tr><td colspan="5" class="hint">No decisions logged yet — ask something.</td></tr></tbody>
+        <thead><tr><th>Decision</th><th>When (UTC)</th><th>Model</th><th>Input</th><th>Faithfulness</th><th>Human review</th></tr></thead>
+        <tbody id="audit-body"><tr><td colspan="6" class="hint">No decisions logged yet — ask something.</td></tr></tbody>
       </table>
       <div class="chips" id="gov-panel"></div>
       <details class="review" id="gov-details">
@@ -265,10 +265,13 @@
         <div id="gov-register"></div>
         <h2>AI transparency statement</h2>
         <div id="gov-transparency"></div>
+        <h2>Model card &amp; narrative faithfulness</h2>
+        <div id="gov-model-card"></div>
       </details>
       <p class="hint"><a href="/decisions.csv" download>⤓ Audit log (CSV)</a>
         · <a href="/governance/register">register (JSON)</a>
         · <a href="/governance/transparency">transparency statement (JSON)</a>
+        · <a href="/governance/model-card">model card (JSON)</a>
         · <a href="/governance/summary">summary (JSON)</a></p>
     </div>
   </section>
@@ -512,6 +515,24 @@ function pct(v, suffix) {
   return `<span class="chip">${suffix} <b>${arrow} ${Math.abs(v)}%</b></span>`;
 }
 
+// Narrative faithfulness: how well the served summary matches the computed
+// stats (1.0 = no fabricated figures). Only shown when a score is present.
+function faithfulnessChip(score) {
+  if (score === null || score === undefined) return "";
+  return `<span class="chip" title="Every figure in the narrative was checked against the computed statistics">`
+    + `faithfulness <b>✓ ${Math.round(score * 100)}%</b></span>`;
+}
+
+// Audit-table cell: faithfulness %, flagging rows where an unfaithful LLM
+// narrative was rejected and the deterministic template served instead.
+function auditFaithfulness(e) {
+  if (e.faithfulness_score === null || e.faithfulness_score === undefined) return "—";
+  if ((e.tags || []).includes("faithfulness-fallback")) {
+    return `<span title="LLM narrative rejected by the faithfulness eval; template served">↩ template</span>`;
+  }
+  return `${Math.round(e.faithfulness_score * 100)}%`;
+}
+
 // --- Plotly time-series charts (progressive enhancement over the SVG renderers) ---
 // Plotly is loaded deferred from a CDN. plotlyReady resolves true once it is usable
 // and false if the script fails to load (offline), in which case the SVG renderers
@@ -662,7 +683,8 @@ function renderAnswer(d) {
     `<span class="chip">trend <b>${s.trend_direction}</b></span>` +
     pct(s.mom_change_pct, "MoM") + pct(s.yoy_change_pct, "YoY") +
     `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">
-       human review ${d.human_review_required ? "required" : "not required"}</span>`;
+       human review ${d.human_review_required ? "required" : "not required"}</span>` +
+    faithfulnessChip(d.faithfulness_score);
   renderTrendChart();
   $("top-holder").innerHTML = hbarSVG(
     s.top_offenses.map((t) => ({ label: t.offense, count: t.count })), () => "var(--bar)");
@@ -776,6 +798,7 @@ async function refreshAudit() {
       <td>${e.timestamp.slice(0, 16).replace("T", " ")}</td>
       <td>${e.model_name}</td>
       <td>${e.input_summary}</td>
+      <td>${auditFaithfulness(e)}</td>
       <td>${e.human_review_required ? "⚠ required" : "—"}</td></tr>`).join("");
   }
   const s = await (await fetch("/governance/summary")).json();
@@ -1110,6 +1133,19 @@ async function loadGovArtifacts() {
       <h3>Risk classification (EU AI Act tiers)</h3><p>${risks || "None recorded yet"}.</p>
       <h3>Human oversight</h3><p>${esc(ts.human_oversight)}</p>
       <h3>Public access and accountability</h3><p>${esc(ts.public_access)}</p>
+    </div>`;
+    const mc = await (await fetch("/governance/model-card")).json();
+    const ev = mc.narrative_eval || {};
+    $("gov-model-card").innerHTML = `<div class="gov-statement">
+      <p><b>${esc(mc.name)} v${esc(mc.version)}</b> — ${esc(mc.intended_use)}</p>
+      <h3>Components</h3><ul>${mc.components.map((c) =>
+        `<li><b>${esc(c.name)}</b> (${esc(c.type)}) — ${esc(c.role)}</li>`).join("")}</ul>
+      <h3>Narrative faithfulness eval</h3>
+      <p>${esc(ev.method || "")} ${esc(ev.on_failure || "")}</p>
+      <p>Decisions evaluated: <b>${ev.decisions_evaluated ?? 0}</b>
+        · mean faithfulness: <b>${ev.mean_faithfulness ?? "n/a"}</b>
+        · fallbacks to template: <b>${ev.fallbacks_to_template ?? 0}</b></p>
+      <h3>Limitations</h3>${list(mc.limitations)}
     </div>`;
   } catch {
     $("gov-register").innerHTML = '<p class="err">Couldn’t load governance artifacts.</p>';

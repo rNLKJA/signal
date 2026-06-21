@@ -37,14 +37,17 @@ from pydantic import BaseModel, Field, model_validator
 
 from signalkit.data import catalogue, nyc, sa_crime
 from signalkit.data.sa_crime import MonthlyRecord
+from signalkit.analyst.eval import allowed_from_stats, allowed_from_totals, evaluate
 from signalkit.governance.decision_log import (
     DecisionCategory,
     DecisionEntry,
     DecisionLogger,
     GovernanceSummary,
+    ModelCard,
     RiskCategory,
     TransparencyStatement,
     UseCaseRegister,
+    model_card,
     register,
     summarise,
     transparency_statement,
@@ -259,6 +262,7 @@ class CompareResult(BaseModel):
     model_used: str
     human_review_required: bool
     generated_at: datetime
+    faithfulness_score: Optional[float] = None
 
 
 class AnalystAnswer(BaseModel):
@@ -271,6 +275,7 @@ class AnalystAnswer(BaseModel):
     model_used: str
     human_review_required: bool
     generated_at: datetime
+    faithfulness_score: Optional[float] = None
 
 
 def _slope(series: list[int]) -> float:
@@ -452,6 +457,27 @@ def _ask_prompt(stats: TrendStats, query: AnalystQuery) -> str:
     )
 
 
+def _gate_narrative(narrative, model_used, provider, fallback, allowed, trend_direction):
+    """Gate an LLM narrative on faithfulness; fall back to the template if it fails.
+
+    Returns (narrative, model_used, provider, faithfulness_score, note, extra_tags).
+    The deterministic template is faithful by construction, so it scores 1.0 and
+    is never re-checked. When an LLM narrative fails, we serve the template, record
+    a 1.0 for the *served* text, and note the rejection so the audit trail shows it.
+    """
+    if model_used == DETERMINISTIC_MODEL:
+        return narrative, model_used, provider, 1.0, None, []
+    report = evaluate(narrative, allowed, trend_direction=trend_direction)
+    if report.passed:
+        return narrative, model_used, provider, round(report.score, 3), None, []
+    note = (
+        f"LLM narrative ({model_used}) failed the faithfulness eval "
+        f"(score {report.score:.2f}): {'; '.join(report.issues)}. "
+        "Served the deterministic template instead."
+    )
+    return fallback, DETERMINISTIC_MODEL, None, 1.0, note, ["faithfulness-fallback"]
+
+
 class Analyst:
     """Answers queries over the recorded-offence data and audit-logs every answer."""
 
@@ -484,8 +510,11 @@ class Analyst:
             )
 
         stats = compute_stats(filtered, query.months)
-        narrative, model_used, provider = _generate_narrative(
-            _ask_prompt(stats, query), _template_narrative(stats, query)
+        fallback = _template_narrative(stats, query)
+        narrative, model_used, provider = _generate_narrative(_ask_prompt(stats, query), fallback)
+        narrative, model_used, provider, faithfulness, note, extra_tags = _gate_narrative(
+            narrative, model_used, provider, fallback,
+            allowed_from_stats(stats), stats.trend_direction,
         )
         human_review = bool(stats.anomalous_months)
         entry = DecisionEntry(
@@ -506,7 +535,9 @@ class Analyst:
                 "Policy for the responsible use of AI in government (DTA v2.0); EU AI Act Art. 50"
             ),
             risk_category=RiskCategory.limited,
-            tags=[f"{query.source}-crime", "trend-analysis"],
+            tags=[f"{query.source}-crime", "trend-analysis"] + extra_tags,
+            notes=note,
+            faithfulness_score=faithfulness,
         )
         self._logger.log(entry)
 
@@ -518,6 +549,7 @@ class Analyst:
             model_used=model_used,
             human_review_required=human_review,
             generated_at=datetime.now(timezone.utc),
+            faithfulness_score=faithfulness,
         )
 
     def compare(self, query: CompareQuery) -> CompareResult:
@@ -585,7 +617,20 @@ class Analyst:
             f"Scope: {scope}, window {window[0]} to {window[-1]}\n"
             f"Statistics: {compact}"
         )
-        narrative, model_used, provider = _generate_narrative(prompt, " ".join(fallback_parts))
+        compare_fallback = " ".join(fallback_parts)
+        narrative, model_used, provider = _generate_narrative(prompt, compare_fallback)
+        allowed = allowed_from_totals(
+            [s.total for s in series],
+            extra=(
+                {abs(float(s.yoy_change_pct)) for s in series if s.yoy_change_pct is not None}
+                | {abs(float(round(s.yoy_change_pct))) for s in series if s.yoy_change_pct is not None}
+                | {float(len(window))}
+                | {float(int(p)) for label in (window[0], window[-1]) for p in re.findall(r"\d+", label)}
+            ),
+        )
+        narrative, model_used, provider, faithfulness, note, extra_tags = _gate_narrative(
+            narrative, model_used, provider, compare_fallback, allowed, None,
+        )
 
         human_review = any(s.anomalous_months for s in series)
         entry = DecisionEntry(
@@ -606,7 +651,9 @@ class Analyst:
                 "Policy for the responsible use of AI in government (DTA v2.0); EU AI Act Art. 50"
             ),
             risk_category=RiskCategory.limited,
-            tags=[f"{query.source}-crime", "region-comparison"],
+            tags=[f"{query.source}-crime", "region-comparison"] + extra_tags,
+            notes=note,
+            faithfulness_score=faithfulness,
         )
         self._logger.log(entry)
 
@@ -621,6 +668,7 @@ class Analyst:
             model_used=model_used,
             human_review_required=human_review,
             generated_at=datetime.now(timezone.utc),
+            faithfulness_score=faithfulness,
         )
 
     def recent_decisions(self, limit: int = 20) -> list[DecisionEntry]:
@@ -679,6 +727,19 @@ class Analyst:
         """A DTA-style AI transparency statement, generated from the log."""
         return transparency_statement(
             self._logger.read_all(), self._agency, self._accountable_official
+        )
+
+    def model_card(self) -> ModelCard:
+        """A model card for the analyst, with live faithfulness-eval results."""
+        import signalkit
+
+        return model_card(
+            self._logger.read_all(),
+            agency=self._agency,
+            accountable_official=self._accountable_official,
+            version=signalkit.__version__,
+            llm_model=os.environ.get("SIGNAL_LLM_MODEL", DEFAULT_LLM_MODEL),
+            deterministic_model=DETERMINISTIC_MODEL,
         )
 
     def preview_dataset(

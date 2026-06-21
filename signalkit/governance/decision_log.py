@@ -204,6 +204,16 @@ class DecisionEntry(BaseModel):
         default=None,
         description="Any additional context not captured by the structured fields.",
     )
+    faithfulness_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Faithfulness of the served narrative to the computed statistics "
+            "(1.0 = no fabricated figures, no trend contradiction). None for "
+            "non-narrated entries. [DTA/EU]"
+        ),
+    )
 
     @field_validator("override_reason")
     @classmethod
@@ -397,6 +407,113 @@ def transparency_statement(
         ai_systems=systems, purposes=purposes, data_sources=sources,
         risk_tiers=risks, human_oversight=oversight, public_access=public,
         statement=statement,
+    )
+
+
+class ModelCard(BaseModel):
+    """A model card for the Signal analyst, generated live from the log.
+
+    Documents the two narrative layers (deterministic template + optional LLM)
+    and the faithfulness eval that gates the LLM output, with the live eval
+    results read back from the audit trail."""
+
+    name: str = "Signal analyst"
+    version: str
+    agency: str
+    accountable_official: str
+    policy: str = "Policy for the responsible use of AI in government (DTA, v2.0)"
+    components: list[dict]
+    narrative_eval: dict
+    data_sources: list[str]
+    intended_use: str
+    out_of_scope: list[str]
+    limitations: list[str]
+    card: str
+
+
+def model_card(
+    entries: list[DecisionEntry],
+    *,
+    agency: str,
+    accountable_official: str,
+    version: str,
+    llm_model: str,
+    deterministic_model: str,
+) -> ModelCard:
+    """Generate the analyst model card, with live faithfulness results."""
+    scored = [e for e in entries if e.faithfulness_score is not None]
+    mean_faith = round(sum(e.faithfulness_score for e in scored) / len(scored), 3) if scored else None
+    fallbacks = sum(1 for e in entries if "faithfulness-fallback" in (e.tags or []))
+    sources = sorted({s for e in entries for s in e.data_sources})[:12]
+
+    components = [
+        {
+            "name": deterministic_model,
+            "type": "deterministic statistics",
+            "role": "Computes totals, month-on-month / year-on-year change, trend "
+                    "direction and z-score anomalies. Also writes the default narrative.",
+        },
+        {
+            "name": llm_model,
+            "type": "LLM narrative (optional, provider-agnostic)",
+            "role": "Phrases the narrative from the computed aggregates only. Never "
+                    "sees raw records. Output is gated by the faithfulness eval.",
+        },
+    ]
+    narrative_eval = {
+        "method": "Deterministic faithfulness check (no model call): every figure in "
+                  "the narrative must appear in the computed statistics, and the trend "
+                  "sentence must not contradict the computed direction.",
+        "on_failure": "The LLM narrative is rejected and the deterministic template is "
+                      "served instead; the rejection is recorded in the audit log.",
+        "decisions_evaluated": len(scored),
+        "mean_faithfulness": mean_faith,
+        "fallbacks_to_template": fallbacks,
+    }
+    intended_use = (
+        "Surface trends and anomalies in already-aggregated, de-identified public "
+        "crime data, with every answer audit-logged for governance."
+    )
+    out_of_scope = [
+        "Individual-level prediction, profiling, or any decision about a person.",
+        "Operational policing or resource-allocation decisions.",
+        "Any use over data containing personal information.",
+    ]
+    limitations = [
+        "Counts are not rates: differences across regions may reflect population, "
+        "reporting or policing intensity rather than real offending.",
+        "Anomaly and trend thresholds are fixed heuristics, not calibrated models.",
+        "The LLM narrative is gated for figure-faithfulness, not for tone or nuance; "
+        "the deterministic template is always the fallback.",
+        "Large explorer datasets are sampled at a row cap (flagged in the result).",
+    ]
+    card = (
+        f"# Model card — Signal analyst v{version}\n\n"
+        f"**Agency:** {agency}  ·  **Accountable official:** {accountable_official}\n\n"
+        f"**Policy basis:** Policy for the responsible use of AI in government (DTA, v2.0).\n\n"
+        f"## Components\n"
+        + "".join(f"- **{c['name']}** ({c['type']}) — {c['role']}\n" for c in components)
+        + f"\n## Narrative faithfulness eval\n{narrative_eval['method']} "
+        f"{narrative_eval['on_failure']}\n\n"
+        f"- Decisions evaluated: {len(scored)}\n"
+        f"- Mean faithfulness: {mean_faith if mean_faith is not None else 'n/a'}\n"
+        f"- Fallbacks to template: {fallbacks}\n\n"
+        f"## Intended use\n{intended_use}\n\n"
+        f"## Out of scope\n" + "".join(f"- {x}\n" for x in out_of_scope)
+        + "\n## Limitations\n" + "".join(f"- {x}\n" for x in limitations)
+        + f"\n## Data sources\n{', '.join(sources) or 'None recorded yet'}.\n"
+    )
+    return ModelCard(
+        version=version,
+        agency=agency,
+        accountable_official=accountable_official,
+        components=components,
+        narrative_eval=narrative_eval,
+        data_sources=sources,
+        intended_use=intended_use,
+        out_of_scope=out_of_scope,
+        limitations=limitations,
+        card=card,
     )
 
 

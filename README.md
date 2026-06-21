@@ -118,6 +118,7 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Real base map (Leaflet + OpenStreetMap): region comparison plotted on a map with click-to-drill; explorer datasets with lat/lon columns plotted as points
 - [x] NYC Open Data in the explorer via a Socrata adapter (alongside the CKAN portals) — browse, preview, generic-trend, geocode-map any NYC dataset
 - [x] Plotly time-series charts: the trend (bar/line) and region-comparison charts use Plotly (basic build, deferred CDN + SRI) for zoom, pan, hover, legend toggling, PNG export and click-a-line-to-drill — with a graceful fallback to the hand-rolled SVG renderers if the CDN is unavailable
+- [x] Narrative faithfulness eval + model card: every LLM-written narrative is deterministically checked against the computed statistics (no fabricated figures, no trend contradiction); a narrative that fails is rejected and the deterministic template is served instead, with the rejection logged. Faithfulness is shown on the answer and in the audit table, and the live model card (`/governance/model-card`) reports the mean score and fallback count
 
 ### Beyond 1.0.0
 
