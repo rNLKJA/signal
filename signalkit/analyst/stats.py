@@ -169,8 +169,11 @@ def seasonal_decompose(months: list[str], values: list[float]) -> Optional[Seaso
     Seasonal strength follows the standard ``max(0, 1 - var(resid)/var(resid+seasonal))``.
     With fewer than two full years the seasonal estimate is returned but flagged
     ``established=False`` — honest about what ~21 months can and cannot support.
+    Below 13 months it is not computed at all: with one observation per calendar
+    month the decomposition is unidentifiable (it would absorb every wobble as
+    "seasonal" and report a vacuous strength of 1.0).
     """
-    if len(values) != len(months) or len(values) < 12:
+    if len(values) != len(months) or len(values) < 13:
         return None
     y = np.asarray(values, dtype=float)
     n = y.size
