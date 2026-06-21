@@ -35,6 +35,11 @@ A governed, tamper-evident decision in a few lines::
 See ``signalkit/governance/README.md`` for the full guide.
 """
 
+from signalkit.governance.audit_store import (
+    AuditStore,
+    InMemoryAuditStore,
+    JsonlAuditStore,
+)
 from signalkit.governance.decision_log import (
     ChainVerification,
     DecisionCategory,
@@ -62,6 +67,10 @@ __all__ = [
     "DecisionLogger",
     "DecisionCategory",
     "RiskCategory",
+    # pluggable storage
+    "AuditStore",
+    "JsonlAuditStore",
+    "InMemoryAuditStore",
     # tamper-evidence
     "ChainVerification",
     "verify_chain",

@@ -60,6 +60,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from signalkit.governance.audit_store import AuditStore, JsonlAuditStore
+
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -749,41 +751,43 @@ def impact_assessment(
 
 class DecisionLogger:
     """
-    Append-only JSONL logger for DecisionEntry records.
+    Hash-chained, append-only logger for DecisionEntry records.
 
-    JSONL format: one JSON object per line, UTF-8, no trailing comma.
-    Human-readable and grep-able without special tooling.
+    The governance logic — chaining each entry to the previous by hash, and
+    verifying the chain — lives here. *Where* the lines are kept is delegated to a
+    pluggable ``AuditStore`` (see ``audit_store.py``); the default is a JSONL file,
+    so ``DecisionLogger("logs/decisions.jsonl")`` keeps working, but a durable
+    backend can be passed instead without changing any of the guarantees.
 
     Example
     -------
-        logger = DecisionLogger("logs/decisions.jsonl")
+        logger = DecisionLogger("logs/decisions.jsonl")   # JSONL file (default)
+        logger = DecisionLogger(InMemoryAuditStore())     # any AuditStore
         logger.log(entry)
     """
 
     #: prev_hash value for the first entry in a chain.
     GENESIS = "genesis"
 
-    def __init__(self, path: str | Path) -> None:
-        self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._last_hash: Optional[str] = None  # lazily loaded from the file tail
+    def __init__(self, store: "AuditStore | str | Path") -> None:
+        if isinstance(store, (str, Path)):
+            store = JsonlAuditStore(store)
+        self._store: AuditStore = store
+        #: Back-compat / convenience: the file path when the store is file-backed.
+        self.path = getattr(store, "path", None)
+        self._last_hash: Optional[str] = None  # lazily loaded from the store tail
 
     def _tail_hash(self) -> str:
         """entry_hash of the last logged entry, or GENESIS for an empty/legacy log.
 
         Cached in memory; the single-writer, single-container design means the
-        cache cannot go stale. On a cold start it is rebuilt from the file's last
+        cache cannot go stale. On a cold start it is rebuilt from the store's last
         line. A legacy log whose last entry predates hashing chains from GENESIS,
         so the tamper-evident chain simply begins at the next entry.
         """
         if self._last_hash is not None:
             return self._last_hash
-        last_line = None
-        if self.path.exists():
-            with self.path.open("r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        last_line = line.strip()
+        last_line = self._store.last_line()
         if last_line:
             self._last_hash = DecisionEntry.model_validate_json(last_line).entry_hash or self.GENESIS
         else:
@@ -794,8 +798,7 @@ class DecisionLogger:
         """Append a DecisionEntry, chaining it to the previous one by hash."""
         entry.prev_hash = self._tail_hash()
         entry.entry_hash = entry.content_hash()
-        with self.path.open("a", encoding="utf-8") as f:
-            f.write(entry.to_jsonl_line() + "\n")
+        self._store.append(entry.to_jsonl_line())
         self._last_hash = entry.entry_hash
 
     def verify(self) -> "ChainVerification":
@@ -803,16 +806,8 @@ class DecisionLogger:
         return verify_chain(self.read_all())
 
     def read_all(self) -> list[DecisionEntry]:
-        """Read and parse all entries from the log file."""
-        if not self.path.exists():
-            return []
-        entries = []
-        with self.path.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    entries.append(DecisionEntry.model_validate_json(line))
-        return entries
+        """Read and parse all entries from the store, oldest first."""
+        return [DecisionEntry.model_validate_json(line) for line in self._store.read_lines()]
 
     def to_dicts(self) -> list[dict]:
         """Return all entries as plain dicts (e.g. for pandas or DuckDB)."""
