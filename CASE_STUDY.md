@@ -8,7 +8,7 @@ Signal is a small product I built to test a different idea: make the compliance 
 
 ## What it does
 
-Signal is a governed analyst over crime data and a governed explorer over open data. You ask it a question, for example how theft is trending in Adelaide over the last twelve months, and it returns a plain-language summary backed by real numbers: the trend direction, the month-on-month and year-on-year change, the top offence categories, and any months unusual enough to flag for review. It runs over two jurisdictions, South Australia Police and the New York City Police Department, on the same governed path.
+Signal is a governed analyst over crime data and a governed explorer over open data. You ask it a question, for example how theft is trending in Adelaide over the last eighteen months, and it returns a plain-language summary backed by real numbers: the trend direction and whether that trend is statistically significant, the month-on-month and year-on-year change, the seasonal pattern, a short forecast, the top offence categories, and any months unusual enough to flag for review. It runs over two jurisdictions, South Australia Police and the New York City Police Department, on the same governed path.
 
 Beyond the crime data, the same portal behind the SA figures publishes around 1,900 open datasets, so Signal also lets you search and analyse the data.sa.gov.au, data.nsw.gov.au, data.vic.gov.au and NYC Open Data catalogues. Any dataset with a date and a number can be trended, and any dataset with coordinates is plotted on a map. Every one of those lookups is governed too.
 
@@ -23,6 +23,16 @@ The important decision was where to put the logging. In Signal the analyst physi
 ## Checking the AI, not just logging it
 
 The summaries are phrased by a language model from the computed figures, never from the raw data. That raises the question an auditor asks first: how do you know the model did not make a number up? Signal answers it by checking every summary against the statistics before it reaches anyone. The check is deterministic and runs without calling the model again. Every figure in the summary has to appear in the computed numbers, and the sentence describing the trend cannot contradict the computed direction. A summary that fails is rejected, the plain deterministic version is sent in its place, and the rejection is written to the same audit log. Each answer also carries a faithfulness score you can see on the result and in the audit trail, and a live model card reports the average score and how often the model was overruled. The model is allowed to phrase the answer. It is never trusted to invent one.
+
+## Statistics worth trusting
+
+A percentage change makes a good headline and a poor conclusion. Theft in a suburb can be down ten per cent on last month and still be doing nothing unusual, because monthly counts wander on their own. So the analyst does not stop at the percentage. It asks whether the movement is real.
+
+To do that it runs a Mann-Kendall test, the standard way to check for a trend in a monthly series like this. It assumes nothing about the data being neatly shaped, and it returns a p-value, so the answer can say "the decline is statistically significant" or "this is within normal variation" instead of leaving the reader to guess. Alongside it, a Sen slope estimates how steep the trend is from the median of every pairwise slope, so one odd month cannot tilt the line, and it comes with a confidence interval.
+
+Crime is also seasonal. The South Australian theft series sits higher around March and eases through winter, so a decomposition separates the seasonal swing from the underlying trend and reports how strong that season is. With less than two full years of data the seasonal estimate is marked as indicative rather than settled, because that is the honest thing to say with twenty-one months in hand. A short forecast then projects the next few months with a prediction interval that widens the further out it reaches.
+
+None of this is decoration. Every one of these figures is computed before the language model is allowed to phrase anything, every one is checked by the faithfulness test, and every one is written to the same audit log as the rest of the answer. A governed answer should be able to state not only what it found but how sure it is, in terms an auditor can follow. On the dashboard the same numbers appear as a forecast cone on the trend chart, a month by year heat map of the seasonal pattern, and a short statistical reading beside the answer. The methods themselves live in one small, tested module, [`signalkit/analyst/stats.py`](signalkit/analyst/stats.py).
 
 ## Mapping to the DTA policy
 
