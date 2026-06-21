@@ -65,6 +65,9 @@
   .stat-list b { font-weight: 600; }
   .stat-sig { color: var(--bar); font-weight: 600; }
   .stat-flat { color: var(--muted); font-weight: 600; }
+  table.tree { width: 100%; border-collapse: collapse; font-size: .85rem; margin-top: .3rem; }
+  table.tree th, table.tree td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--border); }
+  table.tree th { color: var(--muted); font-weight: 600; }
   .tagline { color: var(--muted); margin: 0 0 1.5rem; }
   .tagline a { color: var(--brand); }
   form {
@@ -213,6 +216,8 @@
     <button type="submit" id="ask-btn">Ask</button>
     <button type="button" id="cmp-btn" class="secondary"
       title="Same offence and window, SA regions side by side">Compare regions</button>
+    <button type="button" id="multi-btn" class="secondary"
+      title="Put two or more offences in the offence box, comma-separated (e.g. 'theft, robbery, fraud'). Each becomes its own governed, linked sub-decision.">Multi-step</button>
   </form>
 
   <form id="ds-form" hidden>
@@ -1035,8 +1040,53 @@ async function runCompare() {
   }
 }
 
+async function runMulti() {
+  $("multi-btn").disabled = true;
+  try {
+    const p = formPayload();
+    const offenses = (p.offense || "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (offenses.length < 2) {
+      renderError(0, { detail: "For a multi-step answer, put two or more offences in the offence box, comma-separated (e.g. 'theft, robbery, fraud')." });
+      return;
+    }
+    const r = await post("/ask/multi", { question: "dashboard multi-step", offenses, region: p.region, months: p.months, source: p.source });
+    r.ok ? renderMultiStep(r.body) : renderError(r.status, r.body);
+    await refreshAudit();
+  } catch {
+    renderError(0, { detail: "Network error — is the API running?" });
+  } finally {
+    $("multi-btn").disabled = false;
+  }
+}
+
+// A compound answer: the synthesis plus the tree of linked, individually-logged sub-decisions.
+function renderMultiStep(d) {
+  lastAnswer = { stats: null, decision_id: d.decision_id };
+  $("error").hidden = true;
+  $("answer").hidden = false;
+  setPanelMode("preview");
+  $("narrative").textContent = d.synthesis;
+  $("chips").innerHTML =
+    `<span class="chip">steps <b>${d.steps.length}</b></span>` +
+    `<span class="chip ${d.human_review_required ? "review-yes" : "review-no"}">human review ${d.human_review_required ? "required" : "not required"}</span>` +
+    faithfulnessChip(d.faithfulness_score);
+  const rows = d.steps.map((s) => `<tr>
+      <td>${s.offense}</td>
+      <td><a href="/decisions/${s.decision_id}"><code>${s.decision_id}</code></a></td>
+      <td>${s.total_offences.toLocaleString()}</td>
+      <td>${s.trend_direction}</td>
+      <td>${s.human_review_required ? "⚠ required" : "—"}</td></tr>`).join("");
+  $("extra-holder").innerHTML =
+    `<h2>Decision tree <span class="h2-sub">parent <code>${d.decision_id}</code> → ${d.steps.length} linked sub-decisions, each governed and in the audit chain</span></h2>
+     <table class="tree"><thead><tr><th>Offence</th><th>Decision</th><th>Total</th><th>Trend</th><th>Review</th></tr></thead>
+     <tbody>${rows}</tbody></table>`;
+  $("gov").innerHTML = `Composite decision <a href="/decisions/${d.decision_id}"><code>${d.decision_id}</code></a>
+    · model <code>${d.model_used}</code> · source: ${d.data_source}`;
+}
+
 $("ask-form").addEventListener("submit", (ev) => { ev.preventDefault(); runAsk(); });
 $("cmp-btn").addEventListener("click", runCompare);
+$("multi-btn").addEventListener("click", runMulti);
 
 $("rv-submit").addEventListener("click", async () => {
   if (!lastAnswer) return;

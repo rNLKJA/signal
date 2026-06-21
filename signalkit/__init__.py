@@ -10,4 +10,4 @@ See ``signalkit.governance.decision_log`` for the audit-trail core,
 ``signalkit.analyst.stats`` for the statistical methods it reports.
 """
 
-__version__ = "1.15.1"
+__version__ = "1.16.0"

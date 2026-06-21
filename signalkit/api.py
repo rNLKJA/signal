@@ -47,6 +47,7 @@ from signalkit.analyst.core import (
     Analyst,
     AnalystQuery,
     CompareQuery,
+    MultiQuery,
     NoDataError,
     ReviewRequest,
 )
@@ -152,6 +153,21 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         _enforce_rate_limit(request, response)
         try:
             result = app.state.analyst.compare(query)
+        except NoDataError as e:
+            raise HTTPException(
+                status_code=404,
+                detail={"message": str(e), "valid_values": e.suggestions},
+            ) from e
+        except DataUnavailable as e:
+            raise HTTPException(status_code=503, detail=str(e)) from e
+        return result.model_dump(mode="json")
+
+    @app.post("/ask/multi")
+    def ask_multi(query: MultiQuery, request: Request, response: Response) -> dict:
+        """A compound question answered as a traceable tree of linked sub-decisions."""
+        _enforce_rate_limit(request, response)
+        try:
+            result = app.state.analyst.ask_multi(query)
         except NoDataError as e:
             raise HTTPException(
                 status_code=404,
