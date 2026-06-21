@@ -50,6 +50,7 @@ Usage
 
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
@@ -215,12 +216,38 @@ class DecisionEntry(BaseModel):
         ),
     )
 
+    # --- Integrity (tamper-evidence) ---
+    # Each entry carries the hash of the one before it, so the log forms a chain.
+    # Any retroactive edit or deletion breaks the chain and is detectable. This
+    # turns the audit trail from "we wrote it down" into "we can show it was not
+    # changed" — the traceability the DTA policy and the EU AI Act ask for. These
+    # are set by DecisionLogger.log() at append time, not by the caller.
+    prev_hash: Optional[str] = Field(
+        default=None,
+        description="entry_hash of the previous logged entry ('genesis' for the first). [EU]",
+    )
+    entry_hash: Optional[str] = Field(
+        default=None,
+        description="SHA-256 over this entry's content (incl. prev_hash); links it into the chain. [EU]",
+    )
+
     @field_validator("override_reason")
     @classmethod
     def override_reason_required_when_overridden(cls, v: Optional[str], info) -> Optional[str]:
         if info.data.get("override_applied") and not v:
             raise ValueError("override_reason must be provided when override_applied is True.")
         return v
+
+    def content_hash(self) -> str:
+        """Deterministic SHA-256 over this entry's content, excluding entry_hash itself.
+
+        prev_hash IS included, which is what chains each entry to the one before
+        it. Serialisation is canonical (sorted keys, no whitespace) so the hash is
+        reproducible by anyone re-reading the log.
+        """
+        payload = self.model_dump(mode="json", exclude={"entry_hash"})
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     def to_jsonl_line(self) -> str:
         """Serialise to a single JSON line for JSONL append."""
@@ -686,14 +713,47 @@ class DecisionLogger:
         logger.log(entry)
     """
 
+    #: prev_hash value for the first entry in a chain.
+    GENESIS = "genesis"
+
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._last_hash: Optional[str] = None  # lazily loaded from the file tail
+
+    def _tail_hash(self) -> str:
+        """entry_hash of the last logged entry, or GENESIS for an empty/legacy log.
+
+        Cached in memory; the single-writer, single-container design means the
+        cache cannot go stale. On a cold start it is rebuilt from the file's last
+        line. A legacy log whose last entry predates hashing chains from GENESIS,
+        so the tamper-evident chain simply begins at the next entry.
+        """
+        if self._last_hash is not None:
+            return self._last_hash
+        last_line = None
+        if self.path.exists():
+            with self.path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        last_line = line.strip()
+        if last_line:
+            self._last_hash = DecisionEntry.model_validate_json(last_line).entry_hash or self.GENESIS
+        else:
+            self._last_hash = self.GENESIS
+        return self._last_hash
 
     def log(self, entry: DecisionEntry) -> None:
-        """Append a DecisionEntry to the JSONL file."""
+        """Append a DecisionEntry, chaining it to the previous one by hash."""
+        entry.prev_hash = self._tail_hash()
+        entry.entry_hash = entry.content_hash()
         with self.path.open("a", encoding="utf-8") as f:
             f.write(entry.to_jsonl_line() + "\n")
+        self._last_hash = entry.entry_hash
+
+    def verify(self) -> "ChainVerification":
+        """Re-walk the log and confirm the hash chain is intact."""
+        return verify_chain(self.read_all())
 
     def read_all(self) -> list[DecisionEntry]:
         """Read and parse all entries from the log file."""
@@ -710,6 +770,72 @@ class DecisionLogger:
     def to_dicts(self) -> list[dict]:
         """Return all entries as plain dicts (e.g. for pandas or DuckDB)."""
         return [json.loads(e.to_jsonl_line()) for e in self.read_all()]
+
+
+# ---------------------------------------------------------------------------
+# Tamper-evidence: verify the hash chain
+# ---------------------------------------------------------------------------
+
+class ChainVerification(BaseModel):
+    """The verdict on whether the audit log's hash chain is intact."""
+
+    valid: bool = Field(description="True if no edit, deletion or reordering was detected")
+    entries_total: int = Field(description="Total entries read from the log")
+    chained_entries: int = Field(default=0, description="Entries covered by the tamper-evident chain")
+    legacy_entries: int = Field(
+        default=0, description="Leading entries written before hashing began (unverifiable, not tampered)"
+    )
+    head_hash: Optional[str] = Field(
+        default=None,
+        description="entry_hash of the last chained entry — the digest that commits the whole chain",
+    )
+    broken_at: Optional[str] = Field(
+        default=None, description="decision_id where the chain first fails, if any"
+    )
+    reason: Optional[str] = Field(default=None, description="Why it failed, in plain words")
+
+
+def verify_chain(entries: list[DecisionEntry]) -> ChainVerification:
+    """Re-walk a list of entries and confirm each one's hash, and the links between them.
+
+    A tamper-evident chain begins at the first entry that carries an ``entry_hash``.
+    Entries written before the feature shipped have no hash; they are counted as
+    ``legacy`` and reported honestly rather than failing the check. Once the chain
+    has begun, every entry must hash correctly and point at its predecessor, and no
+    unchained entry may appear after it (that would be an inserted or rewound record).
+    """
+    legacy = 0
+    chained = 0
+    prev: Optional[str] = None  # None until the chain begins
+    for idx, e in enumerate(entries):
+        if e.entry_hash is None:
+            if prev is not None:
+                return ChainVerification(
+                    valid=False, entries_total=len(entries), chained_entries=chained,
+                    legacy_entries=legacy, broken_at=e.decision_id,
+                    reason="an unchained entry appears after the hash chain began",
+                )
+            legacy += 1
+            continue
+        expected_prev = DecisionLogger.GENESIS if prev is None else prev
+        if e.prev_hash != expected_prev:
+            return ChainVerification(
+                valid=False, entries_total=len(entries), chained_entries=chained,
+                legacy_entries=legacy, broken_at=e.decision_id,
+                reason="prev_hash does not match the previous entry (an entry was removed or reordered)",
+            )
+        if e.entry_hash != e.content_hash():
+            return ChainVerification(
+                valid=False, entries_total=len(entries), chained_entries=chained,
+                legacy_entries=legacy, broken_at=e.decision_id,
+                reason="entry content does not match its hash (the entry was altered)",
+            )
+        prev = e.entry_hash
+        chained += 1
+    return ChainVerification(
+        valid=True, entries_total=len(entries), chained_entries=chained,
+        legacy_entries=legacy, head_hash=prev,
+    )
 
 
 # ---------------------------------------------------------------------------
