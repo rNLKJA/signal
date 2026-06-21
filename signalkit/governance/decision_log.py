@@ -177,6 +177,15 @@ class DecisionEntry(BaseModel):
         default=None,
         description="For a review event: the decision_id this review applies to. [DTA]",
     )
+    parent_decision_id: Optional[str] = Field(
+        default=None,
+        description="For a sub-decision in a multi-step answer: the composite decision it "
+                    "belongs to. Gives per-step accountability for agentic reasoning. [DTA/EU]",
+    )
+    child_decision_ids: list[str] = Field(
+        default_factory=list,
+        description="For a composite decision: the sub-decisions it synthesises. [DTA/EU]",
+    )
 
     # --- Governance context ---
     agency: Optional[str] = Field(

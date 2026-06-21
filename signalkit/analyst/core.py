@@ -29,6 +29,7 @@ import os
 import re
 import statistics
 import threading
+import uuid
 from collections import deque
 from datetime import datetime, timezone
 from typing import Literal, Optional
@@ -189,6 +190,17 @@ class CompareQuery(BaseModel):
     source: str = Field(default="sa", description="Data source: sa | nyc")
 
 
+class MultiQuery(BaseModel):
+    """A compound question over several offences, answered as linked sub-decisions."""
+
+    question: str = Field(default="", description="Free-text question, recorded in the audit log")
+    offenses: list[str] = Field(min_length=2, max_length=6,
+                                description="Two to six offence scopes to analyse and synthesise")
+    region: Optional[str] = Field(default=None, description="Region/borough filter")
+    months: int = Field(default=18, ge=2, le=24)
+    source: str = Field(default="sa", description="Data source: sa | nyc")
+
+
 _MONTH_NAMES = {
     m: i for i, m in enumerate(
         ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
@@ -337,6 +349,37 @@ class AnalystAnswer(BaseModel):
     narrative: str
     stats: TrendStats
     decision_id: str
+    data_source: str
+    model_used: str
+    human_review_required: bool
+    generated_at: datetime
+    faithfulness_score: Optional[float] = None
+
+
+class MultiStepStep(BaseModel):
+    """One governed sub-decision within a multi-step answer."""
+
+    offense: str
+    decision_id: str
+    total_offences: int
+    trend_direction: str
+    narrative: str
+    human_review_required: bool
+
+
+class MultiStepAnswer(BaseModel):
+    """A compound answer: a synthesis over linked, individually-logged sub-decisions.
+
+    ``decision_id`` is the parent (composite) decision; each step carries its own
+    decision_id whose audit entry links back via ``parent_decision_id``. The whole
+    tree is in the same tamper-evident chain, so a compound answer is as traceable
+    as a single one.
+    """
+
+    question: str
+    decision_id: str
+    synthesis: str
+    steps: list[MultiStepStep]
     data_source: str
     model_used: str
     human_review_required: bool
@@ -649,6 +692,25 @@ def _gate_narrative(narrative, model_used, provider, fallback, allowed, trend_di
     return fallback, DETERMINISTIC_MODEL, None, 1.0, note, ["faithfulness-fallback"]
 
 
+def _synthesise_multi(query: "MultiQuery", steps: list["MultiStepStep"]) -> str:
+    """A deterministic synthesis over the sub-decisions of a multi-step answer.
+
+    Only states each scope's total and trend, both drawn straight from the child
+    decisions, so it passes the same faithfulness check the children do.
+    """
+    region = query.region.upper() if query.region else "all regions"
+    parts = [f"In {region}, each offence type was analysed as its own governed decision."]
+    for s in steps:
+        parts.append(
+            f" {s.offense.capitalize()} recorded {s.total_offences:,} offences "
+            f"({s.trend_direction})."
+        )
+    flagged = [s.offense for s in steps if s.human_review_required]
+    if flagged:
+        parts.append(" Flagged for human review: " + ", ".join(flagged) + ".")
+    return "".join(parts)
+
+
 class Analyst:
     """Answers queries over the recorded-offence data and audit-logs every answer."""
 
@@ -675,7 +737,7 @@ class Analyst:
         self._logger.log(entry)
         return entry.decision_id
 
-    def ask(self, query: AnalystQuery) -> AnalystAnswer:
+    def ask(self, query: AnalystQuery, parent_decision_id: str | None = None) -> AnalystAnswer:
         records, source_label = _records_for(query.source, self._offline)
 
         filtered = [
@@ -722,6 +784,7 @@ class Analyst:
             tags=[f"{query.source}-crime", "trend-analysis"] + extra_tags,
             notes=note,
             faithfulness_score=faithfulness,
+            parent_decision_id=parent_decision_id,
         )
         self._commit(entry)
 
@@ -732,6 +795,83 @@ class Analyst:
             data_source=source_label,
             model_used=model_used,
             human_review_required=human_review,
+            generated_at=datetime.now(timezone.utc),
+            faithfulness_score=faithfulness,
+        )
+
+    def ask_multi(self, query: MultiQuery) -> MultiStepAnswer:
+        """Answer a compound question as linked, individually-governed sub-decisions.
+
+        Each offence is analysed by ``ask`` — its own logged, faithfulness-checked
+        decision, stamped with this answer's parent id — then a parent decision
+        synthesises them and records the child ids. The whole tree sits in one
+        tamper-evident chain, so a multi-step answer is as accountable as a single
+        one. This is per-step accountability for multi-step reasoning.
+        """
+        parent_id = f"d-{uuid.uuid4().hex[:8]}"  # pre-allocated so children can link up
+        steps: list[MultiStepStep] = []
+        child_ids: list[str] = []
+        union_allowed: set = set()
+        any_review = False
+        source_label = ""
+        for offense in query.offenses:
+            sub = self.ask(
+                AnalystQuery(
+                    question=query.question, offense=offense, region=query.region,
+                    months=query.months, source=query.source,
+                ),
+                parent_decision_id=parent_id,
+            )
+            steps.append(MultiStepStep(
+                offense=offense,
+                decision_id=sub.decision_id,
+                total_offences=sub.stats.total_offences,
+                trend_direction=sub.stats.trend_direction,
+                narrative=sub.narrative,
+                human_review_required=sub.human_review_required,
+            ))
+            child_ids.append(sub.decision_id)
+            union_allowed |= allowed_from_stats(sub.stats)
+            any_review = any_review or sub.human_review_required
+            source_label = sub.data_source
+
+        synthesis = _synthesise_multi(query, steps)
+        # The synthesis is faithfulness-checked too, against the union of figures
+        # the children were allowed to state.
+        faithfulness = round(evaluate(synthesis, union_allowed).score, 3)
+
+        parent = DecisionEntry(
+            decision_id=parent_id,
+            model_name=DETERMINISTIC_MODEL,
+            input_summary=(
+                f"compound source='{query.source}' question='{query.question}' "
+                f"offenses={query.offenses} region='{query.region}' months={query.months}"
+            ),
+            model_output_summary=synthesis[:300],
+            data_sources=[source_label],
+            decision_made="Returned a multi-step synthesis over linked sub-decisions.",
+            decision_category=DecisionCategory.analytical,
+            use_case="Multi-step crime trend analysis",
+            confidence_score=0.9,
+            human_review_required=any_review,
+            legislative_basis=(
+                "Policy for the responsible use of AI in government (DTA v2.0); EU AI Act Art. 50"
+            ),
+            risk_category=RiskCategory.limited,
+            tags=[f"{query.source}-crime", "multi-step"],
+            child_decision_ids=child_ids,
+            faithfulness_score=faithfulness,
+        )
+        self._commit(parent)
+
+        return MultiStepAnswer(
+            question=query.question,
+            decision_id=parent_id,
+            synthesis=synthesis,
+            steps=steps,
+            data_source=source_label,
+            model_used=DETERMINISTIC_MODEL,
+            human_review_required=any_review,
             generated_at=datetime.now(timezone.utc),
             faithfulness_score=faithfulness,
         )
