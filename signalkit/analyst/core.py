@@ -66,6 +66,23 @@ SOURCE_AGENCY = {"sa": "SA Police", "nyc": "NYPD"}
 SOURCE_REGION_WORD = {"sa": "regions", "nyc": "boroughs"}
 
 
+def _fairness_note(source: str) -> str:
+    """A non-trivial fairness caveat for a region/borough comparison.
+
+    Raw counts conflate population size, reporting behaviour and policing
+    intensity with actual offending, so a comparison of counts is not a
+    comparison of rates. Saying so plainly is the responsible-AI default for a
+    crime-analytics product."""
+    word = SOURCE_REGION_WORD.get(source, "regions")
+    return (
+        f"Fairness note: these are raw offence counts, not rates. Differences between "
+        f"{word} can reflect population size, reporting rates, and policing intensity as "
+        f"much as actual offending — and the figures are not population-normalised. Read "
+        f"them as a starting point for questions, not a ranking, and do not use them to "
+        f"target {word}, communities or individuals."
+    )
+
+
 def _records_for(source: str, offline):
     if source == "nyc":
         return nyc.get_records(offline)
@@ -265,6 +282,7 @@ class CompareResult(BaseModel):
     human_review_required: bool
     generated_at: datetime
     faithfulness_score: Optional[float] = None
+    fairness_note: str = ""
 
 
 class AnalystAnswer(BaseModel):
@@ -671,6 +689,7 @@ class Analyst:
             human_review_required=human_review,
             generated_at=datetime.now(timezone.utc),
             faithfulness_score=faithfulness,
+            fairness_note=_fairness_note(query.source),
         )
 
     def recent_decisions(self, limit: int = 20) -> list[DecisionEntry]:
