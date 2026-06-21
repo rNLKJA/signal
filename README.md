@@ -1,12 +1,17 @@
 # Signal
 
 [![CI](https://github.com/rNLKJA/signal/actions/workflows/ci.yml/badge.svg)](https://github.com/rNLKJA/signal/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://rnlkja--signal-api-api.modal.run)
+[![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 An interactive product over South Australian and New York City crime data, with an analyst layer and a governance log that records every AI-assisted answer in a form aligned to the Australian Government's [Policy for the responsible use of AI in government](https://www.digital.gov.au/ai/ai-in-government-policy) (DTA) and the EU AI Act.
 
 **Live demo: https://rnlkja--signal-api-api.modal.run** — ask it something and watch the audit trail fill in. Queries are shareable links: [`/?offense=theft&region=adelaide`](https://rnlkja--signal-api-api.modal.run/?offense=theft&region=adelaide).
 
-![Signal dashboard: governed analyst answer with trend chart, offence and division breakdowns, and the live audit trail](.github/dashboard.png)
+![Signal in use: a question is typed, an answer comes back with a trend chart and stats, and a new entry lands at the top of the live governance log](.github/demo.gif)
+
+<sub>Ask a question → the analyst answers with a trend chart, stats and a faithfulness score → the decision lands at the top of the audit trail, live. ([still screenshot](.github/dashboard.png))</sub>
 
 Most data products show you a chart. Signal also shows you how the answer was reached: which model ran, what data informed it, what decision followed, and whether a human signed off. Every API response carries a `decision_id`, and the audit trail is itself a public endpoint — traceability is part of the product surface, not an ops file.
 
@@ -90,7 +95,18 @@ Cold pulls still take long enough that they must never block a request, so the d
 
 ![Roadmap to v1.0.0: interactive charts done; review workflow, audit export, test and freeze API, national data, scheduled refresh, and map view planned](.github/roadmap.svg)
 
-### Shipped
+### Highlights
+
+The parts worth a closer look:
+
+- **Governance on the request path.** The analyst physically cannot answer without first writing a typed audit entry — so the record can never go missing. Aligned to the DTA Policy v2.0, the EU AI Act, and the Privacy Act 1988 (Cth).
+- **All three mandatory DTA artefacts, generated live.** The use-case register, transparency statement, and AI use-case impact assessment are computed from the same log the product writes — never hand-authored, so they can't drift from what the system actually does.
+- **The LLM is checked, not just logged.** Every model-written narrative is deterministically verified against the computed figures (no fabricated numbers, no trend it contradicts). A narrative that fails is rejected, the deterministic template is served instead, and the rejection is logged with a faithfulness score.
+- **Two jurisdictions, one governed path.** SA Police and NYC NYPD run through the same analyst, plus a governed explorer over ~1,900 open datasets across data.sa / NSW / VIC and NYC Open Data.
+- **Live and durable.** Deployed on Modal with the audit log persisted to a Volume, so the trail survives cold starts. Frozen, contract-tested API at **v1.0.0**; tests, CI, and a health-checked Docker image.
+
+<details>
+<summary><b>Full shipped changelog</b> (every increment, newest capability last)</summary>
 
 - [x] Governance decision log (APS / EU AI Act / Privacy Act aligned)
 - [x] Data layer over SA Police open data with offline snapshot and stale-while-revalidate
@@ -121,6 +137,8 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] Narrative faithfulness eval + model card: every LLM-written narrative is deterministically checked against the computed statistics (no fabricated figures, no trend contradiction); a narrative that fails is rejected and the deterministic template is served instead, with the rejection logged. Faithfulness is shown on the answer and in the audit table, and the live model card (`/governance/model-card`) reports the mean score and fallback count
 - [x] AI use-case impact assessment (`/governance/impact-assessment`): the third DTA Policy v2.0 artefact (mandatory from 15 Dec 2026), generated live from the audit log — one assessment per in-scope use case with affected groups, risks, mitigations (citing the faithfulness eval and human-review rate), fairness considerations and residual risk. Rendered in the dashboard governance panel alongside the register, transparency statement and model card
 - [x] Fairness lens on comparisons: every region/borough comparison carries an explicit disparate-impact caveat — raw counts are not rates and may reflect population, reporting and policing intensity rather than offending, so they must not be used to rank or target places or people. Surfaced in the compare view and in the transparency statement
+
+</details>
 
 ### Beyond 1.0.0
 
