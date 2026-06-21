@@ -157,6 +157,8 @@ The parts worth a closer look:
 
 ### Beyond 1.0.0
 
+The next two releases focus on making the governance idea provable, then production-ready — see [ROADMAP.md](ROADMAP.md). In short: **v2** makes the audit trail tamper-evident (hash-chained, with a `/decisions/verify` endpoint), enforces the answer-without-logging invariant with a conformance test, measures the faithfulness check's own precision/recall, and extracts the governance core as a standalone package; **v3** adds a governed multi-step analyst (linked, per-step-logged decisions) on a durable, multi-tenant deployment.
+
 - [ ] Unified cross-state crime comparison (blocked on NSW/VIC publishing queryable, not spreadsheet, data)
 
 ## API stability
