@@ -115,7 +115,7 @@ On the dashboard these surface as a **forecast cone** on the trend chart, a **mo
 
 The parts worth a closer look:
 
-- **Governance on the request path.** The analyst physically cannot answer without first writing a typed audit entry — so the record can never go missing. Aligned to the DTA Policy v2.0, the EU AI Act, and the Privacy Act 1988 (Cth).
+- **Governance on the request path, enforced.** The analyst physically cannot answer without first writing a typed audit entry — every answer funnels through one logging choke point, and a conformance test drives each endpoint (including error paths) and fails CI if any answer's `decision_id` is not in the log. The guarantee is checked, not just asserted. Aligned to the DTA Policy v2.0, the EU AI Act, and the Privacy Act 1988 (Cth).
 - **All three mandatory DTA artefacts, generated live.** The use-case register, transparency statement, and AI use-case impact assessment are computed from the same log the product writes — never hand-authored, so they can't drift from what the system actually does.
 - **Real statistics, not just percentages.** Mann-Kendall trend significance, robust Sen slopes with CIs, seasonal decomposition and a forecast with prediction intervals ([`stats.py`](signalkit/analyst/stats.py)) — surfaced as a forecast cone, a seasonal heatmap and a *Statistical reading* card, and stated in the narrative with their *p*-values. See [Statistical analysis](#statistical-analysis).
 - **The LLM is checked, not just logged.** Every model-written narrative is deterministically verified against the computed figures (no fabricated numbers, no trend it contradicts). A narrative that fails is rejected, the deterministic template is served instead, and the rejection is logged with a faithfulness score.

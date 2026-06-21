@@ -603,6 +603,19 @@ class Analyst:
             "SIGNAL_ACCOUNTABLE_OFFICIAL", DEFAULT_ACCOUNTABLE_OFFICIAL
         )
 
+    def _commit(self, entry: DecisionEntry) -> str:
+        """The single choke point through which every answer is logged.
+
+        Answering and logging are welded here: an answer path obtains its
+        decision_id ONLY as the return value of this method, so there is no way
+        to return an answer that was not first written to the audit log. This is
+        the "answering is logging" invariant, enforced by construction rather
+        than by discipline — every ``ask``/``compare``/review/catalogue path
+        funnels through this one call (see test_logging_invariant.py).
+        """
+        self._logger.log(entry)
+        return entry.decision_id
+
     def ask(self, query: AnalystQuery) -> AnalystAnswer:
         records, source_label = _records_for(query.source, self._offline)
 
@@ -651,7 +664,7 @@ class Analyst:
             notes=note,
             faithfulness_score=faithfulness,
         )
-        self._logger.log(entry)
+        self._commit(entry)
 
         return AnalystAnswer(
             narrative=narrative,
@@ -767,7 +780,7 @@ class Analyst:
             notes=note,
             faithfulness_score=faithfulness,
         )
-        self._logger.log(entry)
+        self._commit(entry)
 
         return CompareResult(
             window_start=window[0],
@@ -829,7 +842,7 @@ class Analyst:
             tags=["human-review", decision_id],
             notes=req.note,
         )
-        self._logger.log(entry)
+        self._commit(entry)
         return entry
 
     def governance_summary(self) -> GovernanceSummary:
@@ -893,7 +906,7 @@ class Analyst:
             risk_category=RiskCategory.minimal,
             tags=[portal, "catalogue-preview"],
         )
-        self._logger.log(entry)
+        self._commit(entry)
         out = preview.model_dump()
         out["decision_id"] = entry.decision_id
         return out
@@ -1053,7 +1066,7 @@ class Analyst:
             risk_category=RiskCategory.limited,
             tags=tags,
         )
-        self._logger.log(entry)
+        self._commit(entry)
         return {
             "analysable": True,
             "stats": stats.model_dump(),
