@@ -11,6 +11,7 @@ storage. The default is a JSONL file.
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 from typing import List, Optional, Protocol, runtime_checkable
 
@@ -76,3 +77,57 @@ class InMemoryAuditStore:
 
     def last_line(self) -> Optional[str]:
         return self._lines[-1] if self._lines else None
+
+
+class SqliteAuditStore:
+    """A durable, transactional store backed by stdlib ``sqlite3``.
+
+    A real database with no server to run. It proves the AuditStore interface
+    works over SQL and de-risks a Postgres backend, which has the same shape: one
+    append-only table, insertion order preserved by an autoincrement sequence. The
+    governance logic in ``DecisionLogger`` is unchanged, so the tamper-evidence
+    holds exactly as it does over the JSONL file.
+
+    A fresh connection is opened per call: simple, thread-safe (the data layer
+    refreshes on background threads), and ample for the audit-write volume.
+    """
+
+    def __init__(self, path: str | Path) -> None:
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        conn = self._connect()
+        try:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS audit ("
+                "seq INTEGER PRIMARY KEY AUTOINCREMENT, line TEXT NOT NULL)"
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _connect(self) -> sqlite3.Connection:
+        return sqlite3.connect(str(self.path))
+
+    def append(self, line: str) -> None:
+        conn = self._connect()
+        try:
+            conn.execute("INSERT INTO audit(line) VALUES (?)", (line,))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def read_lines(self) -> List[str]:
+        conn = self._connect()
+        try:
+            rows = conn.execute("SELECT line FROM audit ORDER BY seq").fetchall()
+        finally:
+            conn.close()
+        return [r[0] for r in rows]
+
+    def last_line(self) -> Optional[str]:
+        conn = self._connect()
+        try:
+            row = conn.execute("SELECT line FROM audit ORDER BY seq DESC LIMIT 1").fetchone()
+        finally:
+            conn.close()
+        return row[0] if row else None
