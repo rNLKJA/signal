@@ -43,10 +43,12 @@ from signalkit.governance.decision_log import (
     DecisionEntry,
     DecisionLogger,
     GovernanceSummary,
+    ImpactAssessment,
     ModelCard,
     RiskCategory,
     TransparencyStatement,
     UseCaseRegister,
+    impact_assessment,
     model_card,
     register,
     summarise,
@@ -726,6 +728,12 @@ class Analyst:
     def transparency(self) -> TransparencyStatement:
         """A DTA-style AI transparency statement, generated from the log."""
         return transparency_statement(
+            self._logger.read_all(), self._agency, self._accountable_official
+        )
+
+    def impact_assessment(self) -> ImpactAssessment:
+        """A DTA-style AI use-case impact assessment, generated from the log."""
+        return impact_assessment(
             self._logger.read_all(), self._agency, self._accountable_official
         )
 

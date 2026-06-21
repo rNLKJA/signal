@@ -334,6 +334,38 @@ class TransparencyStatement(BaseModel):
     statement: str
 
 
+class ImpactAssessmentEntry(BaseModel):
+    """One AI use case assessed for impact, per DTA Policy v2.0."""
+
+    use_case: str
+    risk_category: str
+    decisions: int
+    data_sources: list[str]
+    affected_groups: list[str]
+    benefits: str
+    risks: list[str]
+    mitigations: list[str]
+    human_oversight: str
+    fairness_considerations: str
+    residual_risk: str
+    first_used: Optional[datetime] = None
+    last_used: Optional[datetime] = None
+
+
+class ImpactAssessment(BaseModel):
+    """A DTA-style AI use-case impact assessment, generated live from the log.
+
+    DTA Policy v2.0 makes AI use-case impact assessments mandatory from
+    15 December 2026; one assessment is produced per in-scope use case."""
+
+    agency: str
+    accountable_official: str
+    policy: str = "Policy for the responsible use of AI in government (DTA, v2.0)"
+    mandatory_from: str = "15 December 2026"
+    use_cases: list[ImpactAssessmentEntry]
+    statement: str
+
+
 def _use_case_of(e: "DecisionEntry") -> str:
     return e.use_case or e.decision_category.value.title()
 
@@ -514,6 +546,118 @@ def model_card(
         out_of_scope=out_of_scope,
         limitations=limitations,
         card=card,
+    )
+
+
+_RISK_ORDER = {"unacceptable": 3, "high": 2, "limited": 1, "minimal": 0}
+
+
+def _is_crime_use_case(name: str) -> bool:
+    n = name.lower()
+    return any(w in n for w in ("crime", "comparison", "trend", "offence", "offense"))
+
+
+def impact_assessment(
+    entries: list[DecisionEntry], agency: str, accountable_official: str
+) -> ImpactAssessment:
+    """Generate a DTA-style AI use-case impact assessment from the decision log.
+
+    One assessment per in-scope use case, with mitigations that cite the live
+    governance posture (faithfulness eval results and human-review rate)."""
+    groups: dict[str, list[DecisionEntry]] = {}
+    for e in entries:
+        groups.setdefault(_use_case_of(e), []).append(e)
+
+    rows: list[ImpactAssessmentEntry] = []
+    for use_case, es in sorted(groups.items()):
+        highest = max((e.risk_category.value for e in es), key=lambda r: _RISK_ORDER.get(r, 0))
+        sources = sorted({s for e in es for s in e.data_sources})[:10]
+        needs = [e for e in es if e.human_review_required]
+        review_rate = round(len(needs) / len(es), 3) if es else 0.0
+        scored = [e for e in es if e.faithfulness_score is not None]
+        mean_faith = round(sum(e.faithfulness_score for e in scored) / len(scored), 3) if scored else None
+        fallbacks = sum(1 for e in es if "faithfulness-fallback" in (e.tags or []))
+        is_crime = _is_crime_use_case(use_case)
+
+        affected = (
+            ["Members of the public in the analysed regions",
+             "Communities subject to differential policing or reporting"]
+            if is_crime else
+            ["Consumers of the analysis", "Groups represented in the underlying dataset"]
+        )
+        benefits = (
+            f"Surfaces trends and anomalies for '{use_case}' over aggregate, de-identified "
+            "data, with every answer audit-logged for accountability."
+        )
+        risks = [
+            "Aggregate counts may be misread as rates, overstating differences between regions or groups.",
+            "An LLM-written narrative could misstate a figure or the direction of a trend.",
+            "Statistical anomalies could be over- or under-interpreted without context.",
+        ]
+        mitigations = [
+            "Aggregates only — no personal information enters the system, so re-identification risk is minimal.",
+            (
+                "Every LLM narrative is checked by a deterministic faithfulness eval; unfaithful "
+                "output is rejected and the deterministic template served "
+                f"(mean faithfulness {mean_faith if mean_faith is not None else 'n/a'}, "
+                f"{fallbacks} fallback{'' if fallbacks == 1 else 's'})."
+            ),
+            (
+                "Statistically anomalous results are flagged for human review "
+                f"({round(review_rate * 100)}% of decisions in this use case); reviews and "
+                "overrides are recorded against the decision."
+            ),
+            "Full audit trail is public (GET /decisions); every output carries a decision_id.",
+        ]
+        oversight = (
+            f"{len(needs)} of {len(es)} decisions in this use case were flagged for human "
+            "review. Anomalous results require human review before action."
+        )
+        fairness = (
+            "Counts are not rates: differences across regions may reflect population, reporting "
+            "or policing intensity rather than real offending. Outputs must not be used to rank "
+            "places or people."
+            if is_crime else
+            "Differences across groups may reflect sampling or collection bias in the underlying "
+            "dataset rather than real-world effects."
+        )
+        residual = (
+            "Limited. With aggregates-only data, figure-faithful narratives and human review on "
+            "anomalies, residual risk is low; the main residual risk is misinterpretation of "
+            "counts as rates by downstream readers."
+        )
+        rows.append(ImpactAssessmentEntry(
+            use_case=use_case, risk_category=highest, decisions=len(es),
+            data_sources=sources, affected_groups=affected, benefits=benefits,
+            risks=risks, mitigations=mitigations, human_oversight=oversight,
+            fairness_considerations=fairness, residual_risk=residual,
+            first_used=min((e.timestamp for e in es), default=None),
+            last_used=max((e.timestamp for e in es), default=None),
+        ))
+    rows.sort(key=lambda r: -r.decisions)
+
+    header = (
+        "# AI use-case impact assessment\n\n"
+        f"**Agency:** {agency}  ·  **Accountable official:** {accountable_official}\n\n"
+        "**Policy basis:** Policy for the responsible use of AI in government (DTA, v2.0); "
+        "AI use-case impact assessments mandatory from 15 December 2026.\n\n"
+    )
+    body = "".join(
+        f"## {r.use_case} ({r.risk_category} risk)\n"
+        f"- **Decisions:** {r.decisions}\n"
+        f"- **Affected groups:** {', '.join(r.affected_groups)}\n"
+        f"- **Benefits:** {r.benefits}\n"
+        f"- **Risks:** {'; '.join(r.risks)}\n"
+        f"- **Mitigations:** {'; '.join(r.mitigations)}\n"
+        f"- **Human oversight:** {r.human_oversight}\n"
+        f"- **Fairness:** {r.fairness_considerations}\n"
+        f"- **Residual risk:** {r.residual_risk}\n\n"
+        for r in rows
+    )
+    statement = header + (body or "No in-scope AI use cases recorded yet.\n")
+    return ImpactAssessment(
+        agency=agency, accountable_official=accountable_official,
+        use_cases=rows, statement=statement,
     )
 
 

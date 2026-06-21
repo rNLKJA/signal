@@ -267,11 +267,14 @@
         <div id="gov-transparency"></div>
         <h2>Model card &amp; narrative faithfulness</h2>
         <div id="gov-model-card"></div>
+        <h2>AI use-case impact assessment</h2>
+        <div id="gov-impact"></div>
       </details>
       <p class="hint"><a href="/decisions.csv" download>⤓ Audit log (CSV)</a>
         · <a href="/governance/register">register (JSON)</a>
         · <a href="/governance/transparency">transparency statement (JSON)</a>
         · <a href="/governance/model-card">model card (JSON)</a>
+        · <a href="/governance/impact-assessment">impact assessment (JSON)</a>
         · <a href="/governance/summary">summary (JSON)</a></p>
     </div>
   </section>
@@ -1147,6 +1150,20 @@ async function loadGovArtifacts() {
         · fallbacks to template: <b>${ev.fallbacks_to_template ?? 0}</b></p>
       <h3>Limitations</h3>${list(mc.limitations)}
     </div>`;
+    const ia = await (await fetch("/governance/impact-assessment")).json();
+    $("gov-impact").innerHTML = ia.use_cases.length
+      ? `<p class="hint">Mandatory under DTA Policy v2.0 from ${esc(ia.mandatory_from)}.</p>`
+        + ia.use_cases.map((u) => `<div class="gov-statement">
+          <h3>${esc(u.use_case)} <span class="hint">(${esc(u.risk_category)} risk · ${u.decisions} decisions)</span></h3>
+          <p><b>Affected groups:</b> ${u.affected_groups.map(esc).join(", ")}</p>
+          <p><b>Benefits:</b> ${esc(u.benefits)}</p>
+          <p><b>Risks</b></p>${list(u.risks)}
+          <p><b>Mitigations</b></p>${list(u.mitigations)}
+          <p><b>Human oversight:</b> ${esc(u.human_oversight)}</p>
+          <p><b>Fairness:</b> ${esc(u.fairness_considerations)}</p>
+          <p><b>Residual risk:</b> ${esc(u.residual_risk)}</p>
+        </div>`).join("")
+      : '<p class="hint">No in-scope AI use cases recorded yet — ask something.</p>';
   } catch {
     $("gov-register").innerHTML = '<p class="err">Couldn’t load governance artifacts.</p>';
   }

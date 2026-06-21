@@ -119,6 +119,7 @@ Cold pulls still take long enough that they must never block a request, so the d
 - [x] NYC Open Data in the explorer via a Socrata adapter (alongside the CKAN portals) — browse, preview, generic-trend, geocode-map any NYC dataset
 - [x] Plotly time-series charts: the trend (bar/line) and region-comparison charts use Plotly (basic build, deferred CDN + SRI) for zoom, pan, hover, legend toggling, PNG export and click-a-line-to-drill — with a graceful fallback to the hand-rolled SVG renderers if the CDN is unavailable
 - [x] Narrative faithfulness eval + model card: every LLM-written narrative is deterministically checked against the computed statistics (no fabricated figures, no trend contradiction); a narrative that fails is rejected and the deterministic template is served instead, with the rejection logged. Faithfulness is shown on the answer and in the audit table, and the live model card (`/governance/model-card`) reports the mean score and fallback count
+- [x] AI use-case impact assessment (`/governance/impact-assessment`): the third DTA Policy v2.0 artefact (mandatory from 15 Dec 2026), generated live from the audit log — one assessment per in-scope use case with affected groups, risks, mitigations (citing the faithfulness eval and human-review rate), fairness considerations and residual risk. Rendered in the dashboard governance panel alongside the register, transparency statement and model card
 
 ### Beyond 1.0.0
 
