@@ -61,6 +61,7 @@ from signalkit.governance.decision_log import (
     transparency_statement,
     verify_chain,
 )
+from signalkit.governance.sdk import Governor, Recording
 from signalkit.governance.tenancy import (
     DEFAULT_TENANT,
     TenantLog,
@@ -84,6 +85,9 @@ __all__ = [
     "DEFAULT_TENANT",
     "tenant_for_api_key",
     "parse_tenant_keys",
+    # SDK
+    "Governor",
+    "Recording",
     # tamper-evidence
     "ChainVerification",
     "verify_chain",
