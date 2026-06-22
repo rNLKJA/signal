@@ -31,6 +31,24 @@ assert log.verify().valid   # the hash chain is intact
 
 The log is plain JSONL, one decision per line, UTF-8, grep-able and loadable straight into pandas or DuckDB.
 
+## SDK — govern an existing app in a few lines
+
+For application code, the `Governor` is the easy path. Wrap each answer in `record(...)`: the decision is logged on the request path as the block completes, so the system cannot answer without logging, and the DTA artefacts come from the same log. `mount(app)` exposes the governance endpoints on any FastAPI app.
+
+```python
+from signalkit.governance import Governor
+
+gov = Governor("decisions.jsonl", agency="Acme", accountable_official="Jane Doe")
+gov.mount(app)   # adds /governance/verify, /summary, /register, /transparency, ...
+
+with gov.record(use_case="support-bot", model_name="gpt-4o", input_summary=question) as rec:
+    answer = my_llm(question)
+    rec.output(answer)            # logged, tamper-evident, on exit
+return {"answer": answer, "decision_id": rec.decision_id}
+```
+
+If the block raises, nothing is logged — a failed answer is not a decision. Pass `tenant_id=` to `record()` for multi-tenant deployments. A complete, runnable example (a generic support bot, no crime data) is in [`examples/governed_support_bot.py`](../../examples/governed_support_bot.py).
+
 ## What you get
 
 | Capability | API |
