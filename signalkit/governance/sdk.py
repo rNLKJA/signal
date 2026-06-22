@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from signalkit.governance.audit_store import AuditStore
+from signalkit.governance.compliance import ComplianceReport, compliance_report
 from signalkit.governance.decision_log import (
     ChainVerification,
     DecisionCategory,
@@ -216,6 +217,11 @@ class Governor:
     def impact_assessment(self, tenant_id: str = DEFAULT_TENANT) -> ImpactAssessment:
         return impact_assessment(self._entries(tenant_id), self._agency(), self._official())
 
+    def compliance_report(self, tenant_id: str = DEFAULT_TENANT) -> ComplianceReport:
+        return compliance_report(
+            self._entries(tenant_id), agency=self._agency(), accountable_official=self._official()
+        )
+
     def _agency(self) -> str:
         return self.agency or "Unnamed organisation"
 
@@ -254,6 +260,10 @@ class Governor:
         @router.get("/impact-assessment")
         def _impact() -> dict:
             return self.impact_assessment(tenant_id).model_dump(mode="json")
+
+        @router.get("/compliance-report")
+        def _compliance() -> dict:
+            return self.compliance_report(tenant_id).model_dump(mode="json")
 
         @router.get("/decisions")
         def _decisions(limit: int = 50) -> list:

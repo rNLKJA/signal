@@ -47,7 +47,9 @@ from signalkit.analyst.eval import (
 )
 from signalkit.governance import (
     ChainVerification,
+    ComplianceReport,
     DecisionCategory,
+    compliance_report,
     DecisionEntry,
     DecisionLogger,
     GovernanceSummary,
@@ -1062,6 +1064,14 @@ class Analyst:
         """A DTA-style AI use-case impact assessment, generated from the log."""
         return impact_assessment(
             self._logger.read_all(), self._agency, self._accountable_official
+        )
+
+    def compliance_report(self) -> "ComplianceReport":
+        """An auditor-ready compliance report (ISO 42001 / NIST AI RMF / DTA)."""
+        return compliance_report(
+            self._logger.read_all(),
+            agency=self._agency,
+            accountable_official=self._accountable_official,
         )
 
     def model_card(self) -> ModelCard:
