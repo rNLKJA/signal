@@ -240,6 +240,11 @@ def create_app(analyst: Analyst | None = None, rate_limiter: RateLimiter | None 
         """How well the faithfulness check itself performs, against a labelled set."""
         return app.state.analyst.faithfulness_validation()
 
+    @app.get("/governance/compliance-report")
+    def governance_compliance_report() -> dict:
+        """Map the live log to ISO/IEC 42001, NIST AI RMF and the DTA requirements."""
+        return app.state.analyst.compliance_report().model_dump(mode="json")
+
     @app.get("/decisions.csv")
     def decisions_csv(limit: int = Query(default=1000, ge=1, le=10000)) -> Response:
         cols = [

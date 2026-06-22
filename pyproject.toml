@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "signalkit"
-version = "1.20.0"
+version = "1.21.0"
 description = "Signal: governed analyst and explorer over SA/NYC crime and Australian/NYC open data, with a DTA AI Policy v2.0 aligned governance log"
 readme = "README.md"
 license = { file = "LICENSE" }

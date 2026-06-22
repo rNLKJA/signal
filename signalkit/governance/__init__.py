@@ -61,6 +61,12 @@ from signalkit.governance.decision_log import (
     transparency_statement,
     verify_chain,
 )
+from signalkit.governance.compliance import (
+    ComplianceItem,
+    ComplianceReport,
+    FrameworkMapping,
+    compliance_report,
+)
 from signalkit.governance.sdk import Governor, Recording
 from signalkit.governance.tenancy import (
     DEFAULT_TENANT,
@@ -88,6 +94,11 @@ __all__ = [
     # SDK
     "Governor",
     "Recording",
+    # compliance report
+    "compliance_report",
+    "ComplianceReport",
+    "FrameworkMapping",
+    "ComplianceItem",
     # tamper-evidence
     "ChainVerification",
     "verify_chain",

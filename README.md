@@ -104,6 +104,7 @@ On the dashboard these surface as a **forecast cone** on the trend chart, a **mo
 | `POST /decisions/{decision_id}/review` | Record a human review of a decision — reviewer, and an override with a required reason. Appended as its own audit event; the log is never mutated. |
 | `GET /governance/summary` | The governance posture, quantified: review rate, reviews recorded, outstanding reviews, risk tiers, model breakdown. |
 | `GET /governance/faithfulness-eval` | How well the faithfulness check itself performs: precision/recall against a labelled set, the cases it misses, and the LLM-judge second signal. |
+| `GET /governance/compliance-report` | An auditor-ready report mapping the live log to ISO/IEC 42001, the NIST AI RMF, and the DTA Policy v2.0 — each requirement with how it's met, live evidence, and an honest status. |
 | `GET /health` | Liveness and version. |
 | `GET /docs` | OpenAPI docs. |
 
