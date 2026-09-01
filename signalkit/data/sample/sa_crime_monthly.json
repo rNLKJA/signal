@@ -1,10 +1,10 @@
 {
   "meta": {
     "source": "SA Police Crime statistics (data.sa.gov.au) \u2014 FY2024-25 + FY2025-26 YTD",
-    "fetched_at": "2026-08-01",
+    "fetched_at": "2026-09-01",
     "window": {
       "start": "2024-07",
-      "end": "2026-03"
+      "end": "2026-06"
     },
     "aggregation": "offence counts by month x region x harmonised offence x ANZSOC division",
     "note": "Top 15 suburbs kept as distinct regions; the tail is folded into 'OTHER SA AREAS'. Offence labels harmonised across the SA Police 2025-26 taxonomy revision.",
@@ -348,14 +348,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1412
+      "count": 1418
     },
     {
       "month": "2024-07",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 288
+      "count": 287
     },
     {
       "month": "2024-07",
@@ -397,14 +397,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 822
+      "count": 816
     },
     {
       "month": "2024-07",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3047
+      "count": 3077
     },
     {
       "month": "2024-07",
@@ -454,6 +454,48 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 52
+    },
+    {
+      "month": "2024-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 11
+    },
+    {
+      "month": "2024-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2024-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2024-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2024-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2024-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 19
     },
     {
       "month": "2024-07",
@@ -587,41 +629,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 68
-    },
-    {
-      "month": "2024-07",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 17
-    },
-    {
-      "month": "2024-07",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2024-07",
-      "region": "SMITHFIELD",
-      "offense": "Other against the person",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2024-07",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 6
-    },
-    {
-      "month": "2024-07",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 49
     },
     {
       "month": "2024-07",
@@ -1055,14 +1062,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1498
+      "count": 1496
     },
     {
       "month": "2024-08",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 276
+      "count": 275
     },
     {
       "month": "2024-08",
@@ -1076,35 +1083,35 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 123
+      "count": 124
     },
     {
       "month": "2024-08",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1434
+      "count": 1427
     },
     {
       "month": "2024-08",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 51
+      "count": 52
     },
     {
       "month": "2024-08",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 889
+      "count": 891
     },
     {
       "month": "2024-08",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3216
+      "count": 3264
     },
     {
       "month": "2024-08",
@@ -1147,6 +1154,48 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 72
+    },
+    {
+      "month": "2024-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 16
+    },
+    {
+      "month": "2024-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2024-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2024-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 21
+    },
+    {
+      "month": "2024-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 8
+    },
+    {
+      "month": "2024-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 17
     },
     {
       "month": "2024-08",
@@ -1280,48 +1329,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 83
-    },
-    {
-      "month": "2024-08",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 14
-    },
-    {
-      "month": "2024-08",
-      "region": "SMITHFIELD",
-      "offense": "Other against the person",
-      "offense_division": "Offences against the person",
-      "count": 2
-    },
-    {
-      "month": "2024-08",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 14
-    },
-    {
-      "month": "2024-08",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2024-08",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 10
-    },
-    {
-      "month": "2024-08",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 65
     },
     {
       "month": "2024-08",
@@ -1734,7 +1741,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1428
+      "count": 1407
     },
     {
       "month": "2024-09",
@@ -1762,35 +1769,35 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 134
+      "count": 133
     },
     {
       "month": "2024-09",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1417
+      "count": 1406
     },
     {
       "month": "2024-09",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 41
+      "count": 42
     },
     {
       "month": "2024-09",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 811
+      "count": 803
     },
     {
       "month": "2024-09",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3242
+      "count": 3283
     },
     {
       "month": "2024-09",
@@ -1833,6 +1840,48 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 55
+    },
+    {
+      "month": "2024-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 25
+    },
+    {
+      "month": "2024-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2024-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2024-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 22
+    },
+    {
+      "month": "2024-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 10
+    },
+    {
+      "month": "2024-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 28
     },
     {
       "month": "2024-09",
@@ -1959,48 +2008,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 114
-    },
-    {
-      "month": "2024-09",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 4
-    },
-    {
-      "month": "2024-09",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2024-09",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 11
-    },
-    {
-      "month": "2024-09",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2024-09",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2024-09",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 69
     },
     {
       "month": "2024-09",
@@ -2441,14 +2448,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1573
+      "count": 1561
     },
     {
       "month": "2024-10",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 279
+      "count": 281
     },
     {
       "month": "2024-10",
@@ -2469,14 +2476,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 124
+      "count": 123
     },
     {
       "month": "2024-10",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1580
+      "count": 1565
     },
     {
       "month": "2024-10",
@@ -2490,14 +2497,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 884
+      "count": 867
     },
     {
       "month": "2024-10",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3486
+      "count": 3539
     },
     {
       "month": "2024-10",
@@ -2540,6 +2547,41 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 72
+    },
+    {
+      "month": "2024-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 25
+    },
+    {
+      "month": "2024-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2024-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 27
+    },
+    {
+      "month": "2024-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2024-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 12
     },
     {
       "month": "2024-10",
@@ -2666,41 +2708,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 88
-    },
-    {
-      "month": "2024-10",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 13
-    },
-    {
-      "month": "2024-10",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2024-10",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 12
-    },
-    {
-      "month": "2024-10",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2024-10",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 65
     },
     {
       "month": "2024-10",
@@ -3106,7 +3113,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1580
+      "count": 1565
     },
     {
       "month": "2024-11",
@@ -3141,28 +3148,28 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1465
+      "count": 1459
     },
     {
       "month": "2024-11",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 37
+      "count": 38
     },
     {
       "month": "2024-11",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 968
+      "count": 959
     },
     {
       "month": "2024-11",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3248
+      "count": 3288
     },
     {
       "month": "2024-11",
@@ -3212,6 +3219,41 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 67
+    },
+    {
+      "month": "2024-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 29
+    },
+    {
+      "month": "2024-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2024-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2024-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 13
+    },
+    {
+      "month": "2024-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 24
     },
     {
       "month": "2024-11",
@@ -3338,48 +3380,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 101
-    },
-    {
-      "month": "2024-11",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 14
-    },
-    {
-      "month": "2024-11",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2024-11",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 13
-    },
-    {
-      "month": "2024-11",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2024-11",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 4
-    },
-    {
-      "month": "2024-11",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 64
     },
     {
       "month": "2024-11",
@@ -3785,14 +3785,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1640
+      "count": 1624
     },
     {
       "month": "2024-12",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 212
+      "count": 213
     },
     {
       "month": "2024-12",
@@ -3820,28 +3820,28 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1500
+      "count": 1489
     },
     {
       "month": "2024-12",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 56
+      "count": 57
     },
     {
       "month": "2024-12",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 907
+      "count": 900
     },
     {
       "month": "2024-12",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3125
+      "count": 3157
     },
     {
       "month": "2024-12",
@@ -3898,6 +3898,48 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 54
+    },
+    {
+      "month": "2024-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 38
+    },
+    {
+      "month": "2024-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2024-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2024-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 20
+    },
+    {
+      "month": "2024-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 12
+    },
+    {
+      "month": "2024-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 25
     },
     {
       "month": "2024-12",
@@ -4024,55 +4066,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 99
-    },
-    {
-      "month": "2024-12",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 22
-    },
-    {
-      "month": "2024-12",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2024-12",
-      "region": "SMITHFIELD",
-      "offense": "Other against the person",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2024-12",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 9
-    },
-    {
-      "month": "2024-12",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2024-12",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 5
-    },
-    {
-      "month": "2024-12",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 57
     },
     {
       "month": "2024-12",
@@ -4485,7 +4478,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1598
+      "count": 1577
     },
     {
       "month": "2025-01",
@@ -4513,35 +4506,35 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 156
+      "count": 153
     },
     {
       "month": "2025-01",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1560
+      "count": 1562
     },
     {
       "month": "2025-01",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 48
+      "count": 47
     },
     {
       "month": "2025-01",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 994
+      "count": 987
     },
     {
       "month": "2025-01",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3303
+      "count": 3355
     },
     {
       "month": "2025-01",
@@ -4598,6 +4591,48 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 77
+    },
+    {
+      "month": "2025-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 34
+    },
+    {
+      "month": "2025-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 4
+    },
+    {
+      "month": "2025-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 17
+    },
+    {
+      "month": "2025-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2025-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 12
+    },
+    {
+      "month": "2025-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 14
     },
     {
       "month": "2025-01",
@@ -4745,48 +4780,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 111
-    },
-    {
-      "month": "2025-01",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 13
-    },
-    {
-      "month": "2025-01",
-      "region": "SMITHFIELD",
-      "offense": "Other against the person",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2025-01",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 19
-    },
-    {
-      "month": "2025-01",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2025-01",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 5
-    },
-    {
-      "month": "2025-01",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 66
     },
     {
       "month": "2025-01",
@@ -5199,14 +5192,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1421
+      "count": 1410
     },
     {
       "month": "2025-02",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 208
+      "count": 207
     },
     {
       "month": "2025-02",
@@ -5227,35 +5220,35 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 154
+      "count": 151
     },
     {
       "month": "2025-02",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1346
+      "count": 1343
     },
     {
       "month": "2025-02",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 37
+      "count": 39
     },
     {
       "month": "2025-02",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 709
+      "count": 703
     },
     {
       "month": "2025-02",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 2884
+      "count": 2942
     },
     {
       "month": "2025-02",
@@ -5305,6 +5298,55 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 34
+    },
+    {
+      "month": "2025-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 23
+    },
+    {
+      "month": "2025-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2025-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against property",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2025-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 3
+    },
+    {
+      "month": "2025-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2025-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 9
+    },
+    {
+      "month": "2025-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 10
     },
     {
       "month": "2025-02",
@@ -5459,48 +5501,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 90
-    },
-    {
-      "month": "2025-02",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 12
-    },
-    {
-      "month": "2025-02",
-      "region": "SMITHFIELD",
-      "offense": "Other against property",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2025-02",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 15
-    },
-    {
-      "month": "2025-02",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 2
-    },
-    {
-      "month": "2025-02",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 3
-    },
-    {
-      "month": "2025-02",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 68
     },
     {
       "month": "2025-02",
@@ -5962,14 +5962,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1654
+      "count": 1635
     },
     {
       "month": "2025-03",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 238
+      "count": 237
     },
     {
       "month": "2025-03",
@@ -5983,42 +5983,42 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against property",
       "offense_division": "Offences against property",
-      "count": 58
+      "count": 57
     },
     {
       "month": "2025-03",
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 142
+      "count": 138
     },
     {
       "month": "2025-03",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1432
+      "count": 1418
     },
     {
       "month": "2025-03",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 38
+      "count": 37
     },
     {
       "month": "2025-03",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 812
+      "count": 787
     },
     {
       "month": "2025-03",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3215
+      "count": 3253
     },
     {
       "month": "2025-03",
@@ -6068,6 +6068,62 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 37
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 25
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against property",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 4
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 26
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 27
+    },
+    {
+      "month": "2025-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 21
     },
     {
       "month": "2025-03",
@@ -6222,34 +6278,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 93
-    },
-    {
-      "month": "2025-03",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 6
-    },
-    {
-      "month": "2025-03",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 12
-    },
-    {
-      "month": "2025-03",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2025-03",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 59
     },
     {
       "month": "2025-03",
@@ -6662,7 +6690,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1428
+      "count": 1421
     },
     {
       "month": "2025-04",
@@ -6683,21 +6711,21 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against property",
       "offense_division": "Offences against property",
-      "count": 61
+      "count": 63
     },
     {
       "month": "2025-04",
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 121
+      "count": 120
     },
     {
       "month": "2025-04",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1364
+      "count": 1354
     },
     {
       "month": "2025-04",
@@ -6711,14 +6739,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 810
+      "count": 801
     },
     {
       "month": "2025-04",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 2938
+      "count": 2979
     },
     {
       "month": "2025-04",
@@ -6768,6 +6796,41 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 42
+    },
+    {
+      "month": "2025-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 18
+    },
+    {
+      "month": "2025-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2025-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 12
+    },
+    {
+      "month": "2025-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 13
+    },
+    {
+      "month": "2025-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 22
     },
     {
       "month": "2025-04",
@@ -6922,48 +6985,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 83
-    },
-    {
-      "month": "2025-04",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 11
-    },
-    {
-      "month": "2025-04",
-      "region": "SMITHFIELD",
-      "offense": "Other against property",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2025-04",
-      "region": "SMITHFIELD",
-      "offense": "Other against the person",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2025-04",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2025-04",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 4
-    },
-    {
-      "month": "2025-04",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 63
     },
     {
       "month": "2025-04",
@@ -7404,14 +7425,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1523
+      "count": 1495
     },
     {
       "month": "2025-05",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 253
+      "count": 258
     },
     {
       "month": "2025-05",
@@ -7439,7 +7460,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1370
+      "count": 1361
     },
     {
       "month": "2025-05",
@@ -7453,14 +7474,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 736
+      "count": 718
     },
     {
       "month": "2025-05",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3053
+      "count": 3079
     },
     {
       "month": "2025-05",
@@ -7510,6 +7531,41 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 55
+    },
+    {
+      "month": "2025-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 33
+    },
+    {
+      "month": "2025-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against property",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2025-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 16
+    },
+    {
+      "month": "2025-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2025-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 24
     },
     {
       "month": "2025-05",
@@ -7657,41 +7713,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 102
-    },
-    {
-      "month": "2025-05",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 5
-    },
-    {
-      "month": "2025-05",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 5
-    },
-    {
-      "month": "2025-05",
-      "region": "SMITHFIELD",
-      "offense": "Other against property",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2025-05",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 7
-    },
-    {
-      "month": "2025-05",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 50
     },
     {
       "month": "2025-05",
@@ -8174,14 +8195,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1216
+      "count": 1205
     },
     {
       "month": "2025-06",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 208
+      "count": 207
     },
     {
       "month": "2025-06",
@@ -8195,42 +8216,42 @@
       "region": "OTHER SA AREAS",
       "offense": "Other against property",
       "offense_division": "Offences against property",
-      "count": 163
+      "count": 158
     },
     {
       "month": "2025-06",
       "region": "OTHER SA AREAS",
       "offense": "Other against the person",
       "offense_division": "Offences against the person",
-      "count": 187
+      "count": 184
     },
     {
       "month": "2025-06",
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1235
+      "count": 1217
     },
     {
       "month": "2025-06",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 34
+      "count": 32
     },
     {
       "month": "2025-06",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 724
+      "count": 707
     },
     {
       "month": "2025-06",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 2878
+      "count": 2920
     },
     {
       "month": "2025-06",
@@ -8280,6 +8301,62 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 41
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 20
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against property",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Other against the person",
+      "offense_division": "Offences against the person",
+      "count": 3
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 21
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 17
+    },
+    {
+      "month": "2025-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 16
     },
     {
       "month": "2025-06",
@@ -8437,34 +8514,6 @@
     },
     {
       "month": "2025-06",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 9
-    },
-    {
-      "month": "2025-06",
-      "region": "SMITHFIELD",
-      "offense": "Other against property",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2025-06",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 3
-    },
-    {
-      "month": "2025-06",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 58
-    },
-    {
-      "month": "2025-06",
       "region": "WHYALLA NORRIE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
@@ -8552,7 +8601,7 @@
       "region": "ADELAIDE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 155
+      "count": 156
     },
     {
       "month": "2025-07",
@@ -8762,7 +8811,7 @@
       "region": "MURRAY BRIDGE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 33
+      "count": 34
     },
     {
       "month": "2025-07",
@@ -8797,7 +8846,7 @@
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 204
+      "count": 206
     },
     {
       "month": "2025-07",
@@ -8846,14 +8895,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1542
+      "count": 1528
     },
     {
       "month": "2025-07",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 295
+      "count": 296
     },
     {
       "month": "2025-07",
@@ -8867,28 +8916,28 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1404
+      "count": 1391
     },
     {
       "month": "2025-07",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 35
+      "count": 36
     },
     {
       "month": "2025-07",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 783
+      "count": 771
     },
     {
       "month": "2025-07",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3117
+      "count": 3154
     },
     {
       "month": "2025-07",
@@ -8924,6 +8973,34 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 52
+    },
+    {
+      "month": "2025-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 26
+    },
+    {
+      "month": "2025-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 14
+    },
+    {
+      "month": "2025-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 13
+    },
+    {
+      "month": "2025-07",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 16
     },
     {
       "month": "2025-07",
@@ -9043,41 +9120,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 82
-    },
-    {
-      "month": "2025-07",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 14
-    },
-    {
-      "month": "2025-07",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2025-07",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2025-07",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2025-07",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 51
     },
     {
       "month": "2025-07",
@@ -9294,7 +9336,7 @@
       "region": "MORPHETT VALE",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 6
+      "count": 7
     },
     {
       "month": "2025-08",
@@ -9399,7 +9441,7 @@
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 191
+      "count": 194
     },
     {
       "month": "2025-08",
@@ -9441,14 +9483,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1638
+      "count": 1633
     },
     {
       "month": "2025-08",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 317
+      "count": 320
     },
     {
       "month": "2025-08",
@@ -9462,28 +9504,28 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1358
+      "count": 1351
     },
     {
       "month": "2025-08",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 39
+      "count": 41
     },
     {
       "month": "2025-08",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 785
+      "count": 780
     },
     {
       "month": "2025-08",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3138
+      "count": 3175
     },
     {
       "month": "2025-08",
@@ -9526,6 +9568,41 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 50
+    },
+    {
+      "month": "2025-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 14
+    },
+    {
+      "month": "2025-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 12
+    },
+    {
+      "month": "2025-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2025-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2025-08",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 19
     },
     {
       "month": "2025-08",
@@ -9638,48 +9715,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 69
-    },
-    {
-      "month": "2025-08",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 10
-    },
-    {
-      "month": "2025-08",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 3
-    },
-    {
-      "month": "2025-08",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 4
-    },
-    {
-      "month": "2025-08",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 2
-    },
-    {
-      "month": "2025-08",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2025-08",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 56
     },
     {
       "month": "2025-08",
@@ -9763,7 +9798,7 @@
       "region": "ADELAIDE",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 97
+      "count": 96
     },
     {
       "month": "2025-09",
@@ -9784,7 +9819,7 @@
       "region": "ADELAIDE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 370
+      "count": 369
     },
     {
       "month": "2025-09",
@@ -9868,7 +9903,7 @@
       "region": "MORPHETT VALE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 28
+      "count": 29
     },
     {
       "month": "2025-09",
@@ -9938,7 +9973,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 38
+      "count": 37
     },
     {
       "month": "2025-09",
@@ -9980,14 +10015,14 @@
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 225
+      "count": 227
     },
     {
       "month": "2025-09",
       "region": "OAKLANDS PARK",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 7
+      "count": 8
     },
     {
       "month": "2025-09",
@@ -10029,14 +10064,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1646
+      "count": 1630
     },
     {
       "month": "2025-09",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 309
+      "count": 313
     },
     {
       "month": "2025-09",
@@ -10050,28 +10085,28 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1404
+      "count": 1386
     },
     {
       "month": "2025-09",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 54
+      "count": 58
     },
     {
       "month": "2025-09",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 780
+      "count": 769
     },
     {
       "month": "2025-09",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 2979
+      "count": 3007
     },
     {
       "month": "2025-09",
@@ -10114,6 +10149,34 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 50
+    },
+    {
+      "month": "2025-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 26
+    },
+    {
+      "month": "2025-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 29
+    },
+    {
+      "month": "2025-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 14
+    },
+    {
+      "month": "2025-09",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 13
     },
     {
       "month": "2025-09",
@@ -10236,41 +10299,6 @@
     },
     {
       "month": "2025-09",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 12
-    },
-    {
-      "month": "2025-09",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 4
-    },
-    {
-      "month": "2025-09",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 10
-    },
-    {
-      "month": "2025-09",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 3
-    },
-    {
-      "month": "2025-09",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 36
-    },
-    {
-      "month": "2025-09",
       "region": "WHYALLA NORRIE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
@@ -10344,7 +10372,7 @@
       "region": "ADELAIDE",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 27
+      "count": 30
     },
     {
       "month": "2025-10",
@@ -10365,14 +10393,14 @@
       "region": "ADELAIDE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 49
+      "count": 47
     },
     {
       "month": "2025-10",
       "region": "ADELAIDE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 344
+      "count": 345
     },
     {
       "month": "2025-10",
@@ -10498,7 +10526,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 42
+      "count": 43
     },
     {
       "month": "2025-10",
@@ -10582,7 +10610,7 @@
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 239
+      "count": 241
     },
     {
       "month": "2025-10",
@@ -10624,14 +10652,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1713
+      "count": 1694
     },
     {
       "month": "2025-10",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 320
+      "count": 326
     },
     {
       "month": "2025-10",
@@ -10645,28 +10673,28 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1529
+      "count": 1520
     },
     {
       "month": "2025-10",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 42
+      "count": 43
     },
     {
       "month": "2025-10",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 832
+      "count": 825
     },
     {
       "month": "2025-10",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3102
+      "count": 3122
     },
     {
       "month": "2025-10",
@@ -10716,6 +10744,34 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 67
+    },
+    {
+      "month": "2025-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 22
+    },
+    {
+      "month": "2025-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2025-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 10
+    },
+    {
+      "month": "2025-10",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 18
     },
     {
       "month": "2025-10",
@@ -10838,45 +10894,10 @@
     },
     {
       "month": "2025-10",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 12
-    },
-    {
-      "month": "2025-10",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 5
-    },
-    {
-      "month": "2025-10",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 11
-    },
-    {
-      "month": "2025-10",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2025-10",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 38
-    },
-    {
-      "month": "2025-10",
       "region": "WHYALLA NORRIE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 25
+      "count": 24
     },
     {
       "month": "2025-10",
@@ -10953,7 +10974,7 @@
       "region": "ADELAIDE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 170
+      "count": 171
     },
     {
       "month": "2025-11",
@@ -11002,7 +11023,7 @@
       "region": "ELIZABETH",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 6
+      "count": 5
     },
     {
       "month": "2025-11",
@@ -11079,7 +11100,7 @@
       "region": "MORPHETT VALE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 34
+      "count": 35
     },
     {
       "month": "2025-11",
@@ -11121,7 +11142,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 38
+      "count": 39
     },
     {
       "month": "2025-11",
@@ -11156,7 +11177,7 @@
       "region": "MURRAY BRIDGE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 56
+      "count": 54
     },
     {
       "month": "2025-11",
@@ -11240,14 +11261,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1650
+      "count": 1637
     },
     {
       "month": "2025-11",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 277
+      "count": 280
     },
     {
       "month": "2025-11",
@@ -11261,7 +11282,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1390
+      "count": 1383
     },
     {
       "month": "2025-11",
@@ -11275,14 +11296,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 909
+      "count": 910
     },
     {
       "month": "2025-11",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3053
+      "count": 3081
     },
     {
       "month": "2025-11",
@@ -11325,6 +11346,34 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 53
+    },
+    {
+      "month": "2025-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 25
+    },
+    {
+      "month": "2025-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 15
+    },
+    {
+      "month": "2025-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2025-11",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 24
     },
     {
       "month": "2025-11",
@@ -11394,7 +11443,7 @@
       "region": "PROSPECT",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 24
+      "count": 27
     },
     {
       "month": "2025-11",
@@ -11444,41 +11493,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 94
-    },
-    {
-      "month": "2025-11",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 10
-    },
-    {
-      "month": "2025-11",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 2
-    },
-    {
-      "month": "2025-11",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 7
-    },
-    {
-      "month": "2025-11",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 6
-    },
-    {
-      "month": "2025-11",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 46
     },
     {
       "month": "2025-11",
@@ -11555,7 +11569,7 @@
       "region": "ADELAIDE",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 22
+      "count": 23
     },
     {
       "month": "2025-12",
@@ -11583,7 +11597,7 @@
       "region": "ADELAIDE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 313
+      "count": 315
     },
     {
       "month": "2025-12",
@@ -11667,7 +11681,7 @@
       "region": "MODBURY",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 40
+      "count": 39
     },
     {
       "month": "2025-12",
@@ -11758,7 +11772,7 @@
       "region": "MURRAY BRIDGE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 50
+      "count": 49
     },
     {
       "month": "2025-12",
@@ -11786,14 +11800,14 @@
       "region": "MURRAY BRIDGE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 36
+      "count": 34
     },
     {
       "month": "2025-12",
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 198
+      "count": 195
     },
     {
       "month": "2025-12",
@@ -11835,21 +11849,21 @@
       "region": "OAKLANDS PARK",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 93
+      "count": 94
     },
     {
       "month": "2025-12",
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1754
+      "count": 1752
     },
     {
       "month": "2025-12",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 256
+      "count": 262
     },
     {
       "month": "2025-12",
@@ -11863,35 +11877,35 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1513
+      "count": 1497
     },
     {
       "month": "2025-12",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 38
+      "count": 39
     },
     {
       "month": "2025-12",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 769
+      "count": 760
     },
     {
       "month": "2025-12",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 2922
+      "count": 2910
     },
     {
       "month": "2025-12",
       "region": "PORT AUGUSTA",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 65
+      "count": 66
     },
     {
       "month": "2025-12",
@@ -11905,14 +11919,14 @@
       "region": "PORT AUGUSTA",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 50
+      "count": 51
     },
     {
       "month": "2025-12",
       "region": "PORT AUGUSTA",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 40
+      "count": 39
     },
     {
       "month": "2025-12",
@@ -11920,6 +11934,41 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 40
+    },
+    {
+      "month": "2025-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 21
+    },
+    {
+      "month": "2025-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2025-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 21
+    },
+    {
+      "month": "2025-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2025-12",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 36
     },
     {
       "month": "2025-12",
@@ -11954,7 +12003,7 @@
       "region": "PORT LINCOLN",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 61
+      "count": 63
     },
     {
       "month": "2025-12",
@@ -11975,7 +12024,7 @@
       "region": "PROSPECT",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 14
+      "count": 13
     },
     {
       "month": "2025-12",
@@ -11996,7 +12045,7 @@
       "region": "PROSPECT",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 47
+      "count": 48
     },
     {
       "month": "2025-12",
@@ -12035,41 +12084,6 @@
     },
     {
       "month": "2025-12",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 9
-    },
-    {
-      "month": "2025-12",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2025-12",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 11
-    },
-    {
-      "month": "2025-12",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 6
-    },
-    {
-      "month": "2025-12",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 27
-    },
-    {
-      "month": "2025-12",
       "region": "WHYALLA NORRIE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
@@ -12108,7 +12122,7 @@
       "region": "WHYALLA NORRIE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 41
+      "count": 40
     },
     {
       "month": "2025-12",
@@ -12143,7 +12157,7 @@
       "region": "WHYALLA STUART",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 17
+      "count": 16
     },
     {
       "month": "2026-01",
@@ -12157,14 +12171,14 @@
       "region": "ADELAIDE",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 30
+      "count": 34
     },
     {
       "month": "2026-01",
       "region": "ADELAIDE",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 98
+      "count": 97
     },
     {
       "month": "2026-01",
@@ -12178,14 +12192,14 @@
       "region": "ADELAIDE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 43
+      "count": 44
     },
     {
       "month": "2026-01",
       "region": "ADELAIDE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 326
+      "count": 323
     },
     {
       "month": "2026-01",
@@ -12227,7 +12241,7 @@
       "region": "ELIZABETH",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 65
+      "count": 64
     },
     {
       "month": "2026-01",
@@ -12297,7 +12311,7 @@
       "region": "MORPHETT VALE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 15
+      "count": 14
     },
     {
       "month": "2026-01",
@@ -12311,7 +12325,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 38
+      "count": 41
     },
     {
       "month": "2026-01",
@@ -12325,14 +12339,14 @@
       "region": "MOUNT GAMBIER",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 23
+      "count": 24
     },
     {
       "month": "2026-01",
       "region": "MOUNT GAMBIER",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 14
+      "count": 13
     },
     {
       "month": "2026-01",
@@ -12346,7 +12360,7 @@
       "region": "MURRAY BRIDGE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 53
+      "count": 52
     },
     {
       "month": "2026-01",
@@ -12388,7 +12402,7 @@
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 242
+      "count": 245
     },
     {
       "month": "2026-01",
@@ -12416,7 +12430,7 @@
       "region": "OAKLANDS PARK",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 3
+      "count": 4
     },
     {
       "month": "2026-01",
@@ -12430,14 +12444,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1770
+      "count": 1777
     },
     {
       "month": "2026-01",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 263
+      "count": 271
     },
     {
       "month": "2026-01",
@@ -12451,7 +12465,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1578
+      "count": 1567
     },
     {
       "month": "2026-01",
@@ -12465,14 +12479,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 962
+      "count": 932
     },
     {
       "month": "2026-01",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3443
+      "count": 3452
     },
     {
       "month": "2026-01",
@@ -12514,14 +12528,49 @@
       "region": "PORT AUGUSTA",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 50
+      "count": 51
+    },
+    {
+      "month": "2026-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 31
+    },
+    {
+      "month": "2026-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 27
+    },
+    {
+      "month": "2026-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 29
+    },
+    {
+      "month": "2026-01",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 45
     },
     {
       "month": "2026-01",
       "region": "PORT LINCOLN",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 36
+      "count": 37
     },
     {
       "month": "2026-01",
@@ -12535,7 +12584,7 @@
       "region": "PORT LINCOLN",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 49
+      "count": 48
     },
     {
       "month": "2026-01",
@@ -12637,41 +12686,6 @@
     },
     {
       "month": "2026-01",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 21
-    },
-    {
-      "month": "2026-01",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 1
-    },
-    {
-      "month": "2026-01",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 10
-    },
-    {
-      "month": "2026-01",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 5
-    },
-    {
-      "month": "2026-01",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 49
-    },
-    {
-      "month": "2026-01",
       "region": "WHYALLA NORRIE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
@@ -12710,14 +12724,14 @@
       "region": "WHYALLA STUART",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 35
+      "count": 36
     },
     {
       "month": "2026-01",
       "region": "WHYALLA STUART",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 34
+      "count": 35
     },
     {
       "month": "2026-01",
@@ -12738,14 +12752,14 @@
       "region": "WHYALLA STUART",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 25
+      "count": 24
     },
     {
       "month": "2026-02",
       "region": "ADELAIDE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 154
+      "count": 159
     },
     {
       "month": "2026-02",
@@ -12773,21 +12787,21 @@
       "region": "ADELAIDE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 21
+      "count": 20
     },
     {
       "month": "2026-02",
       "region": "ADELAIDE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 287
+      "count": 285
     },
     {
       "month": "2026-02",
       "region": "ELIZABETH",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 26
+      "count": 27
     },
     {
       "month": "2026-02",
@@ -12843,7 +12857,7 @@
       "region": "MODBURY",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 16
+      "count": 18
     },
     {
       "month": "2026-02",
@@ -12899,7 +12913,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 36
+      "count": 35
     },
     {
       "month": "2026-02",
@@ -12913,7 +12927,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 28
+      "count": 27
     },
     {
       "month": "2026-02",
@@ -12927,7 +12941,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 57
+      "count": 56
     },
     {
       "month": "2026-02",
@@ -12948,28 +12962,28 @@
       "region": "MURRAY BRIDGE",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 27
+      "count": 28
     },
     {
       "month": "2026-02",
       "region": "MURRAY BRIDGE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 19
+      "count": 20
     },
     {
       "month": "2026-02",
       "region": "MURRAY BRIDGE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 65
+      "count": 64
     },
     {
       "month": "2026-02",
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 224
+      "count": 234
     },
     {
       "month": "2026-02",
@@ -13004,21 +13018,21 @@
       "region": "OAKLANDS PARK",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 81
+      "count": 79
     },
     {
       "month": "2026-02",
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1739
+      "count": 1732
     },
     {
       "month": "2026-02",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 259
+      "count": 265
     },
     {
       "month": "2026-02",
@@ -13032,7 +13046,7 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1404
+      "count": 1403
     },
     {
       "month": "2026-02",
@@ -13046,14 +13060,14 @@
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 716
+      "count": 699
     },
     {
       "month": "2026-02",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3004
+      "count": 3034
     },
     {
       "month": "2026-02",
@@ -13067,7 +13081,7 @@
       "region": "PORT AUGUSTA",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 3
+      "count": 2
     },
     {
       "month": "2026-02",
@@ -13099,6 +13113,34 @@
     },
     {
       "month": "2026-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 20
+    },
+    {
+      "month": "2026-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 17
+    },
+    {
+      "month": "2026-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 23
+    },
+    {
+      "month": "2026-02",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2026-02",
       "region": "PORT LINCOLN",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
@@ -13116,7 +13158,7 @@
       "region": "PORT LINCOLN",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 40
+      "count": 39
     },
     {
       "month": "2026-02",
@@ -13130,14 +13172,14 @@
       "region": "PORT LINCOLN",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 30
+      "count": 35
     },
     {
       "month": "2026-02",
       "region": "PORT LINCOLN",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 50
+      "count": 52
     },
     {
       "month": "2026-02",
@@ -13151,7 +13193,7 @@
       "region": "PROSPECT",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 4
+      "count": 3
     },
     {
       "month": "2026-02",
@@ -13179,7 +13221,7 @@
       "region": "SALISBURY",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 30
+      "count": 29
     },
     {
       "month": "2026-02",
@@ -13200,7 +13242,7 @@
       "region": "SALISBURY",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 11
+      "count": 9
     },
     {
       "month": "2026-02",
@@ -13215,41 +13257,6 @@
       "offense": "Theft",
       "offense_division": "Offences against property",
       "count": 46
-    },
-    {
-      "month": "2026-02",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 12
-    },
-    {
-      "month": "2026-02",
-      "region": "SMITHFIELD",
-      "offense": "Fraud and deception",
-      "offense_division": "Offences against property",
-      "count": 3
-    },
-    {
-      "month": "2026-02",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 10
-    },
-    {
-      "month": "2026-02",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 5
-    },
-    {
-      "month": "2026-02",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 51
     },
     {
       "month": "2026-02",
@@ -13270,7 +13277,7 @@
       "region": "WHYALLA NORRIE",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 43
+      "count": 44
     },
     {
       "month": "2026-02",
@@ -13312,7 +13319,7 @@
       "region": "WHYALLA STUART",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 18
+      "count": 19
     },
     {
       "month": "2026-02",
@@ -13333,21 +13340,21 @@
       "region": "ADELAIDE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 208
+      "count": 210
     },
     {
       "month": "2026-03",
       "region": "ADELAIDE",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 27
+      "count": 28
     },
     {
       "month": "2026-03",
       "region": "ADELAIDE",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 92
+      "count": 91
     },
     {
       "month": "2026-03",
@@ -13361,14 +13368,14 @@
       "region": "ADELAIDE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 41
+      "count": 42
     },
     {
       "month": "2026-03",
       "region": "ADELAIDE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 373
+      "count": 371
     },
     {
       "month": "2026-03",
@@ -13396,7 +13403,7 @@
       "region": "ELIZABETH",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 2
+      "count": 1
     },
     {
       "month": "2026-03",
@@ -13410,7 +13417,7 @@
       "region": "ELIZABETH",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 63
+      "count": 64
     },
     {
       "month": "2026-03",
@@ -13431,7 +13438,7 @@
       "region": "MODBURY",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 7
+      "count": 8
     },
     {
       "month": "2026-03",
@@ -13445,21 +13452,21 @@
       "region": "MODBURY",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 3
+      "count": 2
     },
     {
       "month": "2026-03",
       "region": "MODBURY",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 53
+      "count": 54
     },
     {
       "month": "2026-03",
       "region": "MORPHETT VALE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 33
+      "count": 32
     },
     {
       "month": "2026-03",
@@ -13480,7 +13487,7 @@
       "region": "MORPHETT VALE",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 21
+      "count": 19
     },
     {
       "month": "2026-03",
@@ -13494,21 +13501,21 @@
       "region": "MORPHETT VALE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 9
+      "count": 10
     },
     {
       "month": "2026-03",
       "region": "MORPHETT VALE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 39
+      "count": 41
     },
     {
       "month": "2026-03",
       "region": "MOUNT GAMBIER",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 52
+      "count": 55
     },
     {
       "month": "2026-03",
@@ -13522,7 +13529,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 38
+      "count": 39
     },
     {
       "month": "2026-03",
@@ -13536,7 +13543,7 @@
       "region": "MOUNT GAMBIER",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 23
+      "count": 25
     },
     {
       "month": "2026-03",
@@ -13550,7 +13557,7 @@
       "region": "MURRAY BRIDGE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 45
+      "count": 44
     },
     {
       "month": "2026-03",
@@ -13564,14 +13571,14 @@
       "region": "MURRAY BRIDGE",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 36
+      "count": 39
     },
     {
       "month": "2026-03",
       "region": "MURRAY BRIDGE",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 27
+      "count": 26
     },
     {
       "month": "2026-03",
@@ -13585,14 +13592,14 @@
       "region": "NOT DISCLOSED",
       "offense": "Sexual offences",
       "offense_division": "Offences against the person",
-      "count": 244
+      "count": 248
     },
     {
       "month": "2026-03",
       "region": "OAKLANDS PARK",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 15
+      "count": 13
     },
     {
       "month": "2026-03",
@@ -13620,21 +13627,21 @@
       "region": "OAKLANDS PARK",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 82
+      "count": 86
     },
     {
       "month": "2026-03",
       "region": "OTHER SA AREAS",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 1769
+      "count": 1773
     },
     {
       "month": "2026-03",
       "region": "OTHER SA AREAS",
       "offense": "Fraud and deception",
       "offense_division": "Offences against property",
-      "count": 260
+      "count": 263
     },
     {
       "month": "2026-03",
@@ -13648,35 +13655,35 @@
       "region": "OTHER SA AREAS",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 1516
+      "count": 1507
     },
     {
       "month": "2026-03",
       "region": "OTHER SA AREAS",
       "offense": "Robbery and extortion",
       "offense_division": "Offences against the person",
-      "count": 36
+      "count": 39
     },
     {
       "month": "2026-03",
       "region": "OTHER SA AREAS",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 855
+      "count": 852
     },
     {
       "month": "2026-03",
       "region": "OTHER SA AREAS",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 3398
+      "count": 3469
     },
     {
       "month": "2026-03",
       "region": "PORT AUGUSTA",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 91
+      "count": 92
     },
     {
       "month": "2026-03",
@@ -13715,10 +13722,38 @@
     },
     {
       "month": "2026-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 26
+    },
+    {
+      "month": "2026-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 26
+    },
+    {
+      "month": "2026-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 23
+    },
+    {
+      "month": "2026-03",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 34
+    },
+    {
+      "month": "2026-03",
       "region": "PORT LINCOLN",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 37
+      "count": 39
     },
     {
       "month": "2026-03",
@@ -13732,7 +13767,7 @@
       "region": "PORT LINCOLN",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 54
+      "count": 55
     },
     {
       "month": "2026-03",
@@ -13746,7 +13781,7 @@
       "region": "PORT LINCOLN",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 66
+      "count": 65
     },
     {
       "month": "2026-03",
@@ -13774,14 +13809,14 @@
       "region": "PROSPECT",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 58
+      "count": 59
     },
     {
       "month": "2026-03",
       "region": "SALISBURY",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 29
+      "count": 31
     },
     {
       "month": "2026-03",
@@ -13795,14 +13830,7 @@
       "region": "SALISBURY",
       "offense": "Property damage",
       "offense_division": "Offences against property",
-      "count": 19
-    },
-    {
-      "month": "2026-03",
-      "region": "SALISBURY",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 1
+      "count": 20
     },
     {
       "month": "2026-03",
@@ -13816,49 +13844,14 @@
       "region": "SALISBURY",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 49
-    },
-    {
-      "month": "2026-03",
-      "region": "SMITHFIELD",
-      "offense": "Assault and injury",
-      "offense_division": "Offences against the person",
-      "count": 17
-    },
-    {
-      "month": "2026-03",
-      "region": "SMITHFIELD",
-      "offense": "Property damage",
-      "offense_division": "Offences against property",
-      "count": 12
-    },
-    {
-      "month": "2026-03",
-      "region": "SMITHFIELD",
-      "offense": "Robbery and extortion",
-      "offense_division": "Offences against the person",
-      "count": 1
-    },
-    {
-      "month": "2026-03",
-      "region": "SMITHFIELD",
-      "offense": "Serious criminal trespass",
-      "offense_division": "Offences against property",
-      "count": 10
-    },
-    {
-      "month": "2026-03",
-      "region": "SMITHFIELD",
-      "offense": "Theft",
-      "offense_division": "Offences against property",
-      "count": 73
+      "count": 48
     },
     {
       "month": "2026-03",
       "region": "WHYALLA NORRIE",
       "offense": "Assault and injury",
       "offense_division": "Offences against the person",
-      "count": 19
+      "count": 21
     },
     {
       "month": "2026-03",
@@ -13879,7 +13872,7 @@
       "region": "WHYALLA NORRIE",
       "offense": "Theft",
       "offense_division": "Offences against property",
-      "count": 37
+      "count": 38
     },
     {
       "month": "2026-03",
@@ -13907,14 +13900,1722 @@
       "region": "WHYALLA STUART",
       "offense": "Serious criminal trespass",
       "offense_division": "Offences against property",
-      "count": 17
+      "count": 16
     },
     {
       "month": "2026-03",
       "region": "WHYALLA STUART",
       "offense": "Theft",
       "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2026-04",
+      "region": "ADELAIDE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 176
+    },
+    {
+      "month": "2026-04",
+      "region": "ADELAIDE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 24
+    },
+    {
+      "month": "2026-04",
+      "region": "ADELAIDE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 100
+    },
+    {
+      "month": "2026-04",
+      "region": "ADELAIDE",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 8
+    },
+    {
+      "month": "2026-04",
+      "region": "ADELAIDE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 50
+    },
+    {
+      "month": "2026-04",
+      "region": "ADELAIDE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 330
+    },
+    {
+      "month": "2026-04",
+      "region": "ELIZABETH",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 21
+    },
+    {
+      "month": "2026-04",
+      "region": "ELIZABETH",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-04",
+      "region": "ELIZABETH",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 12
+    },
+    {
+      "month": "2026-04",
+      "region": "ELIZABETH",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-04",
+      "region": "ELIZABETH",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 48
+    },
+    {
+      "month": "2026-04",
+      "region": "MODBURY",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 9
+    },
+    {
+      "month": "2026-04",
+      "region": "MODBURY",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 4
+    },
+    {
+      "month": "2026-04",
+      "region": "MODBURY",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 4
+    },
+    {
+      "month": "2026-04",
+      "region": "MODBURY",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-04",
+      "region": "MODBURY",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 7
+    },
+    {
+      "month": "2026-04",
+      "region": "MODBURY",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 63
+    },
+    {
+      "month": "2026-04",
+      "region": "MORPHETT VALE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 29
+    },
+    {
+      "month": "2026-04",
+      "region": "MORPHETT VALE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-04",
+      "region": "MORPHETT VALE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 27
+    },
+    {
+      "month": "2026-04",
+      "region": "MORPHETT VALE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 9
+    },
+    {
+      "month": "2026-04",
+      "region": "MORPHETT VALE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 35
+    },
+    {
+      "month": "2026-04",
+      "region": "MOUNT GAMBIER",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 43
+    },
+    {
+      "month": "2026-04",
+      "region": "MOUNT GAMBIER",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2026-04",
+      "region": "MOUNT GAMBIER",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 32
+    },
+    {
+      "month": "2026-04",
+      "region": "MOUNT GAMBIER",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2026-04",
+      "region": "MOUNT GAMBIER",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 40
+    },
+    {
+      "month": "2026-04",
+      "region": "MURRAY BRIDGE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 46
+    },
+    {
+      "month": "2026-04",
+      "region": "MURRAY BRIDGE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-04",
+      "region": "MURRAY BRIDGE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 20
+    },
+    {
+      "month": "2026-04",
+      "region": "MURRAY BRIDGE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 26
+    },
+    {
+      "month": "2026-04",
+      "region": "MURRAY BRIDGE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 37
+    },
+    {
+      "month": "2026-04",
+      "region": "NOT DISCLOSED",
+      "offense": "Sexual offences",
+      "offense_division": "Offences against the person",
+      "count": 232
+    },
+    {
+      "month": "2026-04",
+      "region": "OAKLANDS PARK",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 6
+    },
+    {
+      "month": "2026-04",
+      "region": "OAKLANDS PARK",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 4
+    },
+    {
+      "month": "2026-04",
+      "region": "OAKLANDS PARK",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 8
+    },
+    {
+      "month": "2026-04",
+      "region": "OAKLANDS PARK",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-04",
+      "region": "OAKLANDS PARK",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 62
+    },
+    {
+      "month": "2026-04",
+      "region": "OTHER SA AREAS",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 1639
+    },
+    {
+      "month": "2026-04",
+      "region": "OTHER SA AREAS",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 286
+    },
+    {
+      "month": "2026-04",
+      "region": "OTHER SA AREAS",
+      "offense": "Homicide and related",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-04",
+      "region": "OTHER SA AREAS",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 1443
+    },
+    {
+      "month": "2026-04",
+      "region": "OTHER SA AREAS",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 39
+    },
+    {
+      "month": "2026-04",
+      "region": "OTHER SA AREAS",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 884
+    },
+    {
+      "month": "2026-04",
+      "region": "OTHER SA AREAS",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 3275
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 52
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 55
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 49
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 60
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 43
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 25
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 32
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 37
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT LINCOLN",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 27
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT LINCOLN",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT LINCOLN",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 35
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT LINCOLN",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT LINCOLN",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 22
+    },
+    {
+      "month": "2026-04",
+      "region": "PORT LINCOLN",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 46
+    },
+    {
+      "month": "2026-04",
+      "region": "PROSPECT",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 12
+    },
+    {
+      "month": "2026-04",
+      "region": "PROSPECT",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-04",
+      "region": "PROSPECT",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 17
+    },
+    {
+      "month": "2026-04",
+      "region": "PROSPECT",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 11
+    },
+    {
+      "month": "2026-04",
+      "region": "PROSPECT",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 62
+    },
+    {
+      "month": "2026-04",
+      "region": "SALISBURY",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 41
+    },
+    {
+      "month": "2026-04",
+      "region": "SALISBURY",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 4
+    },
+    {
+      "month": "2026-04",
+      "region": "SALISBURY",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 21
+    },
+    {
+      "month": "2026-04",
+      "region": "SALISBURY",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 3
+    },
+    {
+      "month": "2026-04",
+      "region": "SALISBURY",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 9
+    },
+    {
+      "month": "2026-04",
+      "region": "SALISBURY",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 44
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA NORRIE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 15
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA NORRIE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 20
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA NORRIE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 13
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA NORRIE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
       "count": 19
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA STUART",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 34
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA STUART",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA STUART",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA STUART",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 10
+    },
+    {
+      "month": "2026-04",
+      "region": "WHYALLA STUART",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2026-05",
+      "region": "ADELAIDE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 176
+    },
+    {
+      "month": "2026-05",
+      "region": "ADELAIDE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 20
+    },
+    {
+      "month": "2026-05",
+      "region": "ADELAIDE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 117
+    },
+    {
+      "month": "2026-05",
+      "region": "ADELAIDE",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 10
+    },
+    {
+      "month": "2026-05",
+      "region": "ADELAIDE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 53
+    },
+    {
+      "month": "2026-05",
+      "region": "ADELAIDE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 466
+    },
+    {
+      "month": "2026-05",
+      "region": "ELIZABETH",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 19
+    },
+    {
+      "month": "2026-05",
+      "region": "ELIZABETH",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-05",
+      "region": "ELIZABETH",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2026-05",
+      "region": "ELIZABETH",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-05",
+      "region": "ELIZABETH",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 69
+    },
+    {
+      "month": "2026-05",
+      "region": "MODBURY",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 20
+    },
+    {
+      "month": "2026-05",
+      "region": "MODBURY",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-05",
+      "region": "MODBURY",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 13
+    },
+    {
+      "month": "2026-05",
+      "region": "MODBURY",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2026-05",
+      "region": "MODBURY",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 79
+    },
+    {
+      "month": "2026-05",
+      "region": "MORPHETT VALE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 25
+    },
+    {
+      "month": "2026-05",
+      "region": "MORPHETT VALE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2026-05",
+      "region": "MORPHETT VALE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 25
+    },
+    {
+      "month": "2026-05",
+      "region": "MORPHETT VALE",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-05",
+      "region": "MORPHETT VALE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 13
+    },
+    {
+      "month": "2026-05",
+      "region": "MORPHETT VALE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 38
+    },
+    {
+      "month": "2026-05",
+      "region": "MOUNT GAMBIER",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 41
+    },
+    {
+      "month": "2026-05",
+      "region": "MOUNT GAMBIER",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-05",
+      "region": "MOUNT GAMBIER",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 29
+    },
+    {
+      "month": "2026-05",
+      "region": "MOUNT GAMBIER",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2026-05",
+      "region": "MOUNT GAMBIER",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 49
+    },
+    {
+      "month": "2026-05",
+      "region": "MURRAY BRIDGE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 42
+    },
+    {
+      "month": "2026-05",
+      "region": "MURRAY BRIDGE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2026-05",
+      "region": "MURRAY BRIDGE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 29
+    },
+    {
+      "month": "2026-05",
+      "region": "MURRAY BRIDGE",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2026-05",
+      "region": "MURRAY BRIDGE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 25
+    },
+    {
+      "month": "2026-05",
+      "region": "MURRAY BRIDGE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 51
+    },
+    {
+      "month": "2026-05",
+      "region": "NOT DISCLOSED",
+      "offense": "Sexual offences",
+      "offense_division": "Offences against the person",
+      "count": 231
+    },
+    {
+      "month": "2026-05",
+      "region": "OAKLANDS PARK",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 8
+    },
+    {
+      "month": "2026-05",
+      "region": "OAKLANDS PARK",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-05",
+      "region": "OAKLANDS PARK",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 12
+    },
+    {
+      "month": "2026-05",
+      "region": "OAKLANDS PARK",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-05",
+      "region": "OAKLANDS PARK",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2026-05",
+      "region": "OAKLANDS PARK",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 89
+    },
+    {
+      "month": "2026-05",
+      "region": "OTHER SA AREAS",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 1685
+    },
+    {
+      "month": "2026-05",
+      "region": "OTHER SA AREAS",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 233
+    },
+    {
+      "month": "2026-05",
+      "region": "OTHER SA AREAS",
+      "offense": "Homicide and related",
+      "offense_division": "Offences against the person",
+      "count": 3
+    },
+    {
+      "month": "2026-05",
+      "region": "OTHER SA AREAS",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 1453
+    },
+    {
+      "month": "2026-05",
+      "region": "OTHER SA AREAS",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 44
+    },
+    {
+      "month": "2026-05",
+      "region": "OTHER SA AREAS",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 947
+    },
+    {
+      "month": "2026-05",
+      "region": "OTHER SA AREAS",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 3349
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 77
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 55
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 54
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 63
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 27
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 14
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 14
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 27
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT LINCOLN",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 40
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT LINCOLN",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 28
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT LINCOLN",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT LINCOLN",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 22
+    },
+    {
+      "month": "2026-05",
+      "region": "PORT LINCOLN",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 39
+    },
+    {
+      "month": "2026-05",
+      "region": "PROSPECT",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 14
+    },
+    {
+      "month": "2026-05",
+      "region": "PROSPECT",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 8
+    },
+    {
+      "month": "2026-05",
+      "region": "PROSPECT",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 7
+    },
+    {
+      "month": "2026-05",
+      "region": "PROSPECT",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-05",
+      "region": "PROSPECT",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 7
+    },
+    {
+      "month": "2026-05",
+      "region": "PROSPECT",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 62
+    },
+    {
+      "month": "2026-05",
+      "region": "SALISBURY",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 33
+    },
+    {
+      "month": "2026-05",
+      "region": "SALISBURY",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-05",
+      "region": "SALISBURY",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2026-05",
+      "region": "SALISBURY",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-05",
+      "region": "SALISBURY",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 11
+    },
+    {
+      "month": "2026-05",
+      "region": "SALISBURY",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 71
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA NORRIE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 22
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA NORRIE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 17
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA NORRIE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 6
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA NORRIE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 37
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA STUART",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 29
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA STUART",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 22
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA STUART",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 10
+    },
+    {
+      "month": "2026-05",
+      "region": "WHYALLA STUART",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2026-06",
+      "region": "ADELAIDE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 156
+    },
+    {
+      "month": "2026-06",
+      "region": "ADELAIDE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 14
+    },
+    {
+      "month": "2026-06",
+      "region": "ADELAIDE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 114
+    },
+    {
+      "month": "2026-06",
+      "region": "ADELAIDE",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 7
+    },
+    {
+      "month": "2026-06",
+      "region": "ADELAIDE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 47
+    },
+    {
+      "month": "2026-06",
+      "region": "ADELAIDE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 374
+    },
+    {
+      "month": "2026-06",
+      "region": "ELIZABETH",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 20
+    },
+    {
+      "month": "2026-06",
+      "region": "ELIZABETH",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-06",
+      "region": "ELIZABETH",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2026-06",
+      "region": "ELIZABETH",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-06",
+      "region": "ELIZABETH",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 52
+    },
+    {
+      "month": "2026-06",
+      "region": "MODBURY",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 17
+    },
+    {
+      "month": "2026-06",
+      "region": "MODBURY",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-06",
+      "region": "MODBURY",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 18
+    },
+    {
+      "month": "2026-06",
+      "region": "MODBURY",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-06",
+      "region": "MODBURY",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 8
+    },
+    {
+      "month": "2026-06",
+      "region": "MODBURY",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 57
+    },
+    {
+      "month": "2026-06",
+      "region": "MORPHETT VALE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 38
+    },
+    {
+      "month": "2026-06",
+      "region": "MORPHETT VALE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-06",
+      "region": "MORPHETT VALE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 30
+    },
+    {
+      "month": "2026-06",
+      "region": "MORPHETT VALE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 17
+    },
+    {
+      "month": "2026-06",
+      "region": "MORPHETT VALE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 51
+    },
+    {
+      "month": "2026-06",
+      "region": "MOUNT GAMBIER",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 40
+    },
+    {
+      "month": "2026-06",
+      "region": "MOUNT GAMBIER",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 3
+    },
+    {
+      "month": "2026-06",
+      "region": "MOUNT GAMBIER",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 24
+    },
+    {
+      "month": "2026-06",
+      "region": "MOUNT GAMBIER",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 14
+    },
+    {
+      "month": "2026-06",
+      "region": "MOUNT GAMBIER",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 46
+    },
+    {
+      "month": "2026-06",
+      "region": "MURRAY BRIDGE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 37
+    },
+    {
+      "month": "2026-06",
+      "region": "MURRAY BRIDGE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 5
+    },
+    {
+      "month": "2026-06",
+      "region": "MURRAY BRIDGE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 22
+    },
+    {
+      "month": "2026-06",
+      "region": "MURRAY BRIDGE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 15
+    },
+    {
+      "month": "2026-06",
+      "region": "MURRAY BRIDGE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 40
+    },
+    {
+      "month": "2026-06",
+      "region": "NOT DISCLOSED",
+      "offense": "Sexual offences",
+      "offense_division": "Offences against the person",
+      "count": 212
+    },
+    {
+      "month": "2026-06",
+      "region": "OAKLANDS PARK",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 6
+    },
+    {
+      "month": "2026-06",
+      "region": "OAKLANDS PARK",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 8
+    },
+    {
+      "month": "2026-06",
+      "region": "OAKLANDS PARK",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 4
+    },
+    {
+      "month": "2026-06",
+      "region": "OAKLANDS PARK",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 77
+    },
+    {
+      "month": "2026-06",
+      "region": "OTHER SA AREAS",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 1600
+    },
+    {
+      "month": "2026-06",
+      "region": "OTHER SA AREAS",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 218
+    },
+    {
+      "month": "2026-06",
+      "region": "OTHER SA AREAS",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 1379
+    },
+    {
+      "month": "2026-06",
+      "region": "OTHER SA AREAS",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 35
+    },
+    {
+      "month": "2026-06",
+      "region": "OTHER SA AREAS",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 812
+    },
+    {
+      "month": "2026-06",
+      "region": "OTHER SA AREAS",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 3041
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 71
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 54
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 74
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 68
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 27
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 23
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT AUGUSTA WEST",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 43
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT LINCOLN",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 31
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT LINCOLN",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 4
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT LINCOLN",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 33
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT LINCOLN",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT LINCOLN",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 19
+    },
+    {
+      "month": "2026-06",
+      "region": "PORT LINCOLN",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 29
+    },
+    {
+      "month": "2026-06",
+      "region": "PROSPECT",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 13
+    },
+    {
+      "month": "2026-06",
+      "region": "PROSPECT",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 1
+    },
+    {
+      "month": "2026-06",
+      "region": "PROSPECT",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 12
+    },
+    {
+      "month": "2026-06",
+      "region": "PROSPECT",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 5
+    },
+    {
+      "month": "2026-06",
+      "region": "PROSPECT",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 38
+    },
+    {
+      "month": "2026-06",
+      "region": "SALISBURY",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 37
+    },
+    {
+      "month": "2026-06",
+      "region": "SALISBURY",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 2
+    },
+    {
+      "month": "2026-06",
+      "region": "SALISBURY",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 32
+    },
+    {
+      "month": "2026-06",
+      "region": "SALISBURY",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 1
+    },
+    {
+      "month": "2026-06",
+      "region": "SALISBURY",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 14
+    },
+    {
+      "month": "2026-06",
+      "region": "SALISBURY",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 74
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA NORRIE",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 31
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA NORRIE",
+      "offense": "Fraud and deception",
+      "offense_division": "Offences against property",
+      "count": 4
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA NORRIE",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 16
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA NORRIE",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 15
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA NORRIE",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 46
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA STUART",
+      "offense": "Assault and injury",
+      "offense_division": "Offences against the person",
+      "count": 36
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA STUART",
+      "offense": "Property damage",
+      "offense_division": "Offences against property",
+      "count": 27
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA STUART",
+      "offense": "Robbery and extortion",
+      "offense_division": "Offences against the person",
+      "count": 2
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA STUART",
+      "offense": "Serious criminal trespass",
+      "offense_division": "Offences against property",
+      "count": 37
+    },
+    {
+      "month": "2026-06",
+      "region": "WHYALLA STUART",
+      "offense": "Theft",
+      "offense_division": "Offences against property",
+      "count": 28
     }
   ]
 }
