@@ -28,9 +28,9 @@ def test_snapshot_months_are_well_formed():
     records, _ = load_snapshot()
     months = {r.month for r in records}
     assert all(len(m) == 7 and m[4] == "-" for m in months)
-    # the bundled window spans 2024-07 .. 2026-03
+    # the bundled window spans 2024-07 .. 2026-06
     assert min(months) == "2024-07"
-    assert max(months) == "2026-03"
+    assert max(months) == "2026-06"
 
 
 def test_snapshot_divisions_are_anzsoc():
