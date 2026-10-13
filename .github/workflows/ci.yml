@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       SIGNAL_OFFLINE: "1"   # tests run against the bundled snapshot, no network
     steps:
@@ -26,7 +26,7 @@ jobs:
     # Only build the image once the suite is green; a broken app should never
     # produce a "verified" container.
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Build image

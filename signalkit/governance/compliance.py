@@ -20,8 +20,6 @@ as the deploying organisation's responsibility rather than claimed.
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from signalkit.governance.decision_log import (
@@ -40,13 +38,13 @@ class ComplianceItem(BaseModel):
     requirement: str
     how_signal_meets_it: str
     status: str = Field(description=f"{MET} | {PARTIAL} | {ORG}")
-    evidence: List[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
 
 
 class FrameworkMapping(BaseModel):
     framework: str
     summary: str
-    items: List[ComplianceItem]
+    items: list[ComplianceItem]
 
 
 class ComplianceReport(BaseModel):
@@ -56,13 +54,13 @@ class ComplianceReport(BaseModel):
     accountable_official: str
     decisions_covered: int
     chain_valid: bool
-    chain_head: Optional[str] = None
+    chain_head: str | None = None
     note: str
-    frameworks: List[FrameworkMapping]
+    frameworks: list[FrameworkMapping]
     statement: str  # a Markdown render for an auditor
 
 
-def _evidence(entries: List[DecisionEntry]) -> dict:
+def _evidence(entries: list[DecisionEntry]) -> dict:
     s = summarise(entries)
     chain = verify_chain(entries)
     faith = [e.faithfulness_score for e in entries if e.faithfulness_score is not None]
@@ -232,7 +230,7 @@ def _dta(ev: dict) -> FrameworkMapping:
 
 
 def compliance_report(
-    entries: List[DecisionEntry],
+    entries: list[DecisionEntry],
     *,
     agency: str,
     accountable_official: str,
@@ -247,9 +245,9 @@ def compliance_report(
         f"Generated live from the audit log. Decisions covered: **{ev['decisions']}**. "
         f"Audit chain: **{'verified' if ev['chain_valid'] else 'NOT verified'}**"
         + (f" (head {ev['chain_head'][:12]})." if ev["chain_head"] else ".") + "\n",
-        "Status key: *met* — satisfied by the governance layer with live evidence; "
+        ("Status key: *met* — satisfied by the governance layer with live evidence; "
         "*partial* — partially supported; *organisation's responsibility* — outside the tool, "
-        "for the deploying organisation to operate.\n",
+        "for the deploying organisation to operate.\n"),
     ]
     for fw in frameworks:
         lines.append(f"## {fw.framework}\n\n{fw.summary}\n")

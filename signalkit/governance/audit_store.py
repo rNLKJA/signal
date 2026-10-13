@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
-from typing import List, Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
@@ -24,11 +24,11 @@ class AuditStore(Protocol):
         """Append one record. Must be durable before returning, for a real store."""
         ...
 
-    def read_lines(self) -> List[str]:
+    def read_lines(self) -> list[str]:
         """All records, oldest first."""
         ...
 
-    def last_line(self) -> Optional[str]:
+    def last_line(self) -> str | None:
         """The most recently appended record, or None if the store is empty."""
         ...
 
@@ -47,14 +47,14 @@ class JsonlAuditStore:
         with self.path.open("a", encoding="utf-8") as f:
             f.write(line + "\n")
 
-    def read_lines(self) -> List[str]:
+    def read_lines(self) -> list[str]:
         if not self.path.exists():
             return []
         with self.path.open("r", encoding="utf-8") as f:
             return [ln.strip() for ln in f if ln.strip()]
 
-    def last_line(self) -> Optional[str]:
-        last: Optional[str] = None
+    def last_line(self) -> str | None:
+        last: str | None = None
         if self.path.exists():
             with self.path.open("r", encoding="utf-8") as f:
                 for ln in f:
@@ -67,15 +67,15 @@ class InMemoryAuditStore:
     """An ephemeral store for tests and demos. NOT durable — lines vanish on exit."""
 
     def __init__(self) -> None:
-        self._lines: List[str] = []
+        self._lines: list[str] = []
 
     def append(self, line: str) -> None:
         self._lines.append(line)
 
-    def read_lines(self) -> List[str]:
+    def read_lines(self) -> list[str]:
         return list(self._lines)
 
-    def last_line(self) -> Optional[str]:
+    def last_line(self) -> str | None:
         return self._lines[-1] if self._lines else None
 
 
@@ -116,7 +116,7 @@ class SqliteAuditStore:
         finally:
             conn.close()
 
-    def read_lines(self) -> List[str]:
+    def read_lines(self) -> list[str]:
         conn = self._connect()
         try:
             rows = conn.execute("SELECT line FROM audit ORDER BY seq").fetchall()
@@ -124,7 +124,7 @@ class SqliteAuditStore:
             conn.close()
         return [r[0] for r in rows]
 
-    def last_line(self) -> Optional[str]:
+    def last_line(self) -> str | None:
         conn = self._connect()
         try:
             row = conn.execute("SELECT line FROM audit ORDER BY seq DESC LIMIT 1").fetchone()

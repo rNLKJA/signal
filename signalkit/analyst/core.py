@@ -32,12 +32,10 @@ import threading
 import uuid
 from collections import deque
 from datetime import datetime, timezone
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from signalkit.data import catalogue, nyc, sa_crime
-from signalkit.data.sa_crime import MonthlyRecord
 from signalkit.analyst import stats as tstats
 from signalkit.analyst.eval import (
     allowed_from_stats,
@@ -45,11 +43,12 @@ from signalkit.analyst.eval import (
     evaluate,
     measure_check,
 )
+from signalkit.data import catalogue, nyc, sa_crime
+from signalkit.data.sa_crime import MonthlyRecord
 from signalkit.governance import (
     ChainVerification,
     ComplianceReport,
     DecisionCategory,
-    compliance_report,
     DecisionEntry,
     DecisionLogger,
     GovernanceSummary,
@@ -58,6 +57,7 @@ from signalkit.governance import (
     RiskCategory,
     TransparencyStatement,
     UseCaseRegister,
+    compliance_report,
     impact_assessment,
     model_card,
     register,
@@ -119,8 +119,8 @@ class AnalystQuery(BaseModel):
     """A question to the analyst. Filters are case-insensitive substrings."""
 
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
-    offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
-    region: Optional[str] = Field(default=None, description="Region/borough filter")
+    offense: str | None = Field(default=None, description="Offence filter, e.g. 'theft'")
+    region: str | None = Field(default=None, description="Region/borough filter")
     months: int = Field(default=12, ge=2, le=24, description="Trailing window size in months")
     source: str = Field(default="sa", description="Data source: sa | nyc")
 
@@ -132,10 +132,10 @@ class TrendStats(BaseModel):
     window_end: str
     total_offences: int
     monthly_counts: dict[str, int]
-    mom_change_pct: Optional[float] = Field(
+    mom_change_pct: float | None = Field(
         default=None, description="Last month vs the month before, percent"
     )
-    yoy_change_pct: Optional[float] = Field(
+    yoy_change_pct: float | None = Field(
         default=None, description="Last month vs the same month a year earlier, percent"
     )
     trend_direction: Literal["rising", "falling", "flat"]
@@ -150,35 +150,35 @@ class TrendStats(BaseModel):
         description="Counts by ANZSOC division (against the person / against property)",
     )
     # Inferential statistics (signalkit.analyst.stats) — added at v1.13, all optional.
-    trend_significant: Optional[bool] = Field(
+    trend_significant: bool | None = Field(
         default=None, description="Mann-Kendall: is the monotonic trend significant at α=0.05"
     )
-    trend_p_value: Optional[float] = Field(
+    trend_p_value: float | None = Field(
         default=None, description="Mann-Kendall two-sided p-value"
     )
-    sen_slope_per_month: Optional[float] = Field(
+    sen_slope_per_month: float | None = Field(
         default=None, description="Robust Theil-Sen slope, offences per month"
     )
-    sen_slope_ci: Optional[list[float]] = Field(
+    sen_slope_ci: list[float] | None = Field(
         default=None, description="95% confidence interval for the Sen slope, [lo, hi]"
     )
-    seasonal_strength: Optional[float] = Field(
+    seasonal_strength: float | None = Field(
         default=None, description="0..1 — share of detrended variance explained by season"
     )
-    seasonal_peak_month: Optional[int] = Field(
+    seasonal_peak_month: int | None = Field(
         default=None, description="Calendar month (1-12) of the seasonal peak"
     )
-    seasonal_trough_month: Optional[int] = Field(
+    seasonal_trough_month: int | None = Field(
         default=None, description="Calendar month (1-12) of the seasonal trough"
     )
-    seasonality_established: Optional[bool] = Field(
+    seasonality_established: bool | None = Field(
         default=None, description="True once two full years (24 months) are observed"
     )
     forecast: list[dict] = Field(
         default_factory=list,
         description="Next-N-month forecast: each {month, point, lo, hi}",
     )
-    forecast_method: Optional[str] = Field(
+    forecast_method: str | None = Field(
         default=None, description="How the forecast was produced"
     )
 
@@ -187,7 +187,7 @@ class CompareQuery(BaseModel):
     """Compare one offence scope across regions/boroughs."""
 
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
-    offense: Optional[str] = Field(default=None, description="Offence filter, e.g. 'theft'")
+    offense: str | None = Field(default=None, description="Offence filter, e.g. 'theft'")
     months: int = Field(default=12, ge=2, le=24)
     source: str = Field(default="sa", description="Data source: sa | nyc")
 
@@ -198,7 +198,7 @@ class MultiQuery(BaseModel):
     question: str = Field(default="", description="Free-text question, recorded in the audit log")
     offenses: list[str] = Field(min_length=2, max_length=6,
                                 description="Two to six offence scopes to analyse and synthesise")
-    region: Optional[str] = Field(default=None, description="Region/borough filter")
+    region: str | None = Field(default=None, description="Region/borough filter")
     months: int = Field(default=18, ge=2, le=24)
     source: str = Field(default="sa", description="Data source: sa | nyc")
 
@@ -218,7 +218,7 @@ _MONTH_NAME = {
 }
 
 
-def _parse_month(value) -> Optional[str]:
+def _parse_month(value) -> str | None:
     """Extract a sortable YYYY-MM period from many date/period formats.
 
     Handles ISO/timestamps, DD/MM/YYYY, quarter labels (Q1 2023, Q1-2023/2024 →
@@ -254,14 +254,14 @@ def _parse_month(value) -> Optional[str]:
     return None
 
 
-def _to_float(value) -> Optional[float]:
+def _to_float(value) -> float | None:
     try:
         return float(str(value).replace(",", "").strip())
     except (ValueError, AttributeError):
         return None
 
 
-def _infer_columns(fields: list[dict], rows: list[dict]) -> tuple[Optional[str], Optional[str]]:
+def _infer_columns(fields: list[dict], rows: list[dict]) -> tuple[str | None, str | None]:
     """Find a date/period column and a numeric column by sampling values."""
     sample = rows[:200]
     if not sample:
@@ -291,8 +291,8 @@ class GenericTrend(BaseModel):
     total: float
     monthly_counts: dict[str, float]
     trend_direction: Literal["rising", "falling", "flat"]
-    mom_change_pct: Optional[float] = None
-    yoy_change_pct: Optional[float] = None
+    mom_change_pct: float | None = None
+    yoy_change_pct: float | None = None
     anomalous_months: list[str] = Field(default_factory=list)
 
 
@@ -301,13 +301,13 @@ class ReviewRequest(BaseModel):
 
     reviewer: str = Field(min_length=1, description="Who reviewed (email or role)")
     override: bool = Field(default=False, description="True if the human overrode the result")
-    override_reason: Optional[str] = Field(
+    override_reason: str | None = Field(
         default=None, description="Required when override is true"
     )
-    note: Optional[str] = Field(default=None, description="Optional free-text note")
+    note: str | None = Field(default=None, description="Optional free-text note")
 
     @model_validator(mode="after")
-    def _reason_required_when_override(self) -> "ReviewRequest":
+    def _reason_required_when_override(self) -> ReviewRequest:
         if self.override and not (self.override_reason and self.override_reason.strip()):
             raise ValueError("override_reason is required when override is true.")
         return self
@@ -325,7 +325,7 @@ class RegionSeries(BaseModel):
     region: str
     monthly_counts: dict[str, int]
     total: int
-    yoy_change_pct: Optional[float] = None
+    yoy_change_pct: float | None = None
     trend_direction: Literal["rising", "falling", "flat"]
     anomalous_months: list[str] = Field(default_factory=list)
 
@@ -333,7 +333,7 @@ class RegionSeries(BaseModel):
 class CompareResult(BaseModel):
     window_start: str
     window_end: str
-    offense_filter: Optional[str]
+    offense_filter: str | None
     series: list[RegionSeries]
     narrative: str
     decision_id: str
@@ -341,7 +341,7 @@ class CompareResult(BaseModel):
     model_used: str
     human_review_required: bool
     generated_at: datetime
-    faithfulness_score: Optional[float] = None
+    faithfulness_score: float | None = None
     fairness_note: str = ""
 
 
@@ -355,7 +355,7 @@ class AnalystAnswer(BaseModel):
     model_used: str
     human_review_required: bool
     generated_at: datetime
-    faithfulness_score: Optional[float] = None
+    faithfulness_score: float | None = None
 
 
 class MultiStepStep(BaseModel):
@@ -386,7 +386,7 @@ class MultiStepAnswer(BaseModel):
     model_used: str
     human_review_required: bool
     generated_at: datetime
-    faithfulness_score: Optional[float] = None
+    faithfulness_score: float | None = None
 
 
 def _slope(series: list[int]) -> float:
@@ -491,8 +491,8 @@ def _template_narrative(stats: TrendStats, query: AnalystQuery) -> str:
     agency = SOURCE_AGENCY.get(query.source, "SA Police")
 
     parts = [
-        f"Between {stats.window_start} and {stats.window_end}, {agency} recorded "
-        f"{stats.total_offences:,} offences {scope}.",
+        (f"Between {stats.window_start} and {stats.window_end}, {agency} recorded "
+        f"{stats.total_offences:,} offences {scope}."),
         f"The trend over the window is {stats.trend_direction}.",
     ]
     if stats.mom_change_pct is not None:
@@ -588,7 +588,7 @@ def _llm_complete(prompt: str, model: str, base_url: str, api_key: str) -> str:
     return narrative
 
 
-def _generate_narrative(prompt: str, fallback: str) -> tuple[str, str, Optional[str]]:
+def _generate_narrative(prompt: str, fallback: str) -> tuple[str, str, str | None]:
     """Produce a narrative, preferring the LLM when configured.
 
     Returns (narrative, model_used, provider). The prompt must contain
@@ -607,7 +607,7 @@ def _generate_narrative(prompt: str, fallback: str) -> tuple[str, str, Optional[
     return narrative, model, provider
 
 
-def _llm_judge(narrative: str, allowed: set, trend_direction: str) -> Optional[bool]:
+def _llm_judge(narrative: str, allowed: set, trend_direction: str) -> bool | None:
     """An independent LLM verdict on whether a narrative is faithful to the figures.
 
     Returns True (faithful), False (unfaithful), or None when no key is set or the
@@ -694,7 +694,7 @@ def _gate_narrative(narrative, model_used, provider, fallback, allowed, trend_di
     return fallback, DETERMINISTIC_MODEL, None, 1.0, note, ["faithfulness-fallback"]
 
 
-def _synthesise_multi(query: "MultiQuery", steps: list["MultiStepStep"]) -> str:
+def _synthesise_multi(query: MultiQuery, steps: list[MultiStepStep]) -> str:
     """A deterministic synthesis over the sub-decisions of a multi-step answer.
 
     Only states each scope's total and trend, both drawn straight from the child
@@ -923,9 +923,9 @@ class Analyst:
         }
         region_word = SOURCE_REGION_WORD.get(query.source, "regions")
         fallback_parts = [
-            f"Between {window[0]} and {window[-1]}, comparing {scope} across {region_word}: "
+            (f"Between {window[0]} and {window[-1]}, comparing {scope} across {region_word}: "
             f"{series[0].region} recorded the most offences ({series[0].total:,}) and "
-            f"{series[-1].region} the fewest ({series[-1].total:,})."
+            f"{series[-1].region} the fewest ({series[-1].total:,}).")
         ]
         moves = [s for s in series if s.yoy_change_pct is not None]
         if moves:
@@ -1002,7 +1002,7 @@ class Analyst:
         """Read back the most recent audit entries (newest last)."""
         return self._logger.read_all()[-limit:]
 
-    def verify_log(self) -> "ChainVerification":
+    def verify_log(self) -> ChainVerification:
         """Re-walk the audit log and confirm its tamper-evident hash chain."""
         return self._logger.verify()
 
@@ -1066,7 +1066,7 @@ class Analyst:
             self._logger.read_all(), self._agency, self._accountable_official
         )
 
-    def compliance_report(self) -> "ComplianceReport":
+    def compliance_report(self) -> ComplianceReport:
         """An auditor-ready compliance report (ISO 42001 / NIST AI RMF / DTA)."""
         return compliance_report(
             self._logger.read_all(),

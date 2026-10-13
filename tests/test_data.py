@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-import signalkit.data.sa_crime as sa_crime
+from signalkit.data import sa_crime
 from signalkit.data.sa_crime import MonthlyRecord, get_records, load_snapshot
 
 
@@ -28,9 +28,9 @@ def test_snapshot_months_are_well_formed():
     records, _ = load_snapshot()
     months = {r.month for r in records}
     assert all(len(m) == 7 and m[4] == "-" for m in months)
-    # the bundled window spans 2024-07 .. 2026-03
+    # the bundled window spans 2024-07 .. 2026-06
     assert min(months) == "2024-07"
-    assert max(months) == "2026-03"
+    assert max(months) == "2026-06"
 
 
 def test_snapshot_divisions_are_anzsoc():
@@ -53,7 +53,7 @@ def test_offline_env_forces_snapshot(monkeypatch):
 
 def test_offline_argument_overrides(monkeypatch):
     monkeypatch.delenv("SIGNAL_OFFLINE", raising=False)
-    records, label = get_records(offline=True)
+    _records, label = get_records(offline=True)
     assert "snapshot" in label
 
 
@@ -93,7 +93,7 @@ def test_live_cache_served_once_populated(monkeypatch):
 
 
 def test_nyc_snapshot_loads():
-    import signalkit.data.nyc as nyc
+    from signalkit.data import nyc
     records, label = nyc.load_snapshot()
     assert len(records) > 1000
     assert "NYC Open Data" in label

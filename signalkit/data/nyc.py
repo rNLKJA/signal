@@ -31,8 +31,8 @@ from datetime import date
 
 import httpx
 
-from signalkit.data.sa_crime import DataUnavailable, MonthlyRecord
 from signalkit.data.sa_crime import SNAPSHOT_PATH as _SA_SNAPSHOT_PATH
+from signalkit.data.sa_crime import DataUnavailable, MonthlyRecord
 
 AGENCY = "NYPD"
 HISTORIC_URL = "https://data.cityofnewyork.us/resource/qgea-i56i.json"
@@ -42,7 +42,7 @@ TOP_OFFENSES = 25
 OTHER_OFFENSE = "OTHER OFFENSES"
 
 _CACHE_TTL_SECONDS = 3600
-_live_cache: tuple[float, list["MonthlyRecord"], str] | None = None
+_live_cache: tuple[float, list[MonthlyRecord], str] | None = None
 _refresh_lock = threading.Lock()
 _refresh_in_flight = False
 

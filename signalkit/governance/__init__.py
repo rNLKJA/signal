@@ -41,6 +41,12 @@ from signalkit.governance.audit_store import (
     JsonlAuditStore,
     SqliteAuditStore,
 )
+from signalkit.governance.compliance import (
+    ComplianceItem,
+    ComplianceReport,
+    FrameworkMapping,
+    compliance_report,
+)
 from signalkit.governance.decision_log import (
     ChainVerification,
     DecisionCategory,
@@ -61,12 +67,6 @@ from signalkit.governance.decision_log import (
     transparency_statement,
     verify_chain,
 )
-from signalkit.governance.compliance import (
-    ComplianceItem,
-    ComplianceReport,
-    FrameworkMapping,
-    compliance_report,
-)
 from signalkit.governance.sdk import Governor, Recording
 from signalkit.governance.tenancy import (
     DEFAULT_TENANT,
@@ -76,43 +76,43 @@ from signalkit.governance.tenancy import (
 )
 
 __all__ = [
+    "DEFAULT_TENANT",
+    # pluggable storage
+    "AuditStore",
+    # tamper-evidence
+    "ChainVerification",
+    "ComplianceItem",
+    "ComplianceReport",
+    "DecisionCategory",
     # audit log
     "DecisionEntry",
     "DecisionLogger",
-    "DecisionCategory",
-    "RiskCategory",
-    # pluggable storage
-    "AuditStore",
-    "JsonlAuditStore",
+    "FrameworkMapping",
+    # artefacts generated from the log
+    "GovernanceSummary",
+    # SDK
+    "Governor",
+    "ImpactAssessment",
+    "ImpactAssessmentEntry",
     "InMemoryAuditStore",
+    "JsonlAuditStore",
+    "ModelCard",
+    "Recording",
+    "RiskCategory",
     "SqliteAuditStore",
     # multi-tenancy
     "TenantLog",
-    "DEFAULT_TENANT",
-    "tenant_for_api_key",
-    "parse_tenant_keys",
-    # SDK
-    "Governor",
-    "Recording",
-    # compliance report
-    "compliance_report",
-    "ComplianceReport",
-    "FrameworkMapping",
-    "ComplianceItem",
-    # tamper-evidence
-    "ChainVerification",
-    "verify_chain",
-    # artefacts generated from the log
-    "GovernanceSummary",
-    "summarise",
+    "TransparencyStatement",
     "UseCaseEntry",
     "UseCaseRegister",
-    "register",
-    "TransparencyStatement",
-    "transparency_statement",
-    "ImpactAssessmentEntry",
-    "ImpactAssessment",
+    # compliance report
+    "compliance_report",
     "impact_assessment",
-    "ModelCard",
     "model_card",
+    "parse_tenant_keys",
+    "register",
+    "summarise",
+    "tenant_for_api_key",
+    "transparency_statement",
+    "verify_chain",
 ]

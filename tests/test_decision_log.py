@@ -7,13 +7,13 @@ from signalkit.governance.decision_log import DecisionEntry, DecisionLogger
 
 
 def make_entry(**overrides):
-    base = dict(
-        model_name="signal-stats-v1 (deterministic)",
-        input_summary="trend query",
-        model_output_summary="complaints flat over window",
-        decision_made="returned analysis",
-        human_review_required=False,
-    )
+    base = {
+        "model_name": "signal-stats-v1 (deterministic)",
+        "input_summary": "trend query",
+        "model_output_summary": "complaints flat over window",
+        "decision_made": "returned analysis",
+        "human_review_required": False,
+    }
     base.update(overrides)
     return DecisionEntry(**base)
 

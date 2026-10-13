@@ -41,7 +41,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 
 import signalkit
-from signalkit.data import catalogue
 from signalkit.analyst.core import (
     AnalyseRequest,
     Analyst,
@@ -51,6 +50,7 @@ from signalkit.analyst.core import (
     NoDataError,
     ReviewRequest,
 )
+from signalkit.data import catalogue
 from signalkit.data.sa_crime import DataUnavailable, snapshot_meta
 from signalkit.ratelimit import RateLimiter
 
