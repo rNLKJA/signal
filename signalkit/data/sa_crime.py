@@ -60,7 +60,7 @@ TOP_REGIONS = 15
 OTHER_REGION = "OTHER SA AREAS"
 
 _CACHE_TTL_SECONDS = 3600
-_live_cache: tuple[float, list["MonthlyRecord"], str] | None = None
+_live_cache: tuple[float, list[MonthlyRecord], str] | None = None
 _refresh_lock = threading.Lock()
 _refresh_in_flight = False
 

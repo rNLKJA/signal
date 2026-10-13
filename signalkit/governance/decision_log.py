@@ -56,12 +56,10 @@ import uuid
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 from signalkit.governance.audit_store import AuditStore, JsonlAuditStore
-
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -117,11 +115,11 @@ class DecisionEntry(BaseModel):
     model_name: str = Field(
         description="Name of the AI model used (e.g. 'gpt-4o', 'claude-sonnet-4-6'). [DTA]",
     )
-    model_version: Optional[str] = Field(
+    model_version: str | None = Field(
         default=None,
         description="Model version or release date string. [DTA] [EU]",
     )
-    model_provider: Optional[str] = Field(
+    model_provider: str | None = Field(
         default=None,
         description="Provider of the model (e.g. 'OpenAI', 'Anthropic'). [DTA]",
     )
@@ -147,12 +145,12 @@ class DecisionEntry(BaseModel):
         default=DecisionCategory.analytical,
         description="Broad category of this decision. [DTA]",
     )
-    use_case: Optional[str] = Field(
+    use_case: str | None = Field(
         default=None,
         description="Named AI use case this decision belongs to, for the DTA "
                     "use-case register (e.g. 'Crime trend analysis'). [DTA]",
     )
-    confidence_score: Optional[float] = Field(
+    confidence_score: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
@@ -163,7 +161,7 @@ class DecisionEntry(BaseModel):
     human_review_required: bool = Field(
         description="Whether human review was required before acting on this output. [DTA] [EU]",
     )
-    human_reviewer: Optional[str] = Field(
+    human_reviewer: str | None = Field(
         default=None,
         description="Identifier (email or role) of the human reviewer, if applicable. [DTA]",
     )
@@ -171,15 +169,15 @@ class DecisionEntry(BaseModel):
         default=False,
         description="True if a human overrode the model output. [EU]",
     )
-    override_reason: Optional[str] = Field(
+    override_reason: str | None = Field(
         default=None,
         description="Reason for override, if override_applied is True. [EU]",
     )
-    reviews_decision_id: Optional[str] = Field(
+    reviews_decision_id: str | None = Field(
         default=None,
         description="For a review event: the decision_id this review applies to. [DTA]",
     )
-    parent_decision_id: Optional[str] = Field(
+    parent_decision_id: str | None = Field(
         default=None,
         description="For a sub-decision in a multi-step answer: the composite decision it "
                     "belongs to. Gives per-step accountability for agentic reasoning. [DTA/EU]",
@@ -190,21 +188,21 @@ class DecisionEntry(BaseModel):
     )
 
     # --- Governance context ---
-    tenant_id: Optional[str] = Field(
+    tenant_id: str | None = Field(
         default=None,
         description="The tenant (organisation) this decision belongs to. Part of the signed "
                     "content, so a record cannot be moved between tenants without breaking its "
                     "hash. None on a single-tenant deployment. [DTA]",
     )
-    agency: Optional[str] = Field(
+    agency: str | None = Field(
         default=None,
         description="Government agency or organisation responsible for this decision. [DTA]",
     )
-    officer_id: Optional[str] = Field(
+    officer_id: str | None = Field(
         default=None,
         description="Anonymised ID of the officer or user who initiated the query. [DTA] [Privacy]",
     )
-    legislative_basis: Optional[str] = Field(
+    legislative_basis: str | None = Field(
         default=None,
         description="Policy or legislative reference authorising AI use in this context. [DTA]",
     )
@@ -218,11 +216,11 @@ class DecisionEntry(BaseModel):
         default_factory=list,
         description="Free-form tags for filtering and analysis.",
     )
-    notes: Optional[str] = Field(
+    notes: str | None = Field(
         default=None,
         description="Any additional context not captured by the structured fields.",
     )
-    faithfulness_score: Optional[float] = Field(
+    faithfulness_score: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
@@ -239,18 +237,18 @@ class DecisionEntry(BaseModel):
     # turns the audit trail from "we wrote it down" into "we can show it was not
     # changed" — the traceability the DTA policy and the EU AI Act ask for. These
     # are set by DecisionLogger.log() at append time, not by the caller.
-    prev_hash: Optional[str] = Field(
+    prev_hash: str | None = Field(
         default=None,
         description="entry_hash of the previous logged entry ('genesis' for the first). [EU]",
     )
-    entry_hash: Optional[str] = Field(
+    entry_hash: str | None = Field(
         default=None,
         description="SHA-256 over this entry's content (incl. prev_hash); links it into the chain. [EU]",
     )
 
     @field_validator("override_reason")
     @classmethod
-    def override_reason_required_when_overridden(cls, v: Optional[str], info) -> Optional[str]:
+    def override_reason_required_when_overridden(cls, v: str | None, info) -> str | None:
         if info.data.get("override_applied") and not v:
             raise ValueError("override_reason must be provided when override_applied is True.")
         return v
@@ -288,7 +286,7 @@ class GovernanceSummary(BaseModel):
 
     total_decisions: int
     human_review_required_count: int
-    human_review_rate: Optional[float] = Field(
+    human_review_rate: float | None = Field(
         default=None, description="Fraction of decisions flagged for human review (0–1)."
     )
     reviews_recorded: int = Field(
@@ -301,8 +299,8 @@ class GovernanceSummary(BaseModel):
     by_risk_category: dict[str, int]
     by_model: dict[str, int]
     by_decision_category: dict[str, int]
-    first_decision_at: Optional[datetime] = None
-    last_decision_at: Optional[datetime] = None
+    first_decision_at: datetime | None = None
+    last_decision_at: datetime | None = None
 
 
 def summarise(entries: list[DecisionEntry]) -> GovernanceSummary:
@@ -355,10 +353,10 @@ class UseCaseEntry(BaseModel):
     risk_categories: dict[str, int]
     models: list[str]
     accountable_reviewers: list[str]
-    human_review_rate: Optional[float]
+    human_review_rate: float | None
     data_sources: list[str]
-    first_used: Optional[datetime] = None
-    last_used: Optional[datetime] = None
+    first_used: datetime | None = None
+    last_used: datetime | None = None
 
 
 class UseCaseRegister(BaseModel):
@@ -401,8 +399,8 @@ class ImpactAssessmentEntry(BaseModel):
     human_oversight: str
     fairness_considerations: str
     residual_risk: str
-    first_used: Optional[datetime] = None
-    last_used: Optional[datetime] = None
+    first_used: datetime | None = None
+    last_used: datetime | None = None
 
 
 class ImpactAssessment(BaseModel):
@@ -419,7 +417,7 @@ class ImpactAssessment(BaseModel):
     statement: str
 
 
-def _use_case_of(e: "DecisionEntry") -> str:
+def _use_case_of(e: DecisionEntry) -> str:
     return e.use_case or e.decision_category.value.title()
 
 
@@ -575,11 +573,11 @@ def model_card(
         "Any use over data containing personal information.",
     ]
     limitations = [
-        "Counts are not rates: differences across regions may reflect population, "
-        "reporting or policing intensity rather than real offending.",
+        ("Counts are not rates: differences across regions may reflect population, "
+        "reporting or policing intensity rather than real offending."),
         "Anomaly and trend thresholds are fixed heuristics, not calibrated models.",
-        "The LLM narrative is gated for figure-faithfulness, not for tone or nuance; "
-        "the deterministic template is always the fallback.",
+        ("The LLM narrative is gated for figure-faithfulness, not for tone or nuance; "
+        "the deterministic template is always the fallback."),
         "Large explorer datasets are sampled at a row cap (flagged in the result).",
     ]
     card = (
@@ -775,13 +773,13 @@ class DecisionLogger:
     #: prev_hash value for the first entry in a chain.
     GENESIS = "genesis"
 
-    def __init__(self, store: "AuditStore | str | Path") -> None:
+    def __init__(self, store: AuditStore | str | Path) -> None:
         if isinstance(store, (str, Path)):
             store = JsonlAuditStore(store)
         self._store: AuditStore = store
         #: Back-compat / convenience: the file path when the store is file-backed.
         self.path = getattr(store, "path", None)
-        self._last_hash: Optional[str] = None  # lazily loaded from the store tail
+        self._last_hash: str | None = None  # lazily loaded from the store tail
 
     def _tail_hash(self) -> str:
         """entry_hash of the last logged entry, or GENESIS for an empty/legacy log.
@@ -807,7 +805,7 @@ class DecisionLogger:
         self._store.append(entry.to_jsonl_line())
         self._last_hash = entry.entry_hash
 
-    def verify(self) -> "ChainVerification":
+    def verify(self) -> ChainVerification:
         """Re-walk the log and confirm the hash chain is intact."""
         return verify_chain(self.read_all())
 
@@ -833,14 +831,14 @@ class ChainVerification(BaseModel):
     legacy_entries: int = Field(
         default=0, description="Leading entries written before hashing began (unverifiable, not tampered)"
     )
-    head_hash: Optional[str] = Field(
+    head_hash: str | None = Field(
         default=None,
         description="entry_hash of the last chained entry — the digest that commits the whole chain",
     )
-    broken_at: Optional[str] = Field(
+    broken_at: str | None = Field(
         default=None, description="decision_id where the chain first fails, if any"
     )
-    reason: Optional[str] = Field(default=None, description="Why it failed, in plain words")
+    reason: str | None = Field(default=None, description="Why it failed, in plain words")
 
 
 def verify_chain(entries: list[DecisionEntry]) -> ChainVerification:
@@ -854,7 +852,7 @@ def verify_chain(entries: list[DecisionEntry]) -> ChainVerification:
     """
     legacy = 0
     chained = 0
-    prev: Optional[str] = None  # None until the chain begins
+    prev: str | None = None  # None until the chain begins
     for idx, e in enumerate(entries):
         if e.entry_hash is None:
             if prev is not None:

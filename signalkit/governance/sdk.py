@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
+
+from typing_extensions import Self
 
 from signalkit.governance.audit_store import AuditStore
 from signalkit.governance.compliance import ComplianceReport, compliance_report
@@ -62,13 +64,13 @@ class Recording:
 
     def __init__(
         self,
-        governor: "Governor",
+        governor: Governor,
         *,
         use_case: str,
         model_name: str,
         input_summary: str,
         tenant_id: str,
-        model_provider: Optional[str],
+        model_provider: str | None,
         risk_category: RiskCategory,
         decision_category: DecisionCategory,
     ) -> None:
@@ -83,22 +85,22 @@ class Recording:
         self._category = decision_category
         self._output_summary = ""
         self._decision_made = "Returned an AI-assisted answer to the caller."
-        self._faithfulness: Optional[float] = None
+        self._faithfulness: float | None = None
         self._human_review = False
         self._logged = False
 
-    def __enter__(self) -> "Recording":
+    def __enter__(self) -> Self:
         return self
 
     def output(
         self,
         summary: Any,
         *,
-        decision: Optional[str] = None,
-        faithfulness_score: Optional[float] = None,
+        decision: str | None = None,
+        faithfulness_score: float | None = None,
         human_review_required: bool = False,
-        risk_category: Optional[RiskCategory] = None,
-    ) -> "Recording":
+        risk_category: RiskCategory | None = None,
+    ) -> Recording:
         """Record what the model produced and how it should be governed."""
         self._output_summary = str(summary)[:1000]
         if decision:
@@ -147,16 +149,16 @@ class Governor:
 
     def __init__(
         self,
-        store: "str | Path | AuditStore | DecisionLogger | TenantLog" = "decisions.jsonl",
+        store: str | Path | AuditStore | DecisionLogger | TenantLog = "decisions.jsonl",
         *,
-        agency: Optional[str] = None,
-        accountable_official: Optional[str] = None,
+        agency: str | None = None,
+        accountable_official: str | None = None,
     ) -> None:
         self.agency = agency
         self.accountable_official = accountable_official
         if isinstance(store, TenantLog):
-            self._tenant: Optional[TenantLog] = store
-            self._single: Optional[DecisionLogger] = None
+            self._tenant: TenantLog | None = store
+            self._single: DecisionLogger | None = None
         elif isinstance(store, DecisionLogger):
             self._tenant, self._single = None, store
         else:
@@ -171,7 +173,7 @@ class Governor:
         model_name: str,
         input_summary: str = "",
         tenant_id: str = DEFAULT_TENANT,
-        model_provider: Optional[str] = None,
+        model_provider: str | None = None,
         risk_category: RiskCategory = RiskCategory.limited,
         decision_category: DecisionCategory = DecisionCategory.analytical,
     ) -> Recording:

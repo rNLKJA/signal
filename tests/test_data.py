@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-import signalkit.data.sa_crime as sa_crime
+from signalkit.data import sa_crime
 from signalkit.data.sa_crime import MonthlyRecord, get_records, load_snapshot
 
 
@@ -53,7 +53,7 @@ def test_offline_env_forces_snapshot(monkeypatch):
 
 def test_offline_argument_overrides(monkeypatch):
     monkeypatch.delenv("SIGNAL_OFFLINE", raising=False)
-    records, label = get_records(offline=True)
+    _records, label = get_records(offline=True)
     assert "snapshot" in label
 
 
@@ -93,7 +93,7 @@ def test_live_cache_served_once_populated(monkeypatch):
 
 
 def test_nyc_snapshot_loads():
-    import signalkit.data.nyc as nyc
+    from signalkit.data import nyc
     records, label = nyc.load_snapshot()
     assert len(records) > 1000
     assert "NYC Open Data" in label

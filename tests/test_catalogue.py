@@ -110,7 +110,7 @@ def test_generic_analysis_falls_back_when_too_short(tmp_path, monkeypatch):
 
 
 def test_parse_month_handles_many_formats():
-    import signalkit.analyst.core as core
+    from signalkit.analyst import core
     assert core._parse_month("2023-04") == "2023-04"
     assert core._parse_month("15/08/2025") == "2025-08"
     assert core._parse_month("2013-01-12T00:10:00") == "2013-01"

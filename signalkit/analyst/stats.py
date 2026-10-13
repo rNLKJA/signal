@@ -25,7 +25,6 @@ and the narrative happens in ``core.py``.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 import numpy as np
 from scipy import stats
@@ -64,8 +63,8 @@ class Seasonality:
     """Additive month-of-year decomposition of a monthly series."""
 
     seasonal_strength: float  # 0..1 — share of detrended variance explained by season
-    peak_month: Optional[int]  # 1..12, calendar month with the largest seasonal lift
-    trough_month: Optional[int]
+    peak_month: int | None  # 1..12, calendar month with the largest seasonal lift
+    trough_month: int | None
     seasonal_by_month: dict[int, float] = field(default_factory=dict)  # calendar month -> effect
     established: bool = False  # True once >= two full cycles are observed
     months_observed: int = 0
@@ -87,7 +86,7 @@ class Forecast:
     residual_std: float = 0.0
 
 
-def mann_kendall(values: list[float]) -> Optional[MannKendallResult]:
+def mann_kendall(values: list[float]) -> MannKendallResult | None:
     """Mann-Kendall trend test with tie-corrected variance.
 
     Returns ``None`` for series too short to test (n < 4). The S statistic counts
@@ -137,7 +136,7 @@ def mann_kendall(values: list[float]) -> Optional[MannKendallResult]:
     )
 
 
-def sen_slope(values: list[float]) -> Optional[SenSlope]:
+def sen_slope(values: list[float]) -> SenSlope | None:
     """Theil-Sen robust slope (offences/month) with a 95% confidence interval."""
     y = np.asarray(values, dtype=float)
     n = y.size
@@ -158,7 +157,7 @@ def _month_number(month_label: str) -> int:
     return int(month_label.split("-")[1])
 
 
-def seasonal_decompose(months: list[str], values: list[float]) -> Optional[Seasonality]:
+def seasonal_decompose(months: list[str], values: list[float]) -> Seasonality | None:
     """Additive decomposition: value = trend + seasonal + residual.
 
     The trend is the robust Theil-Sen line over the whole window. A short series
@@ -221,7 +220,7 @@ def _add_months(month_label: str, k: int) -> str:
 
 def forecast(
     months: list[str], values: list[float], horizon: int = 3
-) -> Optional[Forecast]:
+) -> Forecast | None:
     """Level-plus-trend forecast on the deseasonalised series, with an empirical PI.
 
     Deseasonalise with the month-of-year effects, fit a robust (Sen) trend to the

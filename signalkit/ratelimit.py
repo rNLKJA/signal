@@ -19,7 +19,7 @@ import os
 import threading
 import time
 from collections import deque
-from typing import Callable
+from collections.abc import Callable
 
 DEFAULT_LIMIT = 20
 DEFAULT_WINDOW_SECONDS = 60.0

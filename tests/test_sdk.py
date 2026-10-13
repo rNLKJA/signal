@@ -30,9 +30,8 @@ def test_record_logs_a_governed_decision(tmp_path):
 
 def test_a_failed_answer_logs_nothing(tmp_path):
     gov = Governor(str(tmp_path / "d.jsonl"))
-    with pytest.raises(RuntimeError):
-        with gov.record(use_case="support-bot", model_name="gpt-4o"):
-            raise RuntimeError("model timed out")
+    with pytest.raises(RuntimeError), gov.record(use_case="support-bot", model_name="gpt-4o"):
+        raise RuntimeError("model timed out")
     assert gov.decisions() == []  # an exception is not a decision
 
 
